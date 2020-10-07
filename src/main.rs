@@ -8,7 +8,7 @@ fn main() {
     noecho();
     loop {
         match window.getch() {
-            Some(Input::KeyDC) => break,
+            Some(Input::KeyDC) | Some(Input::Character('\x1B')) => break,
             Some(Input::Character(c)) => { window.addstr(&format!("{}", c)); },
             Some(input) => { window.addstr(&format!("{:?}", input)); },
             None => (),
