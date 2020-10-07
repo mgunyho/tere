@@ -8,8 +8,8 @@ fn main() {
     noecho();
     loop {
         match window.getch() {
-            Some(Input::Character(c)) => { window.addch(c); },
             Some(Input::KeyDC) => break,
+            Some(Input::Character(c)) => { window.addstr(&format!("{}", c)); },
             Some(input) => { window.addstr(&format!("{:?}", input)); },
             None => (),
         }
