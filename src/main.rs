@@ -18,7 +18,17 @@ fn main() {
     noecho();
     loop {
         match window.getch() {
-            Some(Input::KeyDC) | Some(Input::Character('\x1B')) => break,
+            Some(Input::Character('\x1B')) => {
+                // Either ESC or ALT+key. If it's ESC, the next getch will be
+                // err. If it's ALT+key, next getch will contain the key
+                window.nodelay(true);
+                match window.getch() {
+                    Some(Input::Character(c)) => { main_win.addstr(&format!("ALT+{}", c)); },
+                    _ => { break; },
+                }
+                window.nodelay(false);
+            }
+            Some(Input::KeyDC) => break,
             Some(Input::Character(c)) => { main_win.addstr(&format!("{}", c)); },
             Some(Input::KeyResize) => (),
             Some(input) => { main_win.addstr(&format!("{:?}", input)); },
