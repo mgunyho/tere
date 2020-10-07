@@ -20,6 +20,7 @@ fn main() {
         match window.getch() {
             Some(Input::KeyDC) | Some(Input::Character('\x1B')) => break,
             Some(Input::Character(c)) => { main_win.addstr(&format!("{}", c)); },
+            Some(Input::KeyResize) => (),
             Some(input) => { main_win.addstr(&format!("{:?}", input)); },
             None => (),
         }
