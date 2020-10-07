@@ -5,6 +5,8 @@ const HEADER_SIZE: i32 = 1;
 fn main() {
     let window = initscr();
 
+    window.keypad(true); // enable arrow keys etc
+
     let header_win = window.subwin(HEADER_SIZE, 0, 0, 0).unwrap();
     let main_win = window.subwin(window.get_max_y() - HEADER_SIZE, 0, HEADER_SIZE, 0).unwrap();
 
