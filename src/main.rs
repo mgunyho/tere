@@ -13,7 +13,7 @@ struct TereTui {
 
 impl TereTui {
     pub fn init(root_win: &pancurses::Window) -> Self {
-        let ret = Self {
+        let mut ret = Self {
             header_win: root_win.subwin(HEADER_SIZE, 0, 0, 0)
                 .expect("failed to initialize header window!"),
             main_win: root_win
@@ -24,7 +24,8 @@ impl TereTui {
 
         ret.init_header();
         ret.update_header();
-        ret.update_main_window();
+        ret.update_ls_output_buf();
+        ret.redraw_main_window();
         return ret;
     }
 
@@ -45,9 +46,27 @@ impl TereTui {
         self.header_win.refresh();
     }
 
-    pub fn update_main_window(&self) {
-        //TODO
-        self.main_win.printw("hëllö");
+    pub fn update_ls_output_buf(&mut self) {
+        if let Ok(entries) = std::fs::read_dir(".") {
+            self.ls_output_buf.clear();
+            self.ls_output_buf.extend(
+                //TODO: sorting...
+                entries.filter_map(|e| e.ok())
+                    .map(|e| e.file_name().into_string().ok())
+                    .filter_map(|e| e)
+            );
+        }
+        //TODO: show error message (add separate msg box)
+    }
+
+    pub fn redraw_main_window(&self) {
+        //TODO: scrolling
+
+        self.main_win.clear();
+        let (max_y, max_x) = self.main_win.get_max_yx();
+        for (i, line) in self.ls_output_buf.iter().enumerate().take(max_y as usize) {
+            self.main_win.mvaddnstr(i as i32, 0, line, max_x);
+        }
         self.main_win.refresh();
     }
 
