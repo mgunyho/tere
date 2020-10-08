@@ -75,15 +75,25 @@ impl TereTui {
         //TODO: show error message (add separate msg box)
     }
 
-    pub fn redraw_main_window(&self) {
-        //TODO: scrolling
+    pub fn higlight_row(&self, row: u32) {
+        // Highlight the row `row` in the main window. Row 0 is the first row of
+        // the main window
+        //TODO
+        let (_, color_pair) = self.main_win.attrget();
+        self.main_win.mvchgat(row as i32, 0, -1, pancurses::A_STANDOUT,
+                              color_pair);
+    }
 
+    pub fn redraw_main_window(&self) {
         self.main_win.clear();
         let (max_y, max_x) = self.main_win.get_max_yx();
         for (i, line) in self.ls_output_buf.iter().skip(self.scroll_pos as usize)
             .enumerate() .take(max_y as usize) {
             self.main_win.mvaddnstr(i as i32, 0, line, max_x);
         }
+
+        self.higlight_row(self.cursor_pos);
+
         self.main_win.refresh();
     }
 
