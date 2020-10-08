@@ -8,8 +8,10 @@ fn main() {
     window.keypad(true); // enable arrow keys etc
 
     //TODO: add another row to header with info, like 'tere - type ALT+? for help', and show status message when trying to open file etc
-    let header_win = window.subwin(HEADER_SIZE, 0, 0, 0).unwrap();
-    let main_win = window.subwin(window.get_max_y() - HEADER_SIZE, 0, HEADER_SIZE, 0).unwrap();
+    let header_win = window.subwin(HEADER_SIZE, 0, 0, 0)
+        .expect("failed to initialize header window!");
+    let main_win = window.subwin(window.get_max_y() - HEADER_SIZE, 0, HEADER_SIZE, 0)
+        .expect("failed to initialize main window!");
 
     header_win.addstr("this is the header");
 
