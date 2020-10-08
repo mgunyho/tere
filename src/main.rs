@@ -9,6 +9,18 @@ struct TereTui {
     main_win: pancurses::Window,
     // This vector will hold the list of files/folders in the current directory
     ls_output_buf: Vec<String>,
+
+    // the row on which the cursor is currently on, counted starting from the
+    // start of `ls_output_buf` (not from the top of the screen).
+    cursor_pos: u32,
+
+    // the top of the screen corresponds to this row in the `ls_output_buf`.
+    scroll_pos: u32,
+
+    //TODO
+    //search_string: String,
+    //// if this is false, match anywhere, otherwise match only from the beginning
+    //search_anywhere: bool,
 }
 
 impl TereTui {
@@ -20,6 +32,10 @@ impl TereTui {
                 .subwin(root_win.get_max_y() - HEADER_SIZE, 0, HEADER_SIZE, 0)
                 .expect("failed to initialize main window!"),
             ls_output_buf: vec![],
+            cursor_pos: 0, // TODO: get last value from previous run
+            scroll_pos: 0,
+            //search_string: "".into(),
+            //search_anywhere: false,
         };
 
         ret.init_header();
@@ -64,16 +80,26 @@ impl TereTui {
 
         self.main_win.clear();
         let (max_y, max_x) = self.main_win.get_max_yx();
-        for (i, line) in self.ls_output_buf.iter().enumerate().take(max_y as usize) {
+        for (i, line) in self.ls_output_buf.iter().skip(self.scroll_pos as usize)
+            .enumerate() .take(max_y as usize) {
             self.main_win.mvaddnstr(i as i32, 0, line, max_x);
         }
         self.main_win.refresh();
     }
 
-    pub fn main_loop(&self, root_win: pancurses::Window) {
+    pub fn main_loop(&mut self, root_win: pancurses::Window) {
         // root_win is the window created by initscr()
         loop {
             match root_win.getch() {
+                Some(Input::KeyUp) => {
+                    self.scroll_pos = self.scroll_pos.checked_sub(1)
+                        .unwrap_or(0);
+                    self.redraw_main_window();
+                }
+                Some(Input::KeyDown) => {
+                    self.scroll_pos += 1;
+                    self.redraw_main_window();
+                }
                 Some(Input::Character('\x1B')) => {
                     // Either ESC or ALT+key. If it's ESC, the next getch will be
                     // err. If it's ALT+key, next getch will contain the key
@@ -101,7 +127,7 @@ fn main() {
 
     root_window.keypad(true); // enable arrow keys etc
 
-    let ui = TereTui::init(&root_window);
+    let mut ui = TereTui::init(&root_window);
 
     noecho();
 
