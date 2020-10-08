@@ -1,4 +1,4 @@
-use pancurses::{initscr, endwin, noecho, Input};
+use pancurses::{initscr, endwin, noecho, Input, curs_set};
 
 const HEADER_SIZE: i32 = 1;
 
@@ -126,6 +126,7 @@ fn main() {
     let root_window = initscr();
 
     root_window.keypad(true); // enable arrow keys etc
+    curs_set(0);
 
     let mut ui = TereTui::init(&root_window);
 
