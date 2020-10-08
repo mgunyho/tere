@@ -13,7 +13,12 @@ fn main() {
     let main_win = window.subwin(window.get_max_y() - HEADER_SIZE, 0, HEADER_SIZE, 0)
         .expect("failed to initialize main window!");
 
-    header_win.addstr("this is the header");
+    let pwd: std::string::String = match std::env::current_dir() {
+        Ok(path) => format!("{}", path.display()),
+        Err(e) => format!("Unable to get current dir! ({})", e),
+    };
+    header_win.attrset(pancurses::A_BOLD);
+    header_win.addstr(pwd);
 
     main_win.printw("hëllö");
 
