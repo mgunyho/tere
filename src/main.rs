@@ -122,7 +122,7 @@ impl TereTui {
                 }
                 Some(Input::KeyDC) => break,
                 Some(Input::Character(c)) => { self.main_win.addstr(&format!("{}", c)); },
-                Some(Input::KeyResize) => (),
+                Some(Input::KeyResize) => { self.redraw_main_window(); },
                 Some(input) => { self.main_win.addstr(&format!("{:?}", input)); },
                 None => (),
             }
