@@ -7,6 +7,8 @@ struct TereTui {
     header_win: pancurses::Window,
     //footer_win: pancurses::Window, //TODO
     main_win: pancurses::Window,
+    // This vector will hold the list of files/folders in the current directory
+    ls_output_buf: Vec<String>,
 }
 
 impl TereTui {
@@ -17,6 +19,7 @@ impl TereTui {
             main_win: root_win
                 .subwin(root_win.get_max_y() - HEADER_SIZE, 0, HEADER_SIZE, 0)
                 .expect("failed to initialize main window!"),
+            ls_output_buf: vec![],
         };
 
         ret.init_header();
