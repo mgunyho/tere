@@ -10,6 +10,21 @@ struct TereTui {
 }
 
 impl TereTui {
+    pub fn init(root_win: &pancurses::Window) -> Self {
+        let ret = Self {
+            header_win: root_win.subwin(HEADER_SIZE, 0, 0, 0)
+                .expect("failed to initialize header window!"),
+            main_win: root_win
+                .subwin(root_win.get_max_y() - HEADER_SIZE, 0, HEADER_SIZE, 0)
+                .expect("failed to initialize main window!"),
+        };
+
+        ret.init_header();
+        ret.update_header();
+        ret.update_main_window();
+        return ret;
+    }
+
     pub fn init_header(&self) {
         //TODO: make header bg/font color configurable via settings
         self.header_win.attrset(pancurses::A_BOLD);
@@ -64,17 +79,7 @@ fn main() {
 
     root_window.keypad(true); // enable arrow keys etc
 
-    let ui = TereTui {
-        header_win: root_window.subwin(HEADER_SIZE, 0, 0, 0)
-            .expect("failed to initialize header window!"),
-        main_win: root_window
-            .subwin(root_window.get_max_y() - HEADER_SIZE, 0, HEADER_SIZE, 0)
-            .expect("failed to initialize main window!"),
-    };
-
-    ui.init_header();
-    ui.update_header();
-    ui.update_main_window();
+    let ui = TereTui::init(&root_window);
 
     noecho();
 
