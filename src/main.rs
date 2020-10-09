@@ -75,7 +75,7 @@ impl TereTui {
         //TODO: show error message (add separate msg box)
     }
 
-    pub fn higlight_row(&self, row: u32) {
+    pub fn highlight_row(&self, row: u32) {
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
         //TODO
@@ -92,7 +92,7 @@ impl TereTui {
             self.main_win.mvaddnstr(i as i32, 0, line, max_x);
         }
 
-        self.higlight_row(self.cursor_pos);
+        self.highlight_row(self.cursor_pos);
 
         self.main_win.refresh();
     }
