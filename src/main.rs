@@ -55,14 +55,19 @@ impl TereTui {
         self.header_win.refresh();
     }
 
+    fn change_row_attr(&self, row: u32, attr: pancurses::chtype) {
+        let (_, color_pair) = self.main_win.attrget();
+        self.main_win.mvchgat(row as i32, 0, -1, attr, color_pair);
+    }
+
+    pub fn unhighlight_row(&self, row: u32) {
+        self.change_row_attr(row, pancurses::Attribute::Normal.into());
+    }
 
     pub fn highlight_row(&self, row: u32) {
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
-        //TODO
-        let (_, color_pair) = self.main_win.attrget();
-        self.main_win.mvchgat(row as i32, 0, -1, pancurses::A_STANDOUT,
-                              color_pair);
+        self.change_row_attr(row, pancurses::A_STANDOUT);
     }
 
     pub fn redraw_main_window(&self) {
