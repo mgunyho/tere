@@ -84,18 +84,36 @@ impl TereTui {
         self.main_win.refresh();
     }
 
+    /// Update the app state by moving the cursor by the specified amount, and
+    /// redraw the view as necessary.
+    pub fn move_cursor(&mut self, amount: i32) {
+
+        self.unhighlight_row(self.app_state.cursor_pos);
+
+        let old_scroll_pos = self.app_state.scroll_pos;
+
+        self.app_state.move_cursor(amount);
+
+        if self.app_state.scroll_pos != old_scroll_pos {
+            // redraw_main_window takes care of highlighting the cursor row
+            // and refreshing
+            self.redraw_main_window();
+        } else {
+            self.highlight_row(self.app_state.cursor_pos);
+            self.main_win.refresh();
+        }
+
+    }
+
     pub fn main_event_loop(&mut self, root_win: pancurses::Window) {
         // root_win is the window created by initscr()
         loop {
             match root_win.getch() {
                 Some(Input::KeyUp) => {
-                    self.app_state.scroll_pos = self.app_state.scroll_pos.checked_sub(1)
-                        .unwrap_or(0);
-                    self.redraw_main_window();
+                    self.move_cursor(-1);
                 }
                 Some(Input::KeyDown) => {
-                    self.app_state.scroll_pos += 1;
-                    self.redraw_main_window();
+                    self.move_cursor(1);
                 }
                 Some(Input::Character('\x1B')) => {
                     // Either ESC or ALT+key. If it's ESC, the next getch will be
