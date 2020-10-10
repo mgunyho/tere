@@ -5,8 +5,8 @@ pub struct TereAppState {
 
     // Width and height of the main window. Their values have to be updated
     // externally if they change.
-    pub main_win_w: u32,
-    pub main_win_h: u32,
+    main_win_w: u32,
+    main_win_h: u32,
 
     // This vector will hold the list of files/folders in the current directory,
     // including ".." (the parent folder).
@@ -45,6 +45,11 @@ impl TereAppState {
         //ret.update_header();  //TODO: move this here
         ret.update_ls_output_buf();
         return ret;
+    }
+
+    pub fn update_main_window_dimensions(&mut self, w: u32, h: u32) {
+        self.main_win_w = w;
+        self.main_win_h = h;
     }
 
     pub fn update_ls_output_buf(&mut self) {
