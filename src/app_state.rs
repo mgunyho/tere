@@ -244,6 +244,8 @@ mod tests {
 
     }
 
+    //TODO: use rstest? https://stackoverflow.com/a/52843365
+    // (using dev-dependencies, https://doc.rust-lang.org/rust-by-example/testing/dev_dependencies.html)
     fn test_scrolling_bufsize_larger_than_window_size_helper(win_h: u32,
                                                              n_files: u32) {
         let mut state = create_test_state(win_h, n_files);
