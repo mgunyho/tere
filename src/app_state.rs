@@ -58,10 +58,16 @@ impl TereAppState {
     }
 
     pub fn update_main_window_dimensions(&mut self, w: u32, h: u32) {
+        let delta_h = h.checked_sub(self.main_win_h).unwrap_or(0);
         self.main_win_w = w;
         self.main_win_h = h;
         self.move_cursor(0); // make sure that cursor is within view
-        //TODO: if height increases, move cursor downwards when applicable
+        if delta_h > 0 {
+            // height is increasing, scroll backwards as much as possible
+            let old_scroll_pos = self.scroll_pos;
+            self.scroll_pos = self.scroll_pos.checked_sub(delta_h).unwrap_or(0);
+            self.cursor_pos += old_scroll_pos - self.scroll_pos;
+        }
     }
 
     pub fn update_ls_output_buf(&mut self) {
