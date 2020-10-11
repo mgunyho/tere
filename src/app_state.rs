@@ -106,6 +106,22 @@ impl TereAppState {
 
     }
 
+    pub fn change_dir(&mut self, path: &str) -> std::io::Result<()> {
+        let final_path: &str = if path.is_empty() {
+            let idx = self.cursor_pos + self.scroll_pos;
+            self.ls_output_buf.get(idx as usize).map(|s| s.as_ref())
+                .unwrap_or("")
+        } else {
+            path
+        };
+        std::env::set_current_dir(final_path)?;
+        self.update_ls_output_buf();
+        //TODO: get these from history
+        self.cursor_pos = 0;
+        self.scroll_pos = 0;
+        Ok(())
+    }
+
 }
 
 #[cfg(test)]
