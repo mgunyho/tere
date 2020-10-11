@@ -110,19 +110,19 @@ mod tests {
         (1..=n).map(|i| format!("file {}", i)).collect()
     }
 
-    fn create_test_state(n_rows: u32, n_filenames: u32) -> TereAppState {
+    fn create_test_state(win_h: u32, n_filenames: u32) -> TereAppState {
         TereAppState {
             cursor_pos: 0,
             scroll_pos: 0,
-            main_win_h: n_rows,
+            main_win_h: win_h,
             main_win_w: 10,
             ls_output_buf: create_test_filenames(n_filenames),
         }
     }
 
+
     #[test]
     fn test_scrolling_bufsize_less_than_window_size() {
-        //TODO: separate application state into a struct with no pancurses dependence (the window should be managed by the TUI)
         let mut state = create_test_state(10, 4);
 
         for i in 1..=3 {
