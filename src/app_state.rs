@@ -3,8 +3,9 @@
 /// notion of curses windows.
 pub struct TereAppState {
 
-    // Width and height of the main window. Their values have to be updated
-    // externally if they change.
+    // Width and height of the main window. These values have to be updated by
+    // calling using the update_main_window_dimensions function if the window
+    // dimensions change.
     main_win_w: u32,
     main_win_h: u32,
 
@@ -12,7 +13,7 @@ pub struct TereAppState {
     // including ".." (the parent folder).
     pub ls_output_buf: Vec<String>,
 
-    // the row on which the cursor is currently on, counted starting from the
+    // The row on which the cursor is currently on, counted starting from the
     // top of the screen (not from the start of `ls_output_buf`). Note that this
     // doesn't have anything to do with the ncurses curspor position.
     pub cursor_pos: u32,
@@ -22,7 +23,7 @@ pub struct TereAppState {
 
     //TODO
     //search_string: String,
-    //// if this is false, match anywhere, otherwise match only from the beginning
+    //// if this is true, match anywhere, otherwise match only from the beginning
     //search_anywhere: bool,
 
     pub header_msg: String,
@@ -166,7 +167,6 @@ mod tests {
             header_msg: "".into(),
         }
     }
-
 
     #[test]
     fn test_scrolling_bufsize_less_than_window_size() {
