@@ -96,9 +96,6 @@ impl TereAppState {
 
         let new_cursor_pos: i32 = old_cursor_pos as i32 + amount;
 
-        // the new cursor position in coordinates relative to the start of `ls_output_buf`
-        //let new_buf_pos = (old_scroll_pos + old_scroll_pos) as i32 + amount
-
         if new_cursor_pos < 0 {
             // attempting to go above the current view, scroll up
             self.scroll_pos = self.scroll_pos
