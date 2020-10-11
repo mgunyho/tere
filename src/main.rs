@@ -53,11 +53,15 @@ impl TereTui {
         self.header_win.attrset(pancurses::A_BOLD);
     }
 
-    pub fn update_header(&mut self) {
-        self.app_state.update_header();
+    pub fn redraw_header(&mut self) {
         self.header_win.clear();
         self.header_win.mvaddstr(0, 0, &self.app_state.header_msg);
         self.header_win.refresh();
+    }
+
+    pub fn update_header(&mut self) {
+        self.app_state.update_header();
+        self.redraw_header();
     }
 
     fn change_row_attr(&self, row: u32, attr: pancurses::chtype) {
