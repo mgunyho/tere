@@ -124,11 +124,20 @@ impl TereAppState {
         } else {
             path
         };
+        let old_cwd = std::env::current_dir();
         std::env::set_current_dir(final_path)?;
         self.update_ls_output_buf();
-        //TODO: get these from history
+        //TODO: proper history
         self.cursor_pos = 0;
         self.scroll_pos = 0;
+        if let Ok(old_cwd) = old_cwd {
+            if let Some(dirname) = old_cwd.file_name() {
+                if let Some(idx) = self.ls_output_buf.iter()
+                    .position(|x| std::ffi::OsString::from(x) == dirname) {
+                    self.move_cursor(idx as i32);
+                }
+            }
+        }
         Ok(())
     }
 
