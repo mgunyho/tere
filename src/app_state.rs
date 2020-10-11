@@ -200,54 +200,56 @@ mod tests {
 
     }
 
-    #[test]
-    fn test_scrolling_bufsize_larger_than_window_size() {
-        let mut state = create_test_state(4, 10);
+    fn test_scrolling_bufsize_larger_than_window_size_helper(win_h: u32,
+                                                             n_files: u32) {
+        let mut state = create_test_state(win_h, n_files);
+        let max_cursor = win_h - 1;
+        let max_scroll = n_files - win_h;
 
         // move cursor all the way to the bottom of the window
-        for i in 1..=3 {
+        for i in 1..=max_cursor {
             state.move_cursor(1);
             assert_eq!(state.cursor_pos, i);
             assert_eq!(state.scroll_pos, 0);
         }
 
         // scroll to the end of the list
-        for i in 1..=6 {
+        for i in 1..=max_scroll {
             println!("scrolling beyond screen {}, cursor at {}, scroll {}",
                      i, state.cursor_pos, state.scroll_pos);
             state.move_cursor(1);
             println!("after move: cursor at {}, scroll {}",
                      state.cursor_pos, state.scroll_pos);
-            assert_eq!(state.cursor_pos, 3);
+            assert_eq!(state.cursor_pos, max_cursor);
             assert_eq!(state.scroll_pos, i);
         }
 
-        assert_eq!(state.scroll_pos, 6);
+        assert_eq!(state.scroll_pos, max_scroll);
 
         // check that nothing changes when trying to scroll further
         for _ in 0..5 {
             state.move_cursor(1);
-            assert_eq!(state.cursor_pos, 3);
-            assert_eq!(state.scroll_pos, 6);
+            assert_eq!(state.cursor_pos, max_cursor);
+            assert_eq!(state.scroll_pos, max_scroll);
         }
-        state.move_cursor(100);
-        assert_eq!(state.cursor_pos, 3);
-        assert_eq!(state.scroll_pos, 6);
+        state.move_cursor(win_h as i32 + 100);
+        assert_eq!(state.cursor_pos, max_cursor);
+        assert_eq!(state.scroll_pos, max_scroll);
 
         // scroll back to the top of the window
-        for i in 1..=3 {
+        for i in 1..=max_cursor {
             state.move_cursor(-1);
-            assert_eq!(state.cursor_pos, 3-i);
-            assert_eq!(state.scroll_pos, 6);
+            assert_eq!(state.cursor_pos, max_cursor-i);
+            assert_eq!(state.scroll_pos, max_scroll);
         }
         assert_eq!(state.cursor_pos, 0);
-        assert_eq!(state.scroll_pos, 6);
+        assert_eq!(state.scroll_pos, max_scroll);
 
         // scroll back to the top of the list
-        for i in 1..=6 {
+        for i in 1..=max_scroll {
             state.move_cursor(-1);
             assert_eq!(state.cursor_pos, 0);
-            assert_eq!(state.scroll_pos, 6-i);
+            assert_eq!(state.scroll_pos, max_scroll-i);
         }
 
         // check that nothing changes when trying to scroll further
@@ -263,11 +265,36 @@ mod tests {
         assert_eq!(state.scroll_pos, 0);
 
         // test jumping all the way to the bottom and back
-        state.move_cursor(100);
-        assert_eq!(state.cursor_pos, 3);
-        assert_eq!(state.scroll_pos, 6);
-        state.move_cursor(-100);
+        state.move_cursor(win_h as i32 + 100);
+        assert_eq!(state.cursor_pos, max_cursor);
+        assert_eq!(state.scroll_pos, max_scroll);
+        state.move_cursor(-100 - win_h as i32);
         assert_eq!(state.cursor_pos, 0);
         assert_eq!(state.scroll_pos, 0);
+    }
+
+    #[test]
+    fn test_scrolling_bufsize_larger_than_window_size1() {
+        test_scrolling_bufsize_larger_than_window_size_helper(4, 5);
+    }
+
+    #[test]
+    fn test_scrolling_bufsize_larger_than_window_size2() {
+        test_scrolling_bufsize_larger_than_window_size_helper(4, 6);
+    }
+
+    #[test]
+    fn test_scrolling_bufsize_larger_than_window_size3() {
+        test_scrolling_bufsize_larger_than_window_size_helper(4, 7);
+    }
+
+    #[test]
+    fn test_scrolling_bufsize_larger_than_window_size4() {
+        test_scrolling_bufsize_larger_than_window_size_helper(4, 8);
+    }
+
+    #[test]
+    fn test_scrolling_bufsize_larger_than_window_size5() {
+        test_scrolling_bufsize_larger_than_window_size_helper(4, 10);
     }
 }
