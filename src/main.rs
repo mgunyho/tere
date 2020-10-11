@@ -16,17 +16,28 @@ struct TereTui {
 }
 
 impl TereTui {
+    /// Helper function for (re)creating the main window
+    pub fn create_main_window(root_win: &pancurses::Window)
+        -> pancurses::Window {
+        root_win.subwin(root_win.get_max_y() - HEADER_SIZE, 0, HEADER_SIZE, 0)
+                .expect("failed to create main window!")
+    }
+
+    /// Helper function for (re)creating the header window
+    pub fn create_header_window(root_win: &pancurses::Window)
+        -> pancurses::Window {
+        root_win.subwin(HEADER_SIZE, 0, 0, 0)
+                .expect("failed to create header window!")
+    }
+
     pub fn init(root_win: &pancurses::Window) -> Self {
-        let main_win = root_win
-                .subwin(root_win.get_max_y() - HEADER_SIZE, 0, HEADER_SIZE, 0)
-                .expect("failed to initialize main window!");
+        let main_win = Self::create_main_window(root_win);
         let state = TereAppState::init(
             main_win.get_max_x().try_into().unwrap_or(1),
             main_win.get_max_y().try_into().unwrap_or(1)
         );
         let mut ret = Self {
-            header_win: root_win.subwin(HEADER_SIZE, 0, 0, 0)
-                .expect("failed to initialize header window!"),
+            header_win: Self::create_header_window(root_win),
             main_win: main_win,
             app_state: state,
         };
