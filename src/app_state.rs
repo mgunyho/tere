@@ -90,12 +90,15 @@ impl TereAppState {
             self.cursor_pos = ls_buf_size.checked_sub(self.scroll_pos + 1)
                 .unwrap_or(0);
         } else if new_cursor_pos as u32 >= max_y {
-            // attempting to go below current view, scroll down
-            // the new scroll position should satisfy old_scroll_position + amount  = ???
-            //TODO
-            self.scroll_pos = new_cursor_pos as u32 - max_y + old_scroll_pos;
+            // Attempting to go below current view, scroll down.
+            // The new cursor and scroll positions should satisfy
             self.cursor_pos = max_y - 1;
+            self.scroll_pos = std::cmp::min(
+                ls_buf_size,
+                old_scroll_pos + new_cursor_pos as u32
+            ).checked_sub(self.cursor_pos).unwrap_or(0);
         } else {
+            // scrolling within view
             self.cursor_pos = new_cursor_pos as u32;
         }
 
