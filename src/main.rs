@@ -112,7 +112,7 @@ impl TereTui {
         }
     }
 
-    pub fn main_event_loop(&mut self, root_win: pancurses::Window) {
+    pub fn main_event_loop(&mut self, root_win: &pancurses::Window) {
         // root_win is the window created by initscr()
         loop {
             match root_win.getch() {
@@ -160,7 +160,7 @@ fn main() {
 
     noecho();
 
-    ui.main_event_loop(root_window);
+    ui.main_event_loop(&root_window);
 
     endwin();
 }
