@@ -127,45 +127,45 @@ mod tests {
 
         for i in 1..=3 {
             state.move_cursor(1);
-            assert!(state.cursor_pos == i);
-            assert!(state.scroll_pos == 0);
+            assert_eq!(state.cursor_pos, i);
+            assert_eq!(state.scroll_pos, 0);
         }
 
         for _ in 0..5 {
             state.move_cursor(1);
-            assert!(state.cursor_pos == 3);
-            assert!(state.scroll_pos == 0);
+            assert_eq!(state.cursor_pos, 3);
+            assert_eq!(state.scroll_pos, 0);
         }
 
         state.move_cursor(100);
-        assert!(state.cursor_pos == 3);
-        assert!(state.scroll_pos == 0);
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 0);
 
         for i in 1..=3 {
             state.move_cursor(-1);
-            assert!(state.cursor_pos == 3 - i);
-            assert!(state.scroll_pos == 0);
+            assert_eq!(state.cursor_pos, 3 - i);
+            assert_eq!(state.scroll_pos, 0);
         }
 
-        assert!(state.cursor_pos == 0);
+        assert_eq!(state.cursor_pos, 0);
 
         for _ in 0..5 {
             state.move_cursor(-1);
-            assert!(state.cursor_pos == 0);
-            assert!(state.scroll_pos == 0);
+            assert_eq!(state.cursor_pos, 0);
+            assert_eq!(state.scroll_pos, 0);
         }
 
         state.move_cursor(-100);
-        assert!(state.cursor_pos == 0);
-        assert!(state.scroll_pos == 0);
+        assert_eq!(state.cursor_pos, 0);
+        assert_eq!(state.scroll_pos, 0);
 
         // test jumping all the way to the bottom and back
         state.move_cursor(100);
-        assert!(state.cursor_pos == 3);
-        assert!(state.scroll_pos == 0);
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 0);
         state.move_cursor(-100);
-        assert!(state.cursor_pos == 0);
-        assert!(state.scroll_pos == 0);
+        assert_eq!(state.cursor_pos, 0);
+        assert_eq!(state.scroll_pos, 0);
     }
 
     #[test]
@@ -174,29 +174,29 @@ mod tests {
 
         for i in 1..=3 {
             state.move_cursor(1);
-            assert!(state.cursor_pos == i);
-            assert!(state.scroll_pos == 0);
+            assert_eq!(state.cursor_pos, i);
+            assert_eq!(state.scroll_pos, 0);
         }
 
         for _ in 0..5 {
             state.move_cursor(1);
-            assert!(state.cursor_pos == 3);
-            assert!(state.scroll_pos == 0);
+            assert_eq!(state.cursor_pos, 3);
+            assert_eq!(state.scroll_pos, 0);
         }
 
         for i in 1..=3 {
             state.move_cursor(-1);
-            assert!(state.cursor_pos == 3-i);
-            assert!(state.scroll_pos == 0);
+            assert_eq!(state.cursor_pos, 3-i);
+            assert_eq!(state.scroll_pos, 0);
         }
 
         // test jumping all the way to the bottom and back
         state.move_cursor(100);
-        assert!(state.cursor_pos == 3);
-        assert!(state.scroll_pos == 0);
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 0);
         state.move_cursor(-100);
-        assert!(state.cursor_pos == 0);
-        assert!(state.scroll_pos == 0);
+        assert_eq!(state.cursor_pos, 0);
+        assert_eq!(state.scroll_pos, 0);
 
     }
 
@@ -207,8 +207,8 @@ mod tests {
         // move cursor all the way to the bottom of the window
         for i in 1..=3 {
             state.move_cursor(1);
-            assert!(state.cursor_pos == i);
-            assert!(state.scroll_pos == 0);
+            assert_eq!(state.cursor_pos, i);
+            assert_eq!(state.scroll_pos, 0);
         }
 
         // scroll to the end of the list
@@ -218,56 +218,56 @@ mod tests {
             state.move_cursor(1);
             println!("after move: cursor at {}, scroll {}",
                      state.cursor_pos, state.scroll_pos);
-            assert!(state.cursor_pos == 3);
-            assert!(state.scroll_pos == i);
+            assert_eq!(state.cursor_pos, 3);
+            assert_eq!(state.scroll_pos, i);
         }
 
-        assert!(state.scroll_pos == 6);
+        assert_eq!(state.scroll_pos, 6);
 
         // check that nothing changes when trying to scroll further
         for _ in 0..5 {
             state.move_cursor(1);
-            assert!(state.cursor_pos == 3);
-            assert!(state.scroll_pos == 6);
+            assert_eq!(state.cursor_pos, 3);
+            assert_eq!(state.scroll_pos, 6);
         }
         state.move_cursor(100);
-        assert!(state.cursor_pos == 3);
-        assert!(state.scroll_pos == 6);
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 6);
 
         // scroll back to the top of the window
         for i in 1..=3 {
             state.move_cursor(-1);
-            assert!(state.cursor_pos == 3-i);
-            assert!(state.scroll_pos == 6);
+            assert_eq!(state.cursor_pos, 3-i);
+            assert_eq!(state.scroll_pos, 6);
         }
-        assert!(state.cursor_pos == 0);
-        assert!(state.scroll_pos == 6);
+        assert_eq!(state.cursor_pos, 0);
+        assert_eq!(state.scroll_pos, 6);
 
         // scroll back to the top of the list
         for i in 1..=6 {
             state.move_cursor(-1);
-            assert!(state.cursor_pos == 0);
-            assert!(state.scroll_pos == 6-i);
+            assert_eq!(state.cursor_pos, 0);
+            assert_eq!(state.scroll_pos, 6-i);
         }
 
         // check that nothing changes when trying to scroll further
-        assert!(state.cursor_pos == 0);
-        assert!(state.scroll_pos == 0);
+        assert_eq!(state.cursor_pos, 0);
+        assert_eq!(state.scroll_pos, 0);
         for _ in 0..5 {
             state.move_cursor(-1);
-            assert!(state.cursor_pos == 0);
-            assert!(state.scroll_pos == 0);
+            assert_eq!(state.cursor_pos, 0);
+            assert_eq!(state.scroll_pos, 0);
         }
         state.move_cursor(-100);
-        assert!(state.cursor_pos == 0);
-        assert!(state.scroll_pos == 0);
+        assert_eq!(state.cursor_pos, 0);
+        assert_eq!(state.scroll_pos, 0);
 
         // test jumping all the way to the bottom and back
         state.move_cursor(100);
-        assert!(state.cursor_pos == 3);
-        assert!(state.scroll_pos == 6);
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 6);
         state.move_cursor(-100);
-        assert!(state.cursor_pos == 0);
-        assert!(state.scroll_pos == 0);
+        assert_eq!(state.cursor_pos, 0);
+        assert_eq!(state.scroll_pos, 0);
     }
 }
