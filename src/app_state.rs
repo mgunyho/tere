@@ -87,7 +87,8 @@ impl TereAppState {
         } else if new_cursor_pos as u32 + old_scroll_pos >= ls_buf_size {
             // attempting to go below content
             self.scroll_pos = ls_buf_size.checked_sub(max_y).unwrap_or(0);
-            self.cursor_pos = ls_buf_size - self.scroll_pos - 1;
+            self.cursor_pos = ls_buf_size.checked_sub(self.scroll_pos + 1)
+                .unwrap_or(0);
         } else if new_cursor_pos as u32 >= max_y {
             // attempting to go below current view, scroll down
             // the new scroll position should satisfy old_scroll_position + amount  = ???
