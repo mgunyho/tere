@@ -60,6 +60,8 @@ impl TereAppState {
     pub fn update_main_window_dimensions(&mut self, w: u32, h: u32) {
         self.main_win_w = w;
         self.main_win_h = h;
+        self.move_cursor(0); // make sure that cursor is within view
+        //TODO: if height increases, move cursor downwards when applicable
     }
 
     pub fn update_ls_output_buf(&mut self) {
