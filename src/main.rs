@@ -127,6 +127,21 @@ impl TereTui {
         }
     }
 
+    pub fn on_resize(&mut self, root_win: &pancurses::Window) {
+        //TODO: see https://github.com/ihalila/pancurses/pull/65
+        // it's not possible to resize windows with pancurses ATM,
+        // so we have to hack around and destroy/recreate the main
+        // window every time. Doesn't seem to be too much of a
+        // performance issue.
+        self.main_win = Self::create_main_window(root_win);
+        self.header_win = Self::create_header_window(root_win);
+        let (h, w) = self.main_win.get_max_yx();
+        let (h, w) = (h as u32, w as u32);
+        self.app_state.update_main_window_dimensions(w, h);
+        self.redraw_header();
+        self.redraw_main_window();
+    }
+
     pub fn main_event_loop(&mut self, root_win: &pancurses::Window) {
         // root_win is the window created by initscr()
         loop {
@@ -155,7 +170,7 @@ impl TereTui {
                 }
                 Some(Input::KeyDC) => break,
                 Some(Input::Character(c)) => { self.main_win.addstr(&format!("{}", c)); },
-                Some(Input::KeyResize) => { self.redraw_main_window(); },
+                Some(Input::KeyResize) => { self.on_resize(root_win) },
                 Some(input) => { self.main_win.addstr(&format!("{:?}", input)); },
                 None => (),
             }
