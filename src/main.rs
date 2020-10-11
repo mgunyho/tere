@@ -105,6 +105,18 @@ impl TereTui {
 
     }
 
+    pub fn change_dir(&mut self, path: &str) {
+        match self.app_state.change_dir(path) {
+            Err(e) => {
+                // TODO: show error message in info box
+                self.main_win.addstr(format!("{:?}", e));
+            },
+            Ok(()) => {
+                self.redraw_main_window();
+            }
+        }
+    }
+
     pub fn main_event_loop(&mut self, root_win: pancurses::Window) {
         // root_win is the window created by initscr()
         loop {
@@ -114,6 +126,12 @@ impl TereTui {
                 }
                 Some(Input::KeyDown) => {
                     self.move_cursor(1);
+                }
+                Some(Input::KeyRight) => {
+                    self.change_dir("");
+                }
+                Some(Input::KeyLeft) => {
+                    self.change_dir("..");
                 }
                 Some(Input::Character('\x1B')) => {
                     // Either ESC or ALT+key. If it's ESC, the next getch will be
