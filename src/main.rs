@@ -69,7 +69,7 @@ impl TereTui {
         let (max_y, max_x) = self.main_win.get_max_yx();
         let scroll_pos = self.app_state.scroll_pos;
         for (i, line) in self.app_state.ls_output_buf.iter().skip(scroll_pos as usize)
-            .enumerate() .take(max_y as usize) {
+            .enumerate().take(max_y as usize) {
             self.main_win.mvaddnstr(i as i32, 0, line, max_x);
         }
 
