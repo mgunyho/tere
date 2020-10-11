@@ -54,13 +54,15 @@ impl TereAppState {
 
     pub fn update_ls_output_buf(&mut self) {
         if let Ok(entries) = std::fs::read_dir(".") {
-            self.ls_output_buf.clear();
+            self.ls_output_buf = vec!["..".into()];
             self.ls_output_buf.extend(
-                //TODO: sorting...
+                //TODO: sort by date etc...
+                //TODO: config: show only folders, hide files
                 entries.filter_map(|e| e.ok())
                     .map(|e| e.file_name().into_string().ok())
                     .filter_map(|e| e)
             );
+            self.ls_output_buf.sort();
         }
         //TODO: show error message (add separate msg box)
     }
