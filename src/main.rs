@@ -24,7 +24,7 @@ impl TereTui {
             main_win.get_max_x().try_into().unwrap_or(1),
             main_win.get_max_y().try_into().unwrap_or(1)
         );
-        let ret = Self {
+        let mut ret = Self {
             header_win: root_win.subwin(HEADER_SIZE, 0, 0, 0)
                 .expect("failed to initialize header window!"),
             main_win: main_win,
@@ -42,16 +42,10 @@ impl TereTui {
         self.header_win.attrset(pancurses::A_BOLD);
     }
 
-    pub fn update_header(&self) {
-        //TODO: move this to app state
-        //TODO: add another row to header (or footer?) with info, like 'tere - type ALT+? for help', and show status message when trying to open file etc
-
-        let cwd: std::string::String = match std::env::current_dir() {
-            Ok(path) => format!("{}", path.display()),
-            Err(e) => format!("Unable to get current dir! ({})", e),
-        };
-
-        self.header_win.addstr(cwd);
+    pub fn update_header(&mut self) {
+        self.app_state.update_header();
+        self.header_win.clear();
+        self.header_win.mvaddstr(0, 0, &self.app_state.header_msg);
         self.header_win.refresh();
     }
 
@@ -112,6 +106,7 @@ impl TereTui {
                 self.main_win.addstr(format!("{:?}", e));
             },
             Ok(()) => {
+                self.update_header();
                 self.redraw_main_window();
             }
         }

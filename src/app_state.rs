@@ -25,7 +25,7 @@ pub struct TereAppState {
     //// if this is false, match anywhere, otherwise match only from the beginning
     //search_anywhere: bool,
 
-    //header_msg: String, //TODO
+    pub header_msg: String,
     //info_msg: String, //TODO
     //footer_extra_msg: String, //TODO
 }
@@ -38,13 +38,23 @@ impl TereAppState {
             ls_output_buf: vec![],
             cursor_pos: 0, // TODO: get last value from previous run
             scroll_pos: 0,
+            header_msg: "".into(),
             //search_string: "".into(),
             //search_anywhere: false,
         };
 
-        //ret.update_header();  //TODO: move this here
+        ret.update_header();
         ret.update_ls_output_buf();
         return ret;
+    }
+
+    pub fn update_header(&mut self) {
+        //TODO: add another row to header (or footer?) with info, like 'tere - type ALT+? for help', and show status message when trying to open file etc
+        let cwd: std::string::String = match std::env::current_dir() {
+            Ok(path) => format!("{}", path.display()),
+            Err(e) => format!("Unable to get current dir! ({})", e),
+        };
+        self.header_msg = cwd;
     }
 
     pub fn update_main_window_dimensions(&mut self, w: u32, h: u32) {
