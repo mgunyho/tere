@@ -125,6 +125,14 @@ impl TereAppState {
 
     }
 
+    /// Move the cursor so that it is at the location `row` in the
+    /// `ls_output_buf`, and scroll the view as necessary
+    pub fn move_cursor_to(&mut self, row: u32) {
+        self.move_cursor(row as i32
+                         - self.cursor_pos as i32
+                         - self.scroll_pos as i32);
+    }
+
     pub fn change_dir(&mut self, path: &str) -> std::io::Result<()> {
         let final_path: &str = if path.is_empty() {
             let idx = self.cursor_pos + self.scroll_pos;
