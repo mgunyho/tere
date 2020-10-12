@@ -33,7 +33,7 @@ impl TereTui {
                 .expect("failed to create header window!");
 
         //TODO: make header bg/font color configurable via settings
-        header.attrset(pancurses::A_BOLD);
+        header.attrset(pancurses::Attribute::Bold);
         header
     }
 
