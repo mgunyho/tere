@@ -148,8 +148,11 @@ impl TereTui {
     pub fn change_dir(&mut self, path: &str) {
         match self.app_state.change_dir(path) {
             Err(e) => {
-                // TODO: show error message in info box
-                self.main_win.addstr(format!("{:?}", e));
+                if cfg!(debug_assertions) {
+                    self.error_message(&format!("{:?}", e));
+                } else {
+                    self.error_message(&format!("{}", e));
+                }
             },
             Ok(()) => {
                 self.update_header();
@@ -198,15 +201,18 @@ impl TereTui {
                     // err. If it's ALT+key, next getch will contain the key
                     root_win.nodelay(true);
                     match root_win.getch() {
-                        Some(Input::Character(c)) => { self.main_win.addstr(&format!("ALT+{}", c)); },
+                        Some(Input::Character(c)) => { self.info_message(&format!("ALT+{}", c)); },
                         _ => { break; },
                     }
                     root_win.nodelay(false);
                 }
-                Some(Input::KeyDC) => break,
-                Some(Input::Character(c)) => { self.main_win.addstr(&format!("{}", c)); },
+                Some(Input::KeyDC) | Some(Input::Character('q')) => break,
+                Some(Input::Character(c)) => {
+                    //TODO: type to search (use separate footer window for that)
+                    self.info_message(&format!("{}", c));
+                },
                 Some(Input::KeyResize) => { self.on_resize(root_win) },
-                Some(input) => { self.main_win.addstr(&format!("{:?}", input)); },
+                Some(input) => { self.info_message(&format!("{:?}", input)); },
                 None => (),
             }
             self.main_win.refresh();
