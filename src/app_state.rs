@@ -105,12 +105,14 @@ impl TereAppState {
             self.cursor_pos = 0;
         } else if new_cursor_pos as u32 + old_scroll_pos >= ls_buf_size {
             // attempting to go below content
+            //TODO: wrap, but only if cursor is starting off at the last row
+            // i.e. if pressing pgdown before the end, jump only to the end,
+            // but if pressing pgdown at the very end, wrap and start from top
             self.scroll_pos = ls_buf_size.checked_sub(max_y).unwrap_or(0);
             self.cursor_pos = ls_buf_size.checked_sub(self.scroll_pos + 1)
                 .unwrap_or(0);
         } else if new_cursor_pos as u32 >= max_y {
             // Attempting to go below current view, scroll down.
-            // The new cursor and scroll positions should satisfy
             self.cursor_pos = max_y - 1;
             self.scroll_pos = std::cmp::min(
                 ls_buf_size,
