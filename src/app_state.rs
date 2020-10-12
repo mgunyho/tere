@@ -27,7 +27,7 @@ pub struct TereAppState {
     //search_anywhere: bool,
 
     pub header_msg: String,
-    //info_msg: String, //TODO
+    pub info_msg: String,
     //footer_extra_msg: String, //TODO
 }
 
@@ -40,6 +40,7 @@ impl TereAppState {
             cursor_pos: 0, // TODO: get last value from previous run
             scroll_pos: 0,
             header_msg: "".into(),
+            info_msg: "".into(), // TODO: initial help message, like 'tere vXXX, type "?" for help'
             //search_string: "".into(),
             //search_anywhere: false,
         };

@@ -2,6 +2,7 @@ use pancurses::{initscr, endwin, noecho, Input, curs_set};
 use std::convert::TryInto;
 
 const HEADER_SIZE: i32 = 1;
+const INFO_WIN_SIZE: i32 = 1;
 
 mod app_state;
 use app_state::TereAppState;
@@ -10,6 +11,7 @@ use app_state::TereAppState;
 /// footer, and an application state object
 struct TereTui {
     header_win: pancurses::Window,
+    info_win: pancurses::Window,
     //footer_win: pancurses::Window, //TODO
     main_win: pancurses::Window,
     app_state: TereAppState,
@@ -19,7 +21,8 @@ impl TereTui {
     /// Helper function for (re)creating the main window
     pub fn create_main_window(root_win: &pancurses::Window)
         -> pancurses::Window {
-        root_win.subwin(root_win.get_max_y() - HEADER_SIZE, 0, HEADER_SIZE, 0)
+        root_win.subwin(root_win.get_max_y() - HEADER_SIZE - INFO_WIN_SIZE, 0,
+                        HEADER_SIZE, 0)
                 .expect("failed to create main window!")
     }
 
@@ -34,6 +37,15 @@ impl TereTui {
         header
     }
 
+    pub fn create_info_window(root_win: &pancurses::Window)
+        -> pancurses::Window {
+        let infobox = root_win.subwin(INFO_WIN_SIZE, 0,
+                        root_win.get_max_y() - INFO_WIN_SIZE, 0)
+                        .expect("failed to create info window!");
+        infobox.attrset(pancurses::Attribute::Bold);
+        infobox
+    }
+
     pub fn init(root_win: &pancurses::Window) -> Self {
         let main_win = Self::create_main_window(root_win);
         let state = TereAppState::init(
@@ -43,10 +55,12 @@ impl TereTui {
         let mut ret = Self {
             header_win: Self::create_header_window(root_win),
             main_win: main_win,
+            info_win: Self::create_info_window(root_win),
             app_state: state,
         };
 
         ret.update_header();
+        ret.redraw_info_window();
         ret.redraw_main_window();
         return ret;
     }
@@ -60,6 +74,25 @@ impl TereTui {
     pub fn update_header(&mut self) {
         self.app_state.update_header();
         self.redraw_header();
+    }
+
+    pub fn redraw_info_window(&self) {
+        self.info_win.clear();
+        self.info_win.mvaddstr(0, 0, &self.app_state.info_msg);
+        self.info_win.refresh();
+    }
+
+    pub fn info_message(&mut self, msg: &str) {
+        self.app_state.info_msg = msg.to_string();
+        self.info_win.attrset(pancurses::Attribute::Bold);
+        self.redraw_info_window();
+    }
+
+    pub fn error_message(&mut self, msg: &str) {
+        //TODO: red color (also: make it configurable)
+        let mut error_msg = String::from("error: ");
+        error_msg.push_str(msg);
+        self.info_message(&error_msg);
     }
 
     fn change_row_attr(&self, row: u32, attr: pancurses::chtype) {
@@ -133,10 +166,14 @@ impl TereTui {
         // performance issue.
         self.main_win = Self::create_main_window(root_win);
         self.header_win = Self::create_header_window(root_win);
+        self.info_win = Self::create_info_window(root_win);
+
         let (h, w) = self.main_win.get_max_yx();
         let (h, w) = (h as u32, w as u32);
         self.app_state.update_main_window_dimensions(w, h);
+
         self.redraw_header();
+        self.redraw_info_window();
         self.redraw_main_window();
     }
 
