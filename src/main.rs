@@ -4,6 +4,9 @@ use std::convert::TryInto;
 const HEADER_SIZE: i32 = 1;
 const INFO_WIN_SIZE: i32 = 1;
 
+//TODO: rustfmt
+//TODO: clippy
+
 mod app_state;
 use app_state::TereAppState;
 
