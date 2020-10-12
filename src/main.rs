@@ -26,8 +26,12 @@ impl TereTui {
     /// Helper function for (re)creating the header window
     pub fn create_header_window(root_win: &pancurses::Window)
         -> pancurses::Window {
-        root_win.subwin(HEADER_SIZE, 0, 0, 0)
-                .expect("failed to create header window!")
+        let header = root_win.subwin(HEADER_SIZE, 0, 0, 0)
+                .expect("failed to create header window!");
+
+        //TODO: make header bg/font color configurable via settings
+        header.attrset(pancurses::A_BOLD);
+        header
     }
 
     pub fn init(root_win: &pancurses::Window) -> Self {
@@ -42,15 +46,9 @@ impl TereTui {
             app_state: state,
         };
 
-        ret.init_header();
         ret.update_header();
         ret.redraw_main_window();
         return ret;
-    }
-
-    pub fn init_header(&self) {
-        //TODO: make header bg/font color configurable via settings
-        self.header_win.attrset(pancurses::A_BOLD);
     }
 
     pub fn redraw_header(&mut self) {
