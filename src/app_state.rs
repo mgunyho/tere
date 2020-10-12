@@ -1,3 +1,32 @@
+#[derive(Default)]
+struct SearchState {
+    search_string: String,
+    // This deque contains the items in `ls_output_buf` that match the current
+    // search string, along with their indices (so it's possible to figure out
+    // whether they are in view). The first element in this vector is always
+    // the current match we're looking at, and it will be rotated around
+    // (using rotate_left/right) when seeking the matches.
+    matches: std::collections::VecDeque<(usize, String)>,
+}
+
+impl SearchState {
+    /// Reset the search state
+    fn clear(&mut self) {
+        self.matches.clear();
+        self.search_string.clear();
+    }
+
+    /// Find the elements in `buf` that match with the current
+    /// search string and store them in self.matches.
+    fn update_matches(&mut self, buf: &Vec<String>) {
+        // TODO: if matches is not empty, iterate over only that and not the whole buffer?
+        self.matches = buf.iter().enumerate().filter(|(_, s)|
+            //TODO: take search_anywhere into account
+            s.starts_with(&self.search_string)
+        ).map(|(i, s)| (i, s.clone())).collect();
+        //TODO: change indices -> Option<usize>, and put Some only for those that are within view?
+    }
+}
 
 /// This struct represents the state of the application. Note that it has no
 /// notion of curses windows.
