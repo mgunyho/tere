@@ -67,6 +67,8 @@ impl TereTui {
 
     pub fn redraw_header(&mut self) {
         self.header_win.clear();
+        //TODO: what to do if window is narrower than path?
+        // add "..." to beginning? or collapse folder names? make configurable?
         self.header_win.mvaddstr(0, 0, &self.app_state.header_msg);
         self.header_win.refresh();
     }
