@@ -105,6 +105,7 @@ impl TereTui {
 
     /// Set/update the current info message and redraw the info window
     pub fn info_message(&mut self, msg: &str) {
+        //TODO: add thread with timeout that will clear the info message after x seconds?
         self.app_state.info_msg = msg.to_string();
         self.info_win.attrset(pancurses::Attribute::Bold);
         self.redraw_info_window();
@@ -253,6 +254,7 @@ fn main() {
 
     noecho();
 
+    //TODO: cleanup on panic...
     ui.main_event_loop(&root_window);
 
     endwin();
