@@ -179,6 +179,7 @@ impl TereAppState {
         let old_cwd = std::env::current_dir();
         std::env::set_current_dir(final_path)?;
         self.update_ls_output_buf();
+        self.search_state.clear();
         //TODO: proper history
         self.cursor_pos = 0;
         self.scroll_pos = 0;
