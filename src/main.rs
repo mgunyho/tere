@@ -4,6 +4,7 @@ use std::convert::TryInto;
 
 const HEADER_SIZE: i32 = 1;
 const INFO_WIN_SIZE: i32 = 1;
+const FOOTER_SIZE: i32 = 1;
 
 //TODO: rustfmt
 //TODO: clippy
@@ -21,7 +22,7 @@ enum TereError {
 struct TereTui {
     header_win: pancurses::Window,
     info_win: pancurses::Window,
-    //footer_win: pancurses::Window, //TODO
+    footer_win: pancurses::Window,
     main_win: pancurses::Window,
     app_state: TereAppState,
 }
@@ -46,10 +47,11 @@ impl TereTui {
     /// Helper function for (re)creating the main window
     pub fn create_main_window(root_win: &pancurses::Window)
         -> Result<pancurses::Window, TereError> {
-        Self::subwin_helper(root_win,
-                            root_win.get_max_y() - HEADER_SIZE - INFO_WIN_SIZE,
-                            HEADER_SIZE,
-                            "main")
+        Self::subwin_helper(
+            root_win,
+            root_win.get_max_y() - HEADER_SIZE - INFO_WIN_SIZE - FOOTER_SIZE,
+            HEADER_SIZE,
+            "main")
     }
 
     /// Helper function for (re)creating the header window
@@ -67,10 +69,15 @@ impl TereTui {
         let infobox = Self::subwin_helper(
             root_win,
             INFO_WIN_SIZE,
-            - INFO_WIN_SIZE,
+            -INFO_WIN_SIZE - FOOTER_SIZE,
             "info")?;
         infobox.attrset(pancurses::Attribute::Bold);
         Ok(infobox)
+    }
+
+    pub fn create_footer_window(root_win: &pancurses::Window)
+        -> Result<pancurses::Window, TereError> {
+        Self::subwin_helper(root_win, FOOTER_SIZE, -FOOTER_SIZE, "footer")
     }
 
     pub fn init(root_win: &pancurses::Window) -> Result<Self, TereError> {
@@ -83,6 +90,7 @@ impl TereTui {
             header_win: Self::create_header_window(root_win)?,
             main_win: main_win,
             info_win: Self::create_info_window(root_win)?,
+            footer_win: Self::create_footer_window(root_win)?,
             app_state: state,
         };
 
