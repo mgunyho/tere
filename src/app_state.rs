@@ -1,3 +1,7 @@
+
+type MatchType = (usize, String);
+type MatchesType = std::collections::VecDeque<MatchType>;
+
 #[derive(Default)]
 struct SearchState {
     search_string: String,
@@ -6,7 +10,7 @@ struct SearchState {
     // whether they are in view). The first element in this vector is always
     // the current match we're looking at, and it will be rotated around
     // (using rotate_left/right) when seeking the matches.
-    matches: std::collections::VecDeque<(usize, String)>,
+    matches: MatchesType,
 }
 
 impl SearchState {
