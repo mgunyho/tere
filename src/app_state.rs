@@ -212,7 +212,7 @@ impl TereAppState {
     /// to the previous match, and if it's zero, move to the cursor to the current
     /// match (without modifying the ).
     pub fn move_cursor_to_adjacent_match(&mut self, dir: i32) {
-        if self.search_state.matches.len() > 0 {
+        if self.search_state.matches.len() > 0 && self.is_searching() {
             if dir < 0 {
                 self.search_state.matches.rotate_right(1);
             } else if dir > 0 {
@@ -222,7 +222,6 @@ impl TereAppState {
             let (i, _) = self.search_state.matches.front().unwrap();
             let i = i.clone() as u32;
             self.move_cursor_to(i);
-
         }
     }
 
