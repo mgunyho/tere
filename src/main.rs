@@ -162,6 +162,26 @@ impl TereTui {
 
         self.highlight_row(self.app_state.cursor_pos);
 
+        // highlight matches that are in view
+        //TODO: moving cursor removes highlights...
+        let is_in_view = |i: usize| {
+            let i = i as u32;
+            scroll_pos <= i
+            && i.checked_sub(scroll_pos).unwrap_or(0) < max_y as u32
+        };
+        //TODO: search_anywhere...
+        let match_range = 0..self.app_state.search_string().len();
+        self.app_state.search_matches().iter()
+            .filter(|(i, _)| is_in_view(*i))
+            .map(|(i, _)| *i as i32 - scroll_pos as i32) // map indices to cursor positions
+            .for_each(|i| {
+                self.main_win.mv(i, match_range.start as i32);
+                let (_, color_pair) = self.main_win.attrget();
+                self.main_win.chgat(match_range.len() as i32,
+                                    pancurses::Attribute::Underline.into(),
+                                    color_pair);
+            });
+
         self.main_win.refresh();
     }
 
