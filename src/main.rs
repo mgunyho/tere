@@ -103,6 +103,7 @@ impl TereTui {
         self.info_win.refresh();
     }
 
+    /// Set/update the current info message and redraw the info window
     pub fn info_message(&mut self, msg: &str) {
         self.app_state.info_msg = msg.to_string();
         self.info_win.attrset(pancurses::Attribute::Bold);

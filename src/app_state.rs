@@ -90,6 +90,7 @@ impl TereAppState {
     /// Move the cursor up (positive amount) or down (negative amount), and scroll
     /// the view as necessary
     pub fn move_cursor(&mut self, amount: i32) {
+        //TOOD: wrap around (when starting from the last row)
 
         let old_cursor_pos = self.cursor_pos;
         let old_scroll_pos = self.scroll_pos;
