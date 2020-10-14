@@ -213,7 +213,7 @@ impl TereTui {
                 Some(Input::KeyDown) => {
                     self.move_cursor(1);
                 }
-                Some(Input::KeyRight) => {
+                Some(Input::KeyRight) | Some(Input::Character('\n')) => {
                     self.change_dir("");
                 }
                 Some(Input::KeyLeft) => {
