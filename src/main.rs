@@ -227,6 +227,7 @@ impl TereTui {
             Ok(()) => {
                 self.update_header();
                 self.redraw_main_window();
+                self.redraw_footer();
             }
         }
     }
