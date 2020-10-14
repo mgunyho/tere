@@ -201,6 +201,11 @@ impl TereAppState {
         &self.search_state.search_string
     }
 
+    /// The current search matches
+    pub fn search_matches(&self) -> &MatchesType {
+        &self.search_state.matches
+    }
+
     pub fn advance_search(&mut self, query: &str) {
         self.search_state.search_string.push_str(query);
         self.search_state.update_matches(&self.ls_output_buf);
