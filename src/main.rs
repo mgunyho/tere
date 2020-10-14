@@ -208,6 +208,17 @@ impl TereTui {
         }
     }
 
+    pub fn on_search_char(&mut self, c: char) {
+        //TODO: cd on successful search
+        self.app_state.advance_search(&c.to_string());
+        self.redraw_footer();
+    }
+
+    pub fn erase_search_char(&mut self) {
+        self.app_state.erase_search_char();
+        self.redraw_footer();
+    }
+
     pub fn on_resize(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
         //TODO: see https://github.com/ihalila/pancurses/pull/65
         // it's not possible to resize windows with pancurses ATM,
@@ -259,8 +270,10 @@ impl TereTui {
                 }
                 Some(Input::KeyDC) | Some(Input::Character('q')) => break,
                 Some(Input::Character(c)) => {
-                    //TODO: type to search (use separate footer window for that)
-                    self.info_message(&format!("{}", c));
+                    self.on_search_char(c);
+                },
+                Some(Input::KeyBackspace) => {
+                    self.erase_search_char();
                 },
                 Some(Input::KeyResize) => { self.on_resize(root_win)? },
                 Some(input) => { self.info_message(&format!("{:?}", input)); },
