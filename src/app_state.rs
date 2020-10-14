@@ -51,9 +51,10 @@ pub struct TereAppState {
     pub scroll_pos: u32,
 
     //TODO
-    //search_string: String,
     //// if this is true, match anywhere, otherwise match only from the beginning
     //search_anywhere: bool,
+
+    search_state: SearchState,
 
     pub header_msg: String,
     pub info_msg: String,
@@ -70,7 +71,7 @@ impl TereAppState {
             scroll_pos: 0,
             header_msg: "".into(),
             info_msg: "".into(), // TODO: initial help message, like 'tere vXXX, type "?" for help'
-            //search_string: "".into(),
+            search_state: Default::default(),
             //search_anywhere: false,
         };
 
