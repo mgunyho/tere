@@ -77,7 +77,10 @@ impl TereTui {
 
     pub fn create_footer_window(root_win: &pancurses::Window)
         -> Result<pancurses::Window, TereError> {
-        Self::subwin_helper(root_win, FOOTER_SIZE, -FOOTER_SIZE, "footer")
+        let footer = Self::subwin_helper(root_win, FOOTER_SIZE, -FOOTER_SIZE,
+                                         "footer")?;
+        footer.attrset(pancurses::Attribute::Bold);
+        Ok(footer)
     }
 
     pub fn init(root_win: &pancurses::Window) -> Result<Self, TereError> {
