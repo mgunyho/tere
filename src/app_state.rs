@@ -239,7 +239,7 @@ impl TereAppState {
 
     pub fn erase_search_char(&mut self) {
         if let Some(_) = self.search_state.search_string.pop() {
-            //TODO: update cursor position
+            //TODO: keep cursor position
             self.search_state.update_matches(&self.ls_output_buf);
             self.on_search_string_changed();
         };
