@@ -199,12 +199,14 @@ impl TereAppState {
 
     pub fn advance_search(&mut self, query: &str) {
         self.search_state.search_string.push_str(query);
+        self.search_state.update_matches(&self.ls_output_buf);
         //TODO: update cursor position
     }
 
     pub fn erase_search_char(&mut self) {
         if let Some(_) = self.search_state.search_string.pop() {
             //TODO: update cursor position
+            self.search_state.update_matches(&self.ls_output_buf);
         };
     }
 
