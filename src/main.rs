@@ -163,7 +163,6 @@ impl TereTui {
         self.highlight_row(self.app_state.cursor_pos);
 
         // highlight matches that are in view
-        //TODO: moving cursor removes highlights...
         let is_in_view = |i: usize| {
             let i = i as u32;
             scroll_pos <= i
@@ -189,6 +188,9 @@ impl TereTui {
     /// redraw the view as necessary.
     pub fn move_cursor(&mut self, amount: i32) {
 
+        //TODO: moving cursor removes highlights
+        // (in principle. currently on_arrow_key redraws the whole screen so this
+        // is not a problem)
         self.unhighlight_row(self.app_state.cursor_pos);
 
         let old_scroll_pos = self.app_state.scroll_pos;
@@ -227,12 +229,11 @@ impl TereTui {
         self.app_state.advance_search(&c.to_string());
         if self.app_state.search_matches().len() == 1 {
             // There's only one match, change dir
-            //TODO: highlight row exclusive
+            //TODO: highlight row exclusive and wait for a configured amount of time
             self.change_dir("");
-        } else {
-            self.redraw_main_window();
-            self.redraw_footer();
         }
+        self.redraw_main_window();
+        self.redraw_footer();
     }
 
     pub fn erase_search_char(&mut self) {
@@ -284,7 +285,7 @@ impl TereTui {
                     root_win.nodelay(true);
                     match root_win.getch() {
                         Some(Input::Character(c)) => { self.info_message(&format!("ALT+{}", c)); },
-                        _ => { break; },
+                        _ => { break; }, // TODO: if searching, just clear search
                     }
                     root_win.nodelay(false);
                 }
