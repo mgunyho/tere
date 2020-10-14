@@ -189,6 +189,25 @@ impl TereAppState {
         Ok(())
     }
 
+    pub fn is_searching(&self) -> bool {
+        !self.search_state.search_string.is_empty()
+    }
+
+    pub fn search_string(&self) -> &String {
+        &self.search_state.search_string
+    }
+
+    pub fn advance_search(&mut self, query: &str) {
+        self.search_state.search_string.push_str(query);
+        //TODO: update cursor position
+    }
+
+    pub fn erase_search_char(&mut self) {
+        if let Some(_) = self.search_state.search_string.pop() {
+            //TODO: update cursor position
+        };
+    }
+
 }
 
 #[cfg(test)]
