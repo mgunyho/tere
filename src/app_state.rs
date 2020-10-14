@@ -206,16 +206,42 @@ impl TereAppState {
         &self.search_state.matches
     }
 
+    /// Move the cursor to the next or previous match in the current list of
+    /// matches, and update the head of the match list to point to the new current
+    /// value. If dir is positive, move to the next match, if it's negative, move
+    /// to the previous match, and if it's zero, move to the cursor to the current
+    /// match (without modifying the ).
+    pub fn move_cursor_to_adjacent_match(&mut self, dir: i32) {
+        if self.search_state.matches.len() > 0 {
+            if dir < 0 {
+                self.search_state.matches.rotate_right(1);
+            } else if dir > 0 {
+                self.search_state.matches.rotate_left(1);
+            }
+
+            let (i, _) = self.search_state.matches.front().unwrap();
+            let i = i.clone() as u32;
+            self.move_cursor_to(i);
+
+        }
+    }
+
+    /// Update the matches and the cursor position
+    fn on_search_string_changed(&mut self) {
+        self.search_state.update_matches(&self.ls_output_buf);
+        self.move_cursor_to_adjacent_match(0);
+    }
+
     pub fn advance_search(&mut self, query: &str) {
         self.search_state.search_string.push_str(query);
-        self.search_state.update_matches(&self.ls_output_buf);
-        //TODO: update cursor position
+        self.on_search_string_changed();
     }
 
     pub fn erase_search_char(&mut self) {
         if let Some(_) = self.search_state.search_string.pop() {
             //TODO: update cursor position
             self.search_state.update_matches(&self.ls_output_buf);
+            self.on_search_string_changed();
         };
     }
 
