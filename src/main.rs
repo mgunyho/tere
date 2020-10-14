@@ -273,15 +273,25 @@ impl TereTui {
         Ok(())
     }
 
+    pub fn on_arrow_key(&mut self, up: bool) {
+        let dir = if up { -1 } else { 1 };
+        if self.app_state.is_searching() {
+            self.app_state.move_cursor_to_adjacent_match(dir);
+            self.redraw_main_window();
+        } else {
+            self.move_cursor(dir);
+        }
+    }
+
     pub fn main_event_loop(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
         // root_win is the window created by initscr()
         loop {
             match root_win.getch() {
                 Some(Input::KeyUp) => {
-                    self.move_cursor(-1);
+                    self.on_arrow_key(true);
                 }
                 Some(Input::KeyDown) => {
-                    self.move_cursor(1);
+                    self.on_arrow_key(false);
                 }
                 Some(Input::KeyRight) | Some(Input::Character('\n')) => {
                     self.change_dir("");
