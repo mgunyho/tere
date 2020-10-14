@@ -234,11 +234,13 @@ impl TereTui {
     pub fn on_search_char(&mut self, c: char) {
         //TODO: cd on successful search
         self.app_state.advance_search(&c.to_string());
+        self.redraw_main_window();
         self.redraw_footer();
     }
 
     pub fn erase_search_char(&mut self) {
         self.app_state.erase_search_char();
+        self.redraw_main_window();
         self.redraw_footer();
     }
 
