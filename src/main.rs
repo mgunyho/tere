@@ -21,19 +21,33 @@ struct TereTui {
 }
 
 impl TereTui {
+
+    // Helper function for creating subwindows. if `begy` is negative, it is counted
+    // bacwards from `root_win.get_max_y()`.
+    fn subwin_helper(root_win: &pancurses::Window,
+                     nlines: i32,
+                     begy: i32,
+                     label: &str,
+                     ) -> pancurses::Window {
+
+        let begy = if begy < 0 { root_win.get_max_y() + begy } else { begy };
+        root_win.subwin(nlines, 0, begy, 0)
+            .expect(&format!("failed to create {} window!", label))
+    }
+
     /// Helper function for (re)creating the main window
     pub fn create_main_window(root_win: &pancurses::Window)
         -> pancurses::Window {
-        root_win.subwin(root_win.get_max_y() - HEADER_SIZE - INFO_WIN_SIZE, 0,
-                        HEADER_SIZE, 0)
-                .expect("failed to create main window!")
+        Self::subwin_helper(root_win,
+                            root_win.get_max_y() - HEADER_SIZE - INFO_WIN_SIZE,
+                            HEADER_SIZE,
+                            "main")
     }
 
     /// Helper function for (re)creating the header window
     pub fn create_header_window(root_win: &pancurses::Window)
         -> pancurses::Window {
-        let header = root_win.subwin(HEADER_SIZE, 0, 0, 0)
-                .expect("failed to create header window!");
+        let header = Self::subwin_helper(root_win, HEADER_SIZE, 0, "header");
 
         //TODO: make header bg/font color configurable via settings
         header.attrset(pancurses::Attribute::Bold);
@@ -42,9 +56,11 @@ impl TereTui {
 
     pub fn create_info_window(root_win: &pancurses::Window)
         -> pancurses::Window {
-        let infobox = root_win.subwin(INFO_WIN_SIZE, 0,
-                        root_win.get_max_y() - INFO_WIN_SIZE, 0)
-                        .expect("failed to create info window!");
+        let infobox = Self::subwin_helper(
+            root_win,
+            INFO_WIN_SIZE,
+            - INFO_WIN_SIZE,
+            "info");
         infobox.attrset(pancurses::Attribute::Bold);
         infobox
     }
