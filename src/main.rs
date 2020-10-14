@@ -125,6 +125,14 @@ impl TereTui {
         self.info_message(&error_msg);
     }
 
+    pub fn redraw_footer(&self) {
+        self.footer_win.clear();
+        if self.app_state.is_searching() {
+            self.footer_win.mvaddstr(0, 0, &self.app_state.search_string());
+        }
+        self.footer_win.refresh();
+    }
+
     fn change_row_attr(&self, row: u32, attr: pancurses::chtype) {
         let (_, color_pair) = self.main_win.attrget();
         self.main_win.mvchgat(row as i32, 0, -1, attr, color_pair);
@@ -200,6 +208,7 @@ impl TereTui {
         self.main_win = Self::create_main_window(root_win);
         self.header_win = Self::create_header_window(root_win);
         self.info_win = Self::create_info_window(root_win);
+        self.footer_win = Self::create_footer_window(root_win);
 
         let (h, w) = self.main_win.get_max_yx();
         let (h, w) = (h as u32, w as u32);
@@ -207,6 +216,7 @@ impl TereTui {
 
         self.redraw_header();
         self.redraw_info_window();
+        self.redraw_footer();
         self.redraw_main_window();
     }
 
