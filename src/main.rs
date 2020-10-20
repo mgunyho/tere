@@ -28,16 +28,16 @@ impl TereTui {
                      nlines: i32,
                      begy: i32,
                      label: &str,
-                     ) -> pancurses::Window {
+                     ) -> Result<pancurses::Window, i32> {
 
         let begy = if begy < 0 { root_win.get_max_y() + begy } else { begy };
         root_win.subwin(nlines, 0, begy, 0)
-            .expect(&format!("failed to create {} window!", label))
+            //.expect(&format!("failed to create {} window!", label))
     }
 
     /// Helper function for (re)creating the main window
     pub fn create_main_window(root_win: &pancurses::Window)
-        -> pancurses::Window {
+        -> Result<pancurses::Window, i32> {
         Self::subwin_helper(root_win,
                             root_win.get_max_y() - HEADER_SIZE - INFO_WIN_SIZE,
                             HEADER_SIZE,
@@ -46,42 +46,42 @@ impl TereTui {
 
     /// Helper function for (re)creating the header window
     pub fn create_header_window(root_win: &pancurses::Window)
-        -> pancurses::Window {
-        let header = Self::subwin_helper(root_win, HEADER_SIZE, 0, "header");
+        -> Result<pancurses::Window, i32> {
+        let header = Self::subwin_helper(root_win, HEADER_SIZE, 0, "header")?;
 
         //TODO: make header bg/font color configurable via settings
         header.attrset(pancurses::Attribute::Bold);
-        header
+        Ok(header)
     }
 
     pub fn create_info_window(root_win: &pancurses::Window)
-        -> pancurses::Window {
+        -> Result<pancurses::Window, i32> {
         let infobox = Self::subwin_helper(
             root_win,
             INFO_WIN_SIZE,
             - INFO_WIN_SIZE,
-            "info");
+            "info")?;
         infobox.attrset(pancurses::Attribute::Bold);
-        infobox
+        Ok(infobox)
     }
 
-    pub fn init(root_win: &pancurses::Window) -> Self {
-        let main_win = Self::create_main_window(root_win);
+    pub fn init(root_win: &pancurses::Window) -> Result<Self, i32> {
+        let main_win = Self::create_main_window(root_win)?;
         let state = TereAppState::init(
             main_win.get_max_x().try_into().unwrap_or(1),
             main_win.get_max_y().try_into().unwrap_or(1)
         );
         let mut ret = Self {
-            header_win: Self::create_header_window(root_win),
+            header_win: Self::create_header_window(root_win)?,
             main_win: main_win,
-            info_win: Self::create_info_window(root_win),
+            info_win: Self::create_info_window(root_win)?,
             app_state: state,
         };
 
         ret.update_header();
         ret.redraw_info_window();
         ret.redraw_main_window();
-        return ret;
+        Ok(ret)
     }
 
     pub fn redraw_header(&mut self) {
@@ -184,15 +184,15 @@ impl TereTui {
         }
     }
 
-    pub fn on_resize(&mut self, root_win: &pancurses::Window) {
+    pub fn on_resize(&mut self, root_win: &pancurses::Window) -> Result<(), i32> {
         //TODO: see https://github.com/ihalila/pancurses/pull/65
         // it's not possible to resize windows with pancurses ATM,
         // so we have to hack around and destroy/recreate the main
         // window every time. Doesn't seem to be too much of a
         // performance issue.
-        self.main_win = Self::create_main_window(root_win);
-        self.header_win = Self::create_header_window(root_win);
-        self.info_win = Self::create_info_window(root_win);
+        self.main_win = Self::create_main_window(root_win)?;
+        self.header_win = Self::create_header_window(root_win)?;
+        self.info_win = Self::create_info_window(root_win)?;
 
         let (h, w) = self.main_win.get_max_yx();
         let (h, w) = (h as u32, w as u32);
@@ -201,9 +201,10 @@ impl TereTui {
         self.redraw_header();
         self.redraw_info_window();
         self.redraw_main_window();
+        Ok(())
     }
 
-    pub fn main_event_loop(&mut self, root_win: &pancurses::Window) {
+    pub fn main_event_loop(&mut self, root_win: &pancurses::Window) -> Result<(), i32> {
         // root_win is the window created by initscr()
         loop {
             match root_win.getch() {
@@ -234,12 +235,14 @@ impl TereTui {
                     //TODO: type to search (use separate footer window for that)
                     self.info_message(&format!("{}", c));
                 },
-                Some(Input::KeyResize) => { self.on_resize(root_win) },
+                Some(Input::KeyResize) => { self.on_resize(root_win)? },
                 Some(input) => { self.info_message(&format!("{:?}", input)); },
                 None => (),
             }
             self.main_win.refresh();
         }
+
+        Ok(())
     }
 }
 
@@ -250,12 +253,13 @@ fn main() {
     root_window.keypad(true); // enable arrow keys etc
     curs_set(0);
 
-    let mut ui = TereTui::init(&root_window);
-
     noecho();
 
-    //TODO: cleanup on panic...
-    ui.main_event_loop(&root_window);
+    let res = TereTui::init(&root_window)
+        .and_then(|mut ui| ui.main_event_loop(&root_window));
 
     endwin();
+
+    // show error message if there was one
+    res.expect("error in initialization or main loop");
 }
