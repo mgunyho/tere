@@ -1,4 +1,5 @@
 use pancurses::{initscr, endwin, noecho, Input, curs_set};
+use ncurses;
 use std::convert::TryInto;
 
 const HEADER_SIZE: i32 = 1;
@@ -225,7 +226,8 @@ impl TereTui {
                     root_win.nodelay(true);
                     match root_win.getch() {
                         Some(Input::Character(c)) => { self.info_message(&format!("ALT+{}", c)); },
-                        _ => { break; },
+                        None => { break; },
+                        _ => (),
                     }
                     root_win.nodelay(false);
                 }
@@ -243,10 +245,10 @@ impl TereTui {
     }
 }
 
-
 fn main() {
     let root_window = initscr();
 
+    ncurses::set_escdelay(0);
     root_window.keypad(true); // enable arrow keys etc
     curs_set(0);
 
