@@ -10,6 +10,11 @@ const INFO_WIN_SIZE: i32 = 1;
 mod app_state;
 use app_state::TereAppState;
 
+#[derive(Debug)]
+enum TereError {
+    WindowInit(String, i32),
+}
+
 /// This struct groups together ncurses windows for the main content, header and
 /// footer, and an application state object
 struct TereTui {
@@ -28,16 +33,18 @@ impl TereTui {
                      nlines: i32,
                      begy: i32,
                      label: &str,
-                     ) -> Result<pancurses::Window, i32> {
+                     ) -> Result<pancurses::Window, TereError> {
 
         let begy = if begy < 0 { root_win.get_max_y() + begy } else { begy };
         root_win.subwin(nlines, 0, begy, 0)
-            //.expect(&format!("failed to create {} window!", label))
+            .map_err(|e| TereError::WindowInit(
+                format!("failed to create {} window!", label), e)
+            )
     }
 
     /// Helper function for (re)creating the main window
     pub fn create_main_window(root_win: &pancurses::Window)
-        -> Result<pancurses::Window, i32> {
+        -> Result<pancurses::Window, TereError> {
         Self::subwin_helper(root_win,
                             root_win.get_max_y() - HEADER_SIZE - INFO_WIN_SIZE,
                             HEADER_SIZE,
@@ -46,7 +53,7 @@ impl TereTui {
 
     /// Helper function for (re)creating the header window
     pub fn create_header_window(root_win: &pancurses::Window)
-        -> Result<pancurses::Window, i32> {
+        -> Result<pancurses::Window, TereError> {
         let header = Self::subwin_helper(root_win, HEADER_SIZE, 0, "header")?;
 
         //TODO: make header bg/font color configurable via settings
@@ -55,7 +62,7 @@ impl TereTui {
     }
 
     pub fn create_info_window(root_win: &pancurses::Window)
-        -> Result<pancurses::Window, i32> {
+        -> Result<pancurses::Window, TereError> {
         let infobox = Self::subwin_helper(
             root_win,
             INFO_WIN_SIZE,
@@ -65,7 +72,7 @@ impl TereTui {
         Ok(infobox)
     }
 
-    pub fn init(root_win: &pancurses::Window) -> Result<Self, i32> {
+    pub fn init(root_win: &pancurses::Window) -> Result<Self, TereError> {
         let main_win = Self::create_main_window(root_win)?;
         let state = TereAppState::init(
             main_win.get_max_x().try_into().unwrap_or(1),
@@ -184,7 +191,7 @@ impl TereTui {
         }
     }
 
-    pub fn on_resize(&mut self, root_win: &pancurses::Window) -> Result<(), i32> {
+    pub fn on_resize(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
         //TODO: see https://github.com/ihalila/pancurses/pull/65
         // it's not possible to resize windows with pancurses ATM,
         // so we have to hack around and destroy/recreate the main
@@ -204,7 +211,7 @@ impl TereTui {
         Ok(())
     }
 
-    pub fn main_event_loop(&mut self, root_win: &pancurses::Window) -> Result<(), i32> {
+    pub fn main_event_loop(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
         // root_win is the window created by initscr()
         loop {
             match root_win.getch() {
