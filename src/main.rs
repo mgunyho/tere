@@ -262,11 +262,22 @@ fn main() {
 
     noecho();
 
+    let prepend_err = |msg: &str, e: TereError| {
+        match e {
+            TereError::WindowInit(desc, code) => {
+                TereError::WindowInit(msg.to_string() + &desc, code)
+            }
+        }
+    };
+
     let res = TereTui::init(&root_window)
-        .and_then(|mut ui| ui.main_event_loop(&root_window));
+        .map_err(|e| prepend_err("error in initializing UI: ", e))
+        .and_then(|mut ui| ui.main_event_loop(&root_window)
+            .map_err(|e| prepend_err("error in main event loop: ", e))
+        );
 
     endwin();
 
     // show error message if there was one
-    res.expect("error in initialization or main loop");
+    res.unwrap();
 }
