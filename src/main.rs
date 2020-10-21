@@ -323,8 +323,16 @@ impl TereTui {
                     // err. If it's ALT+key, next getch will contain the key
                     root_win.nodelay(true);
                     match root_win.getch() {
-                        Some(Input::Character(c)) => { self.info_message(&format!("ALT+{}", c)); },
-                        None => { break; },  // TODO: if searching, just clear search 
+                        Some(Input::Character(c)) => { self.info_message(&format!("ALT+{}", c)); },  //TODO: alt+hjkl -> arrow keys
+                        None => {
+                            if self.app_state.is_searching() {
+                                self.app_state.clear_search();
+                                self.redraw_main_window();
+                                self.redraw_footer();
+                            } else {
+                                break;
+                            }
+                        },
                         _ => (),
                     }
                     root_win.nodelay(false);
