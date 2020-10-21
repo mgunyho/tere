@@ -245,6 +245,10 @@ impl TereAppState {
         };
     }
 
+    pub fn clear_search(&mut self) {
+        self.search_state.clear();
+    }
+
 }
 
 #[cfg(test)]
