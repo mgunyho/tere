@@ -250,8 +250,14 @@ impl TereTui {
     pub fn on_search_char(&mut self, c: char) {
         self.app_state.advance_search(&c.to_string());
         if self.app_state.search_matches().len() == 1 {
-            // There's only one match, change dir
-            //TODO: highlight row exclusive and wait for a configured amount of time
+            // There's only one match, highlight it and then change dir
+            self.highlight_row_exclusive(self.app_state.cursor_pos);
+            self.main_win.refresh();
+
+            //TODO: make duration configurable
+            std::thread::sleep(std::time::Duration::from_millis(200));
+            pancurses::flushinp(); // ignore keys pressed during sleep
+
             self.change_dir("");
         }
         self.redraw_main_window();
