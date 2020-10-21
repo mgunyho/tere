@@ -267,6 +267,8 @@ mod tests {
             main_win_w: 10,
             ls_output_buf: create_test_filenames(n_filenames),
             header_msg: "".into(),
+            info_msg: "".into(),
+            search_state: Default::default(),
         }
     }
 
