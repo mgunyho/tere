@@ -160,6 +160,19 @@ impl TereTui {
         self.change_row_attr(row, pancurses::A_STANDOUT);
     }
 
+    pub fn highlight_row_exclusive(&self, row: u32) {
+        // Highlight the row `row` exclusively, and hide all other rows.
+        // Note that refresh() needs to be called externally.
+        let row_content: &str = self.app_state.ls_output_buf
+            .get((row + self.app_state.scroll_pos) as usize)
+            .map(|s| s.as_ref())
+            .unwrap_or("");
+
+        self.main_win.clear();
+        self.main_win.mvaddstr(row as i32, 0, row_content);
+        self.change_row_attr(row, pancurses::A_STANDOUT);
+    }
+
     pub fn redraw_main_window(&self) {
         self.main_win.clear();
         let (max_y, max_x) = self.main_win.get_max_yx();
