@@ -97,9 +97,11 @@ impl TereTui {
             app_state: state,
         };
 
+        //TODO: function for redrawing all windows
         ret.update_header();
         ret.redraw_info_window();
         ret.redraw_main_window();
+        ret.redraw_footer();
         Ok(ret)
     }
 
