@@ -141,9 +141,21 @@ impl TereTui {
 
     pub fn redraw_footer(&self) {
         self.footer_win.clear();
+        let mut extra_msg = String::new();
         if self.app_state.is_searching() {
             self.footer_win.mvaddstr(0, 0, &self.app_state.search_string());
+            //TODO: show idx of current match like 'idx / n_matches / n_files' (needs modification to app state)
+            extra_msg.push_str(&format!("{} / {}",
+                               self.app_state.search_matches().len(),
+                               self.app_state.ls_output_buf.len()));
+        } else {
+            //TODO: show no. of files/folders? like 'n folders, n files'
+            extra_msg.push_str(&format!("{}",
+                               self.app_state.ls_output_buf.len()));
         }
+        self.footer_win.mvaddstr(0,
+                                 self.main_win.get_max_x() - extra_msg.len() as i32,
+                                 extra_msg);
         self.footer_win.refresh();
     }
 

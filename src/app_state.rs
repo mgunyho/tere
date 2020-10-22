@@ -63,7 +63,6 @@ pub struct TereAppState {
 
     pub header_msg: String,
     pub info_msg: String,
-    //footer_extra_msg: String, //TODO
 }
 
 impl TereAppState {
