@@ -135,6 +135,7 @@ impl TereAppState {
     }
 
     pub fn change_dir(&mut self, path: &str) -> std::io::Result<()> {
+        //TODO: add option to use xdg-open (or similar) on files?
         let final_path: &str = if path.is_empty() {
             let idx = self.cursor_pos + self.scroll_pos;
             self.ls_output_buf.get(idx as usize).map(|s| s.as_ref())
