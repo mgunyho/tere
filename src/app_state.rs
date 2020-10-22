@@ -26,6 +26,7 @@ impl SearchState {
         // TODO: if matches is not empty, iterate over only that and not the whole buffer?
         self.matches = buf.iter().enumerate().filter(|(_, s)|
             //TODO: take search_anywhere into account
+            //TODO: case sensitivity
             s.starts_with(&self.search_string)
         ).map(|(i, s)| (i, s.clone())).collect();
         //TODO: change indices -> Option<usize>, and put Some only for those that are within view?
@@ -110,8 +111,9 @@ impl TereAppState {
         if let Ok(entries) = std::fs::read_dir(".") {
             self.ls_output_buf = vec!["..".into()];
             self.ls_output_buf.extend(
-                //TODO: sort by date etc...
-                //TODO: config: show only folders, hide files
+                //TODO: sort by date etc... - collect into vector of DirEntry's instead of strings
+                //TODO: case-insensitive sort???
+                //TODO: config option: show only folders, hide files
                 entries.filter_map(|e| e.ok())
                     .map(|e| e.file_name().into_string().ok())
                     .filter_map(|e| e)
@@ -239,7 +241,8 @@ impl TereAppState {
 
     pub fn erase_search_char(&mut self) {
         if let Some(_) = self.search_state.search_string.pop() {
-            //TODO: keep cursor position
+            //TODO: keep cursor position. now if we're at the second match and type backspace, the
+            //curor jumps back to the first
             self.search_state.update_matches(&self.ls_output_buf);
             self.on_search_string_changed();
         };
