@@ -239,7 +239,7 @@ impl TereTui {
                     }
                     root_win.nodelay(false);
                 }
-                Some(Input::KeyDC) | Some(Input::Character('q')) => break,
+                Some(Input::KeyDC) => break,
                 Some(Input::Character(c)) => {
                     //TODO: type to search (use separate footer window for that)
                     self.info_message(&format!("{}", c));
