@@ -278,8 +278,13 @@ fn main() {
             .map_err(|e| prepend_err("error in main event loop: ", e))
         );
 
+    // clean up even if there was an error
     endwin();
 
-    // show error message if there was one
+    // panic if there was an error
     res.unwrap();
+
+    // no error, print cwd
+    let cwd = std::env::current_dir().expect("error getting cwd");
+    println!("{}", cwd.display());
 }
