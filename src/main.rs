@@ -256,10 +256,11 @@ impl TereTui {
             },
             Ok(()) => {
                 self.update_header();
-                self.redraw_main_window();
-                self.redraw_footer();
+                self.info_message("");
             }
         }
+        self.redraw_main_window();
+        self.redraw_footer();
     }
 
     pub fn on_search_char(&mut self, c: char) {
