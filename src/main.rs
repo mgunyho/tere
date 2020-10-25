@@ -85,9 +85,11 @@ impl TereTui {
         Ok(footer)
     }
 
-    pub fn init(root_win: &pancurses::Window) -> Result<Self, TereError> {
+    pub fn init(args: &ArgMatches,
+                root_win: &pancurses::Window) -> Result<Self, TereError> {
         let main_win = Self::create_main_window(root_win)?;
         let state = TereAppState::init(
+            args,
             main_win.get_max_x().try_into().unwrap_or(1),
             main_win.get_max_y().try_into().unwrap_or(1)
         );
@@ -408,7 +410,7 @@ fn main() {
         }
     };
 
-    let res = TereTui::init(&root_window)
+    let res = TereTui::init(&cli_args, &root_window)
         .map_err(|e| prepend_err("error in initializing UI: ", e))
         .and_then(|mut ui| ui.main_event_loop(&root_window)
             .map_err(|e| prepend_err("error in main event loop: ", e))

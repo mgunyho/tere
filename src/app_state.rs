@@ -1,6 +1,12 @@
 /// This module contains structs related to handling the application state,
 /// independent of a "graphical" front-end, such as `ncurses`.
 
+use clap::ArgMatches;
+
+#[path = "settings.rs"]
+mod settings;
+use settings::TereSettings;
+
 /// A vector containing a list of matches, which also keeps track of which element
 /// we're pointing at currently
 #[derive(Default)]
@@ -90,6 +96,7 @@ impl SearchState {
     }
 }
 
+
 /// This struct represents the state of the application. Note that it has no
 /// notion of curses windows.
 pub struct TereAppState {
@@ -118,10 +125,12 @@ pub struct TereAppState {
 
     pub header_msg: String,
     pub info_msg: String,
+
+    pub settings: TereSettings,
 }
 
 impl TereAppState {
-    pub fn init(window_w: u32, window_h: u32) -> Self {
+    pub fn init(cli_args: &ArgMatches, window_w: u32, window_h: u32) -> Self {
         let mut ret = Self {
             main_win_w: window_w,
             main_win_h: window_h,
@@ -132,6 +141,7 @@ impl TereAppState {
             info_msg: "".into(), // TODO: initial help message, like 'tere vXXX, type "?" for help'
             search_state: Default::default(),
             //search_anywhere: false,
+            settings: TereSettings::parse_cli_args(cli_args),
         };
 
         ret.update_header();
