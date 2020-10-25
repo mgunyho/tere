@@ -168,7 +168,7 @@ impl TereAppState {
         if let Ok(entries) = std::fs::read_dir(".") {
             self.ls_output_buf = vec!["..".into()];
             self.ls_output_buf.extend(
-                //TODO: sort by date etc... - collect into vector of DirEntry's instead of strings
+                //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 //TODO: case-insensitive sort???
                 //TODO: config option: show only folders, hide files
                 entries.filter_map(|e| e.ok())
