@@ -85,13 +85,30 @@ impl SearchState {
 
     /// Find the elements in `buf` that match with the current
     /// search string and store them in self.matches.
-    fn update_matches(&mut self, buf: &Vec<String>) {
+    fn update_matches(&mut self, buf: &Vec<String>, ignore_case: bool) {
         // TODO: if matches is not empty, iterate over only that and not the whole buffer?
-        self.matches = buf.iter().enumerate().filter(|(_, s)|
-            //TODO: take search_anywhere into account
-            //TODO: case sensitivity
-            s.starts_with(&self.search_string)
-        ).map(|(i, s)| (i, s.clone())).collect();
+        let mut new_matches: Box<dyn Iterator<Item = (usize, &String)>> = Box::new(
+            buf.iter()
+            .enumerate()
+            );
+
+        new_matches = if ignore_case {
+            let search_string_lc = self.search_string.to_lowercase();
+            Box::new(
+            new_matches.filter(move |(_, s)|
+                               s.to_lowercase().starts_with(&search_string_lc)
+                              )
+            )
+        } else {
+            Box::new(
+            new_matches.filter(|(_, s)|
+                               //TODO: take search_anywhere into account
+                               s.starts_with(&self.search_string)
+                              )
+            )
+        };
+
+        self.matches = new_matches.map(|(i, s)| (i, s.clone())).collect();
         //TODO: change indices -> Option<usize>, and put Some only for those that are within view?
     }
 }
@@ -305,7 +322,8 @@ impl TereAppState {
 
     /// Update the matches and the cursor position
     fn on_search_string_changed(&mut self) {
-        self.search_state.update_matches(&self.ls_output_buf);
+        self.search_state.update_matches(&self.ls_output_buf,
+                                         self.settings.ignore_case);
         self.move_cursor_to_adjacent_match(0);
     }
 
@@ -318,7 +336,8 @@ impl TereAppState {
         if let Some(_) = self.search_state.search_string.pop() {
             //TODO: keep cursor position. now if we're at the second match and type backspace, the
             //curor jumps back to the first
-            self.search_state.update_matches(&self.ls_output_buf);
+            self.search_state.update_matches(&self.ls_output_buf,
+                                             self.settings.ignore_case);
             self.on_search_string_changed();
         };
     }
