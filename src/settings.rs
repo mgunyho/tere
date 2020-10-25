@@ -4,8 +4,11 @@ use clap::ArgMatches;
 
 //TODO: config file
 
+//TODO: separate struct for "UI settings" which is accessible by the TereTui struct
+
 #[derive(Default)]
 pub struct TereSettings {
+    //TODO: options to show non-folders faintly, and skip over them with cursor (in ui settings) -- does this make sense?
     pub folders_only: bool,
     //// if this is true, match anywhere, otherwise match only from the beginning
     //search_anywhere: bool, // TODO
