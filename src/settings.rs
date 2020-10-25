@@ -7,6 +7,9 @@ use clap::ArgMatches;
 #[derive(Default)]
 pub struct TereSettings {
     pub folders_only: bool,
+    //// if this is true, match anywhere, otherwise match only from the beginning
+    //search_anywhere: bool, // TODO
+    //case_insensitive: bool //TODO: case insensitive search
 }
 
 impl TereSettings {

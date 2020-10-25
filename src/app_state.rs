@@ -112,9 +112,7 @@ pub struct TereAppState {
     // The top of the screen corresponds to this row in the `ls_output_buf`.
     pub scroll_pos: u32,
 
-    //TODO
-    //// if this is true, match anywhere, otherwise match only from the beginning
-    //search_anywhere: bool,
+    //search_string: String,
 
     search_state: SearchState,
 
