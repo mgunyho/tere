@@ -151,7 +151,10 @@ impl TereTui {
                                self.app_state.ls_output_buf.len()));
         } else {
             //TODO: show no. of files/folders separately? like 'n folders, n files'
-            extra_msg.push_str(&format!("{}",
+            let cursor_idx = self.app_state.cursor_pos +
+                             self.app_state.scroll_pos + 1;
+            extra_msg.push_str(&format!("{} / {}",
+                               cursor_idx,
                                self.app_state.ls_output_buf.len()));
         }
         self.footer_win.mvaddstr(0,
@@ -313,10 +316,10 @@ impl TereTui {
         if self.app_state.is_searching() {
             self.app_state.move_cursor_to_adjacent_match(dir);
             self.redraw_main_window();
-            self.redraw_footer();
         } else {
             self.move_cursor(dir);
         }
+        self.redraw_footer();
     }
 
     pub fn main_event_loop(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
