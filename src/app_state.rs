@@ -49,6 +49,7 @@ impl<T> MatchesVec<T> {
 }
 
 impl<T> std::iter::FromIterator<T> for MatchesVec<T> {
+    // so that MatchesVec can be `collect()`ed from an iterator.
     fn from_iter<I: std::iter::IntoIterator<Item=T>>(iter: I) -> Self {
         Self {
             vec: iter.into_iter().collect(),
@@ -63,11 +64,9 @@ type MatchesType = MatchesVec<MatchType>;
 #[derive(Default)]
 struct SearchState {
     search_string: String,
-    // This deque contains the items in `ls_output_buf` that match the current
+    // This field contains the items in `ls_output_buf` that match the current
     // search string, along with their indices (so it's possible to figure out
-    // whether they are in view). The first element in this vector is always
-    // the current match we're looking at, and it will be rotated around
-    // (using rotate_left/right) when seeking the matches.
+    // whether they are in view).
     matches: MatchesType,
 }
 
@@ -267,9 +266,9 @@ impl TereAppState {
     }
 
     /// Move the cursor to the next or previous match in the current list of
-    /// matches, and update the head of the match list to point to the new current
-    /// value. If dir is positive, move to the next match, if it's negative, move
-    /// to the previous match, and if it's zero, move to the cursor to the current
+    /// matches, and update the match list to point to the new current value.
+    /// If dir is positive, move to the next match, if it's negative, move to
+    /// the previous match, and if it's zero, move to the cursor to the current
     /// match (without modifying the match list).
     pub fn move_cursor_to_adjacent_match(&mut self, dir: i32) {
         if self.search_state.matches.len() > 0 && self.is_searching() {
