@@ -174,12 +174,20 @@ impl TereAppState {
     pub fn update_ls_output_buf(&mut self) {
         if let Ok(entries) = std::fs::read_dir(".") {
             self.ls_output_buf = vec!["..".into()];
-            self.ls_output_buf.extend(
+
+            let mut entries: Box<dyn Iterator<Item = std::fs::DirEntry>> =
+                Box::new(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 //TODO: case-insensitive sort???
-                //TODO: config option: show only folders, hide files
                 entries.filter_map(|e| e.ok())
-                    .map(|e| e.file_name().into_string().ok())
+                );
+
+            if self.settings.folders_only {
+                entries = Box::new(entries.filter(|e| e.path().is_dir()));
+            }
+
+            self.ls_output_buf.extend(
+                entries.map(|e| e.file_name().into_string().ok())
                     .filter_map(|e| e)
             );
             self.ls_output_buf.sort();
