@@ -392,6 +392,11 @@ fn main() {
              //.short("f")  // TODO: check conflicts
              .help("only show folders in listing")
              )
+        .arg(Arg::with_name("ignore-case")
+             .long("ignore-case")
+             //.short("c")  // TODO: check conflicts
+             .help("case insensitive searching")  //TODO: better description?
+             )
         .get_matches();
 
     let root_window = initscr();
