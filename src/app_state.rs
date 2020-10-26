@@ -61,6 +61,9 @@ impl<T> std::iter::FromIterator<T> for MatchesVec<T> {
 type MatchType = (usize, String);
 type MatchesType = MatchesVec<MatchType>;
 
+/// The type of the `ls_output_buf` buffer of the app state
+type LsBufType = Vec<String>;
+
 #[derive(Default)]
 struct SearchState {
     search_string: String,
@@ -79,7 +82,7 @@ impl SearchState {
 
     /// Find the elements in `buf` that match with the current
     /// search string and store them in self.matches.
-    fn update_matches(&mut self, buf: &Vec<String>) {
+    fn update_matches(&mut self, buf: &LsBufType) {
         // TODO: if matches is not empty, iterate over only that and not the whole buffer?
         self.matches = buf.iter().enumerate().filter(|(_, s)|
             //TODO: take search_anywhere into account
@@ -102,7 +105,7 @@ pub struct TereAppState {
 
     // This vector will hold the list of files/folders in the current directory,
     // including ".." (the parent folder).
-    pub ls_output_buf: Vec<String>,
+    pub ls_output_buf: LsBufType,
 
     // The row on which the cursor is currently on, counted starting from the
     // top of the screen (not from the start of `ls_output_buf`). Note that this
@@ -317,7 +320,7 @@ impl TereAppState {
 mod tests {
     use super::*;
 
-    fn create_test_filenames(n: u32) -> Vec<String> {
+    fn create_test_filenames(n: u32) -> LsBufType {
         (1..=n).map(|i| format!("file {}", i)).collect()
     }
 
