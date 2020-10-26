@@ -326,6 +326,17 @@ impl TereTui {
         self.redraw_footer();
     }
 
+    // When the 'page up' or 'page down' keys are pressed
+    pub fn on_page_up_down(&mut self, up: bool) {
+        let (h, _) = self.main_win.get_max_yx();
+        let mut delta = 2 * h - 3;
+        if up {
+            delta *= -1;
+        }
+        self.move_cursor(- (self.app_state.cursor_pos as i32) + delta);
+        self.redraw_footer();
+    }
+
     pub fn main_event_loop(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
         // root_win is the window created by initscr()
         loop {
@@ -342,6 +353,12 @@ impl TereTui {
                 }
                 Some(Input::KeyLeft) => {
                     self.change_dir("..");
+                }
+                Some(Input::KeyPPage) => {
+                    self.on_page_up_down(true);
+                }
+                Some(Input::KeyNPage) => {
+                    self.on_page_up_down(false);
                 }
                 Some(Input::Character('\x1B')) => {
                     // Either ESC or ALT+key. If it's ESC, the next getch will be
