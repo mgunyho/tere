@@ -317,6 +317,7 @@ impl TereTui {
     pub fn on_arrow_key(&mut self, up: bool) {
         let dir = if up { -1 } else { 1 };
         if self.app_state.is_searching() {
+            //TODO: handle case where 'is_searching' but there are no matches - move cursor?
             self.app_state.move_cursor_to_adjacent_match(dir);
             self.redraw_main_window();
         } else {
