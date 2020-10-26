@@ -336,7 +336,7 @@ impl TereTui {
             }
             self.move_cursor(- (self.app_state.cursor_pos as i32) + delta);
             self.redraw_footer();
-        } //TODO: how to handle page up / page down while searching?
+        } //TODO: how to handle page up / page down while searching? jump to the next match below view?
     }
 
     pub fn main_event_loop(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
@@ -361,6 +361,19 @@ impl TereTui {
                 },
                 Some(Input::KeyNPage) => {
                     self.on_page_up_down(false);
+                },
+                Some(Input::KeyHome) => {
+                    if !self.app_state.is_searching() {
+                        self.app_state.move_cursor_to(0);
+                        self.redraw_main_window();
+                    } // TODO: jump to first match
+                },
+                Some(Input::KeyEnd) => {
+                    if !self.app_state.is_searching() {
+                        let end = self.app_state.ls_output_buf.len() as u32;
+                        self.app_state.move_cursor_to(end);
+                        self.redraw_main_window();
+                    } // TODO: jump to last match
                 },
                 Some(Input::Character('\x1B')) => {
                     // Either ESC or ALT+key. If it's ESC, the next getch will be
