@@ -392,10 +392,10 @@ fn main() {
              //.short("f")  // TODO: check conflicts
              .help("only show folders in listing")
              )
-        .arg(Arg::with_name("ignore-case")
-             .long("ignore-case")
+        .arg(Arg::with_name("case-sensitive")
+             .long("case-sensitive")
              //.short("c")  // TODO: check conflicts
-             .help("case insensitive searching")  //TODO: better description?
+             .help("make searching case sensitive")  //TODO: better description?
              )
         .get_matches();
 
