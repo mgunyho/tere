@@ -387,10 +387,15 @@ fn main() {
     let cli_args = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         //.author(env!("CARGO_PKG_AUTHORS")) // TODO: rest of these https://stackoverflow.com/a/27841363
-        .arg(Arg::with_name("folders-only")
-             .long("folders-only")
-             //.short("f")  // TODO: check conflicts
-             .help("only show folders in listing")
+        .arg(Arg::with_name("non-folders")
+             .long("non-folders")
+             //.short("n")  // TODO: check conflicts
+             .takes_value(true)
+             .help("Whether to show non-folder items (i.e. files). If 'skip', files are shown but the cursor skips over them.")
+             .possible_values(&["true", "false", "skip"])
+             .default_value("true")
+             .value_name("true|false|skip")
+             .hide_possible_values(true)
              )
         .get_matches();
 
