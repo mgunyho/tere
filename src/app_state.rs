@@ -1,3 +1,94 @@
+/// This module contains structs related to handling the application state,
+/// independent of a "graphical" front-end, such as `ncurses`.
+
+/// A vector containing a list of matches, which also keeps track of which element
+/// we're pointing at currently
+#[derive(Default)]
+pub struct MatchesVec<T> {
+    vec: Vec<T>,
+    idx: usize,
+}
+
+impl<T> MatchesVec<T> {
+    pub fn increment(&mut self) {
+        self.idx = (self.idx + 1) % self.vec.len();
+    }
+
+    pub fn decrement(&mut self) {
+        self.idx = self.idx.checked_sub(1).unwrap_or(self.vec.len()-1);
+    }
+
+    /// The match we're currently pointing at. Returns None if the list of matches
+    /// is empty.
+    pub fn current_item(&self) -> Option<&T> {
+        self.vec.get(self.idx)
+    }
+
+    /// The index of the match we're currently pointing at. Returs None if the
+    /// list of matches is empty.
+    pub fn current_pos(&self) -> Option<usize> {
+        if self.vec.is_empty() {
+            None
+        } else {
+            Some(self.idx)
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.vec.clear();
+        self.idx = 0;
+    }
+
+    pub fn len(&self) -> usize {
+        self.vec.len()
+    }
+
+    pub fn iter(&self) -> std::slice::Iter<'_, T> {
+        self.vec.iter()
+    }
+}
+
+impl<T> std::iter::FromIterator<T> for MatchesVec<T> {
+    // so that MatchesVec can be `collect()`ed from an iterator.
+    fn from_iter<I: std::iter::IntoIterator<Item=T>>(iter: I) -> Self {
+        Self {
+            vec: iter.into_iter().collect(),
+            idx: 0,
+        }
+    }
+}
+
+type MatchType = (usize, String);
+type MatchesType = MatchesVec<MatchType>;
+
+#[derive(Default)]
+struct SearchState {
+    search_string: String,
+    // This field contains the items in `ls_output_buf` that match the current
+    // search string, along with their indices (so it's possible to figure out
+    // whether they are in view).
+    matches: MatchesType,
+}
+
+impl SearchState {
+    /// Reset the search state
+    fn clear(&mut self) {
+        self.matches.clear();
+        self.search_string.clear();
+    }
+
+    /// Find the elements in `buf` that match with the current
+    /// search string and store them in self.matches.
+    fn update_matches(&mut self, buf: &Vec<String>) {
+        // TODO: if matches is not empty, iterate over only that and not the whole buffer?
+        self.matches = buf.iter().enumerate().filter(|(_, s)|
+            //TODO: take search_anywhere into account
+            //TODO: case sensitivity
+            s.starts_with(&self.search_string)
+        ).map(|(i, s)| (i, s.clone())).collect();
+        //TODO: change indices -> Option<usize>, and put Some only for those that are within view?
+    }
+}
 
 /// This struct represents the state of the application. Note that it has no
 /// notion of curses windows.
@@ -22,13 +113,13 @@ pub struct TereAppState {
     pub scroll_pos: u32,
 
     //TODO
-    //search_string: String,
     //// if this is true, match anywhere, otherwise match only from the beginning
     //search_anywhere: bool,
 
+    search_state: SearchState,
+
     pub header_msg: String,
     pub info_msg: String,
-    //footer_extra_msg: String, //TODO
 }
 
 impl TereAppState {
@@ -41,7 +132,7 @@ impl TereAppState {
             scroll_pos: 0,
             header_msg: "".into(),
             info_msg: "".into(), // TODO: initial help message, like 'tere vXXX, type "?" for help'
-            //search_string: "".into(),
+            search_state: Default::default(),
             //search_anywhere: false,
         };
 
@@ -76,8 +167,9 @@ impl TereAppState {
         if let Ok(entries) = std::fs::read_dir(".") {
             self.ls_output_buf = vec!["..".into()];
             self.ls_output_buf.extend(
-                //TODO: sort by date etc...
-                //TODO: config: show only folders, hide files
+                //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
+                //TODO: case-insensitive sort???
+                //TODO: config option: show only folders, hide files
                 entries.filter_map(|e| e.ok())
                     .map(|e| e.file_name().into_string().ok())
                     .filter_map(|e| e)
@@ -146,6 +238,7 @@ impl TereAppState {
             path
         };
         let old_cwd = std::env::current_dir();
+        self.search_state.clear();
         std::env::set_current_dir(final_path)?;
         self.update_ls_output_buf();
         //TODO: proper history
@@ -160,6 +253,62 @@ impl TereAppState {
             }
         }
         Ok(())
+    }
+
+    pub fn is_searching(&self) -> bool {
+        !self.search_state.search_string.is_empty()
+    }
+
+    pub fn search_string(&self) -> &String {
+        &self.search_state.search_string
+    }
+
+    /// The current search matches
+    pub fn search_matches(&self) -> &MatchesType {
+        &self.search_state.matches
+    }
+
+    /// Move the cursor to the next or previous match in the current list of
+    /// matches, and update the match list to point to the new current value.
+    /// If dir is positive, move to the next match, if it's negative, move to
+    /// the previous match, and if it's zero, move to the cursor to the current
+    /// match (without modifying the match list).
+    pub fn move_cursor_to_adjacent_match(&mut self, dir: i32) {
+        if self.search_state.matches.len() > 0 && self.is_searching() {
+            if dir < 0 {
+                self.search_state.matches.decrement();
+            } else if dir > 0 {
+                self.search_state.matches.increment();
+            }
+
+            let (i, _) = self.search_state.matches.current_item().unwrap();
+            let i = i.clone() as u32;
+            self.move_cursor_to(i);
+        }
+    }
+
+    /// Update the matches and the cursor position
+    fn on_search_string_changed(&mut self) {
+        self.search_state.update_matches(&self.ls_output_buf);
+        self.move_cursor_to_adjacent_match(0);
+    }
+
+    pub fn advance_search(&mut self, query: &str) {
+        self.search_state.search_string.push_str(query);
+        self.on_search_string_changed();
+    }
+
+    pub fn erase_search_char(&mut self) {
+        if let Some(_) = self.search_state.search_string.pop() {
+            //TODO: keep cursor position. now if we're at the second match and type backspace, the
+            //curor jumps back to the first
+            self.search_state.update_matches(&self.ls_output_buf);
+            self.on_search_string_changed();
+        };
+    }
+
+    pub fn clear_search(&mut self) {
+        self.search_state.clear();
     }
 
 }
@@ -180,6 +329,8 @@ mod tests {
             main_win_w: 10,
             ls_output_buf: create_test_filenames(n_filenames),
             header_msg: "".into(),
+            info_msg: "".into(),
+            search_state: Default::default(),
         }
     }
 
