@@ -87,6 +87,7 @@ impl SearchState {
         self.matches = buf.iter().enumerate().filter(|(_, s)|
             //TODO: take search_anywhere into account
             //TODO: case sensitivity
+            //TODO: this doesn't work with PathBufs...
             s.starts_with(&self.search_string)
         ).map(|(i, s)| (i, s.clone())).collect();
         //TODO: change indices -> Option<usize>, and put Some only for those that are within view?
@@ -174,9 +175,7 @@ impl TereAppState {
                 //TODO: case-insensitive sort???
                 //TODO: config option: show only folders, hide files
                 entries.filter_map(|e| e.ok())
-                //TODO: remove './' from paths ... consider using file_name?
-                //strip_prefix?
-                .map(|e| e.path())
+                .map(|e| e.path().strip_prefix("./").unwrap().to_path_buf())
             );
             self.ls_output_buf.sort();
         }
