@@ -97,11 +97,8 @@ impl TereTui {
             app_state: state,
         };
 
-        //TODO: function for redrawing all windows
         ret.update_header();
-        ret.redraw_info_window();
-        ret.redraw_main_window();
-        ret.redraw_footer();
+        ret.redraw_all_windows();
         Ok(ret)
     }
 
@@ -115,6 +112,7 @@ impl TereTui {
 
     pub fn update_header(&mut self) {
         self.app_state.update_header();
+        // TODO: consider removing redraw here... (is inconsistent with the rest of the 'update' functions)
         self.redraw_header();
     }
 
@@ -224,6 +222,13 @@ impl TereTui {
         self.main_win.refresh();
     }
 
+    fn redraw_all_windows(&mut self) {
+        self.redraw_header();
+        self.redraw_info_window();
+        self.redraw_footer();
+        self.redraw_main_window();
+    }
+
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
     pub fn move_cursor(&mut self, amount: i32) {
@@ -304,10 +309,7 @@ impl TereTui {
         let (h, w) = (h as u32, w as u32);
         self.app_state.update_main_window_dimensions(w, h);
 
-        self.redraw_header();
-        self.redraw_info_window();
-        self.redraw_footer();
-        self.redraw_main_window();
+        self.redraw_all_windows();
         Ok(())
     }
 
