@@ -203,8 +203,9 @@ impl TereTui {
         // highlight matches that are in view
         let is_in_view = |i: usize| {
             let i = i as u32;
-            scroll_pos <= i
-            && i.checked_sub(scroll_pos).unwrap_or(0) < max_y as u32
+            let above = i.checked_sub(scroll_pos).unwrap_or(0) < max_y as u32;
+            let below = scroll_pos <= i;
+            above && below
         };
         //TODO: search_anywhere...
         let match_range = 0..self.app_state.search_string().len();
