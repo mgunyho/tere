@@ -346,22 +346,22 @@ impl TereTui {
                 //TODO: home/pg up / pg dn keys
                 Some(Input::KeyUp) => {
                     self.on_arrow_key(true);
-                }
+                },
                 Some(Input::KeyDown) => {
                     self.on_arrow_key(false);
-                }
+                },
                 Some(Input::KeyRight) | Some(Input::Character('\n')) => {
                     self.change_dir("");
-                }
+                },
                 Some(Input::KeyLeft) => {
                     self.change_dir("..");
-                }
+                },
                 Some(Input::KeyPPage) => {
                     self.on_page_up_down(true);
-                }
+                },
                 Some(Input::KeyNPage) => {
                     self.on_page_up_down(false);
-                }
+                },
                 Some(Input::Character('\x1B')) => {
                     // Either ESC or ALT+key. If it's ESC, the next getch will be
                     // err. If it's ALT+key, next getch will contain the key
@@ -389,7 +389,7 @@ impl TereTui {
                         _ => (),
                     }
                     root_win.nodelay(false);
-                }
+                },
                 Some(Input::KeyDC) => break,
                 Some(Input::Character(c)) => {
                     self.on_search_char(c);
