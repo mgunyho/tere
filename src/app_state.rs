@@ -181,7 +181,7 @@ impl TereAppState {
 
     /// Move the cursor up (positive amount) or down (negative amount), and scroll
     /// the view as necessary
-    pub fn move_cursor(&mut self, amount: i32) {
+    pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
         //TOOD: wrap around (when starting from the last row)
 
         let old_cursor_pos = self.cursor_pos;
@@ -189,7 +189,13 @@ impl TereAppState {
         let ls_buf_size = self.ls_output_buf.len() as u32;
         let max_y = self.main_win_h;
 
-        let new_cursor_pos: i32 = old_cursor_pos as i32 + amount;
+        let mut new_cursor_pos: i32 = old_cursor_pos as i32 + amount;
+
+        if wrap && !self.ls_output_buf.is_empty() {
+            let offset = self.scroll_pos as i32;
+            new_cursor_pos = (offset + new_cursor_pos)
+                .rem_euclid(self.ls_output_buf.len() as i32) - offset;
+        }
 
         if new_cursor_pos < 0 {
             // attempting to go above the current view, scroll up
