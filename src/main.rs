@@ -330,6 +330,7 @@ impl TereTui {
         // root_win is the window created by initscr()
         loop {
             match root_win.getch() {
+                //TODO: home/pg up / pg dn keys
                 Some(Input::KeyUp) => {
                     self.on_arrow_key(true);
                 }
@@ -347,6 +348,7 @@ impl TereTui {
                     // err. If it's ALT+key, next getch will contain the key
                     root_win.nodelay(true);
                     match root_win.getch() {
+                        //TODO: alt+home -> go to home folder (possible?)
                         Some(Input::Character(c)) => { self.info_message(&format!("ALT+{}", c)); },  //TODO: alt+hjkl -> arrow keys
                         None => {
                             if self.app_state.is_searching() {
