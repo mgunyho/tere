@@ -58,11 +58,11 @@ impl<T> std::iter::FromIterator<T> for MatchesVec<T> {
     }
 }
 
-type MatchType = (usize, String);
+type MatchType = (usize, std::path::PathBuf);
 type MatchesType = MatchesVec<MatchType>;
 
 /// The type of the `ls_output_buf` buffer of the app state
-type LsBufType = Vec<String>;
+type LsBufType = Vec<std::path::PathBuf>;
 
 #[derive(Default)]
 struct SearchState {
@@ -174,8 +174,9 @@ impl TereAppState {
                 //TODO: case-insensitive sort???
                 //TODO: config option: show only folders, hide files
                 entries.filter_map(|e| e.ok())
-                    .map(|e| e.file_name().into_string().ok())
-                    .filter_map(|e| e)
+                //TODO: remove './' from paths ... consider using file_name?
+                //strip_prefix?
+                .map(|e| e.path())
             );
             self.ls_output_buf.sort();
         }
@@ -233,16 +234,17 @@ impl TereAppState {
         // TODO: add option to use xdg-open (or similar) on files?
         // check out https://crates.io/crates/open
         // (or https://docs.rs/opener/0.4.1/opener/)
-        let final_path: &str = if path.is_empty() {
+        let final_path = if path.is_empty() {
             let idx = self.cursor_pos + self.scroll_pos;
-            self.ls_output_buf.get(idx as usize).map(|s| s.as_ref())
-                .unwrap_or("")
+            self.ls_output_buf.get(idx as usize)
+                .map(|s| format!("{}", s.display()))
+                .unwrap_or("".to_string())
         } else {
-            path
+            path.to_string()
         };
         let old_cwd = std::env::current_dir();
         self.search_state.clear();
-        std::env::set_current_dir(final_path)?;
+        std::env::set_current_dir(&final_path)?;
         self.update_ls_output_buf();
         //TODO: proper history
         self.cursor_pos = 0;
