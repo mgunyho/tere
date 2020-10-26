@@ -4,8 +4,8 @@
 use clap::ArgMatches;
 
 #[path = "settings.rs"]
-mod settings;
-use settings::TereSettings;
+pub mod settings;
+use settings::{TereSettings, NonFoldersOption};
 
 /// A vector containing a list of matches, which also keeps track of which element
 /// we're pointing at currently
@@ -182,8 +182,16 @@ impl TereAppState {
                 entries.filter_map(|e| e.ok())
                 );
 
-            if self.settings.folders_only {
-                entries = Box::new(entries.filter(|e| e.path().is_dir()));
+            match self.settings.show_nonfolders {
+                NonFoldersOption::False => {
+                    entries = Box::new(entries.filter(|e| e.path().is_dir()));
+                }
+                // TODO: implement skip
+                // should be implemented in move_cursor.
+                // needs PathBuf thing (see above)
+                // I guess the GUI should know about it as well
+                //NonFoldersOption::Skip => { ??? }
+                _ => ()
             }
 
             self.ls_output_buf.extend(

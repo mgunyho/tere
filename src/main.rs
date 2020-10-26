@@ -395,6 +395,7 @@ fn main() {
              .possible_values(&["true", "false", "skip"])
              .default_value("true")
              .value_name("true|false|skip")
+             .case_insensitive(true)
              .hide_possible_values(true)
              )
         .get_matches();
