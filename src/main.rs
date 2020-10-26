@@ -232,7 +232,7 @@ impl TereTui {
 
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
-    pub fn move_cursor(&mut self, amount: i32) {
+    pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
 
         //TODO: moving cursor removes highlights
         // (in principle. currently on_arrow_key redraws the whole screen so this
@@ -241,7 +241,7 @@ impl TereTui {
 
         let old_scroll_pos = self.app_state.scroll_pos;
 
-        self.app_state.move_cursor(amount);
+        self.app_state.move_cursor(amount, wrap);
 
         if self.app_state.scroll_pos != old_scroll_pos {
             // redraw_main_window takes care of highlighting the cursor row
@@ -321,7 +321,7 @@ impl TereTui {
             self.app_state.move_cursor_to_adjacent_match(dir);
             self.redraw_main_window();
         } else {
-            self.move_cursor(dir);
+            self.move_cursor(dir, true);
         }
         self.redraw_footer();
     }
@@ -334,7 +334,7 @@ impl TereTui {
             if up {
                 delta *= -1;
             }
-            self.move_cursor(- (self.app_state.cursor_pos as i32) + delta);
+            self.move_cursor(- (self.app_state.cursor_pos as i32) + delta, false);
             self.redraw_footer();
         } //TODO: how to handle page up / page down while searching? jump to the next match below view?
     }
