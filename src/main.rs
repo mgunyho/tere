@@ -321,7 +321,7 @@ impl TereTui {
             self.app_state.move_cursor_to_adjacent_match(dir);
             self.redraw_main_window();
         } else {
-            self.move_cursor(dir);
+            self.move_cursor(dir, true);
         }
         self.redraw_footer();
     }
@@ -334,7 +334,7 @@ impl TereTui {
             if up {
                 delta *= -1;
             }
-            self.move_cursor(- (self.app_state.cursor_pos as i32) + delta);
+            self.move_cursor(- (self.app_state.cursor_pos as i32) + delta, false);
             self.redraw_footer();
         } //TODO: how to handle page up / page down while searching?
     }
