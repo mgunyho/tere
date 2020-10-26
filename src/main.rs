@@ -232,7 +232,7 @@ impl TereTui {
 
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
-    pub fn move_cursor(&mut self, amount: i32) {
+    pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
 
         //TODO: moving cursor removes highlights
         // (in principle. currently on_arrow_key redraws the whole screen so this
@@ -241,7 +241,7 @@ impl TereTui {
 
         let old_scroll_pos = self.app_state.scroll_pos;
 
-        self.app_state.move_cursor(amount);
+        self.app_state.move_cursor(amount, wrap);
 
         if self.app_state.scroll_pos != old_scroll_pos {
             // redraw_main_window takes care of highlighting the cursor row
