@@ -85,14 +85,14 @@ impl SearchState {
 
     /// Find the elements in `buf` that match with the current
     /// search string and store them in self.matches.
-    fn update_matches(&mut self, buf: &Vec<String>, ignore_case: bool) {
+    fn update_matches(&mut self, buf: &Vec<String>, case_sensitive: bool) {
         // TODO: if matches is not empty, iterate over only that and not the whole buffer?
         let mut new_matches: Box<dyn Iterator<Item = (usize, &String)>> = Box::new(
             buf.iter()
             .enumerate()
             );
 
-        new_matches = if ignore_case {
+        new_matches = if !case_sensitive {
             let search_string_lc = self.search_string.to_lowercase();
             Box::new(
             new_matches.filter(move |(_, s)|
@@ -323,7 +323,7 @@ impl TereAppState {
     /// Update the matches and the cursor position
     fn on_search_string_changed(&mut self) {
         self.search_state.update_matches(&self.ls_output_buf,
-                                         self.settings.ignore_case);
+                                         self.settings.case_sensitive);
         self.move_cursor_to_adjacent_match(0);
     }
 
@@ -337,7 +337,7 @@ impl TereAppState {
             //TODO: keep cursor position. now if we're at the second match and type backspace, the
             //curor jumps back to the first
             self.search_state.update_matches(&self.ls_output_buf,
-                                             self.settings.ignore_case);
+                                             self.settings.case_sensitive);
             self.on_search_string_changed();
         };
     }
