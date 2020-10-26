@@ -349,7 +349,13 @@ impl TereTui {
                     root_win.nodelay(true);
                     match root_win.getch() {
                         //TODO: alt+home -> go to home folder (possible?)
-                        Some(Input::Character(c)) => { self.info_message(&format!("ALT+{}", c)); },  //TODO: alt+hjkl -> arrow keys
+                        // TODO: unify these with the  arrow keys above, with custom 'getch_with_alt' function or something that returns an enum which makes it possible to match alt once
+                        Some(Input::Character('k')) => self.on_arrow_key(true),
+                        Some(Input::Character('j')) => self.on_arrow_key(false),
+                        Some(Input::Character('h')) => self.change_dir(".."),
+                        Some(Input::Character('l')) => self.change_dir(""),
+
+                        Some(Input::Character(c)) => { self.info_message(&format!("ALT+{}", c)); },  //TODO: alt+up arrow -> move up (possible?)
                         None => {
                             if self.app_state.is_searching() {
                                 self.app_state.clear_search();
