@@ -154,7 +154,7 @@ impl TereAppState {
         let delta_h = h.checked_sub(self.main_win_h).unwrap_or(0);
         self.main_win_w = w;
         self.main_win_h = h;
-        self.move_cursor(0); // make sure that cursor is within view
+        self.move_cursor(0, false); // make sure that cursor is within view
         if delta_h > 0 {
             // height is increasing, scroll backwards as much as possible
             let old_scroll_pos = self.scroll_pos;
@@ -229,7 +229,8 @@ impl TereAppState {
     pub fn move_cursor_to(&mut self, row: u32) {
         self.move_cursor(row as i32
                          - self.cursor_pos as i32
-                         - self.scroll_pos as i32);
+                         - self.scroll_pos as i32,
+                         false);
     }
 
     pub fn change_dir(&mut self, path: &str) -> std::io::Result<()> {
@@ -254,7 +255,7 @@ impl TereAppState {
             if let Some(dirname) = old_cwd.file_name() {
                 if let Some(idx) = self.ls_output_buf.iter()
                     .position(|x| std::ffi::OsString::from(x) == dirname) {
-                    self.move_cursor(idx as i32);
+                    self.move_cursor(idx as i32, false);
                 }
             }
         }
