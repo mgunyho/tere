@@ -373,6 +373,8 @@ impl TereTui {
                         Some(Input::Character('j')) => self.on_arrow_key(false),
                         Some(Input::Character('h')) => self.change_dir(".."),
                         Some(Input::Character('l')) => self.change_dir(""),
+                        Some(Input::Character('u')) => self.on_page_up_down(true),
+                        Some(Input::Character('d')) => self.on_page_up_down(false),
 
                         Some(Input::Character(c)) => { self.info_message(&format!("ALT+{}", c)); },  //TODO: alt+up arrow -> move up (possible?)
                         None => {
