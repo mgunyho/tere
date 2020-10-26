@@ -87,8 +87,8 @@ impl SearchState {
         self.matches = buf.iter().enumerate().filter(|(_, s)|
             //TODO: take search_anywhere into account
             //TODO: case sensitivity
-            //TODO: this doesn't work with PathBufs...
-            s.starts_with(&self.search_string)
+            s.to_str().map(|x| x.starts_with(&self.search_string))
+                .unwrap_or(false)
         ).map(|(i, s)| (i, s.clone())).collect();
         //TODO: change indices -> Option<usize>, and put Some only for those that are within view?
     }
