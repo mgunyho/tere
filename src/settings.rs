@@ -12,7 +12,7 @@ pub struct TereSettings {
     pub folders_only: bool,
     //// if this is true, match anywhere, otherwise match only from the beginning
     //search_anywhere: bool, // TODO
-    //case_insensitive: bool //TODO: case insensitive search
+    pub case_sensitive: bool,
 }
 
 impl TereSettings {
@@ -21,6 +21,10 @@ impl TereSettings {
 
         if args.is_present("folders-only") {
             ret.folders_only = true;
+        }
+
+        if args.is_present("case-sensitive") {
+            ret.case_sensitive = true;
         }
 
         ret
