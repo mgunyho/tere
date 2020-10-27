@@ -430,10 +430,15 @@ fn main() {
     let cli_args = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         //.author(env!("CARGO_PKG_AUTHORS")) // TODO: rest of these https://stackoverflow.com/a/27841363
+        .about("Start a terminal-based file explorer and write the path of the folder you end up with to the file specified by <outfile>")
         .arg(Arg::with_name("folders-only")
              .long("folders-only")
              //.short("f")  // TODO: check conflicts
              .help("only show folders in listing")
+             )
+        .arg(Arg::with_name("outfile")
+             .help("output file")
+             .required(true)
              )
         .get_matches();
 
@@ -467,5 +472,7 @@ fn main() {
 
     // no error, print cwd
     let cwd = std::env::current_dir().expect("error getting cwd");
-    println!("{}", cwd.display());
+    //TODO: instead of taking outfile as an arg, create a temporary file and print it?
+    let out_filename = cli_args.value_of("outfile").expect("outfile not found!");
+    std::fs::write(out_filename, format!("{}", cwd.display())).expect("error writing to output file");
 }
