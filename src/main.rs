@@ -196,7 +196,9 @@ impl TereTui {
         for (i, line) in self.app_state.ls_output_buf.iter().skip(scroll_pos as usize)
             .enumerate().take(max_y as usize) {
                 //TODO: show  modified date and other info (should query metadata already in update_ls_output_buf)
-                let line = format!("{}", line.path().display());
+                let line = format!("{}",
+                                   line.file_name().clone().into_string()
+                                   .unwrap_or("".to_string()));
                 self.main_win.mvaddnstr(i as i32, 0, line, max_x);
         }
 
