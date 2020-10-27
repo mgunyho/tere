@@ -2,6 +2,8 @@ use pancurses::{initscr, endwin, noecho, Input, curs_set};
 use ncurses;
 use std::convert::TryInto;
 
+use clap::{App, Arg, ArgMatches};
+
 const HEADER_SIZE: i32 = 1;
 const INFO_WIN_SIZE: i32 = 1;
 const FOOTER_SIZE: i32 = 1;
@@ -83,9 +85,11 @@ impl TereTui {
         Ok(footer)
     }
 
-    pub fn init(root_win: &pancurses::Window) -> Result<Self, TereError> {
+    pub fn init(args: &ArgMatches,
+                root_win: &pancurses::Window) -> Result<Self, TereError> {
         let main_win = Self::create_main_window(root_win)?;
         let state = TereAppState::init(
+            args,
             main_win.get_max_x().try_into().unwrap_or(1),
             main_win.get_max_y().try_into().unwrap_or(1)
         );
@@ -424,6 +428,17 @@ impl TereTui {
 }
 
 fn main() {
+
+    let cli_args = App::new(env!("CARGO_PKG_NAME"))
+        .version(env!("CARGO_PKG_VERSION"))
+        //.author(env!("CARGO_PKG_AUTHORS")) // TODO: rest of these https://stackoverflow.com/a/27841363
+        .arg(Arg::with_name("folders-only")
+             .long("folders-only")
+             //.short("f")  // TODO: check conflicts
+             .help("only show folders in listing")
+             )
+        .get_matches();
+
     let root_window = initscr();
 
     ncurses::set_escdelay(0);
@@ -440,7 +455,7 @@ fn main() {
         }
     };
 
-    let res = TereTui::init(&root_window)
+    let res = TereTui::init(&cli_args, &root_window)
         .map_err(|e| prepend_err("error in initializing UI: ", e))
         .and_then(|mut ui| ui.main_event_loop(&root_window)
             .map_err(|e| prepend_err("error in main event loop: ", e))

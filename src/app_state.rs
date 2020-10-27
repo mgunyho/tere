@@ -1,6 +1,12 @@
 /// This module contains structs related to handling the application state,
 /// independent of a "graphical" front-end, such as `ncurses`.
 
+use clap::ArgMatches;
+
+#[path = "settings.rs"]
+mod settings;
+use settings::TereSettings;
+
 /// A vector containing a list of matches, which also keeps track of which element
 /// we're pointing at currently
 #[derive(Default)]
@@ -90,6 +96,7 @@ impl SearchState {
     }
 }
 
+
 /// This struct represents the state of the application. Note that it has no
 /// notion of curses windows.
 pub struct TereAppState {
@@ -112,18 +119,18 @@ pub struct TereAppState {
     // The top of the screen corresponds to this row in the `ls_output_buf`.
     pub scroll_pos: u32,
 
-    //TODO
-    //// if this is true, match anywhere, otherwise match only from the beginning
-    //search_anywhere: bool,
+    //search_string: String,
 
     search_state: SearchState,
 
     pub header_msg: String,
     pub info_msg: String,
+
+    pub settings: TereSettings,
 }
 
 impl TereAppState {
-    pub fn init(window_w: u32, window_h: u32) -> Self {
+    pub fn init(cli_args: &ArgMatches, window_w: u32, window_h: u32) -> Self {
         let mut ret = Self {
             main_win_w: window_w,
             main_win_h: window_h,
@@ -134,6 +141,7 @@ impl TereAppState {
             info_msg: "".into(), // TODO: initial help message, like 'tere vXXX, type "?" for help'
             search_state: Default::default(),
             //search_anywhere: false,
+            settings: TereSettings::parse_cli_args(cli_args),
         };
 
         ret.update_header();
@@ -166,12 +174,20 @@ impl TereAppState {
     pub fn update_ls_output_buf(&mut self) {
         if let Ok(entries) = std::fs::read_dir(".") {
             self.ls_output_buf = vec!["..".into()];
-            self.ls_output_buf.extend(
+
+            let mut entries: Box<dyn Iterator<Item = std::fs::DirEntry>> =
+                Box::new(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 //TODO: case-insensitive sort???
-                //TODO: config option: show only folders, hide files
                 entries.filter_map(|e| e.ok())
-                    .map(|e| e.file_name().into_string().ok())
+                );
+
+            if self.settings.folders_only {
+                entries = Box::new(entries.filter(|e| e.path().is_dir()));
+            }
+
+            self.ls_output_buf.extend(
+                entries.map(|e| e.file_name().into_string().ok())
                     .filter_map(|e| e)
             );
             self.ls_output_buf.sort();
