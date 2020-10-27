@@ -61,6 +61,27 @@ impl<T> std::iter::FromIterator<T> for MatchesVec<T> {
     }
 }
 
+/// A stripped-down version of ``std::fs::DirEntry``.
+#[derive(Clone)]
+struct CustomDirEntry {
+    path: std::path::PathBuf,
+    metadata: Option<std::fs::Metadata>,
+    file_type: Option<std::fs::FileType>,
+    file_name: std::ffi::OsString,
+}
+
+impl From<std::fs::DirEntry> for CustomDirEntry
+{
+    fn from(e: std::fs::DirEntry) -> Self {
+        Self {
+            path: e.path(),
+            metadata: e.metadata().ok(),
+            file_type: e.file_type().ok(),
+            file_name: e.file_name(),
+        }
+    }
+}
+
 type LsBufItem = std::fs::DirEntry;
 /// The type of the `ls_output_buf` buffer of the app state
 type LsBufType = Vec<LsBufItem>;
