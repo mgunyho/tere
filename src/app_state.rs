@@ -113,6 +113,8 @@ pub struct TereAppState {
     // including ".." (the parent folder).
     pub ls_output_buf: LsBufType,
 
+    //sort_mode: SortMode // TODO: sort by date etc
+
     // The row on which the cursor is currently on, counted starting from the
     // top of the screen (not from the start of `ls_output_buf`). Note that this
     // doesn't have anything to do with the ncurses curspor position.
