@@ -58,11 +58,12 @@ impl<T> std::iter::FromIterator<T> for MatchesVec<T> {
     }
 }
 
-type MatchType = (usize, std::path::PathBuf);
+type LsBufItem = std::fs::DirEntry;
+/// The type of the `ls_output_buf` buffer of the app state
+type LsBufType = Vec<LsBufItem>;
+type MatchType = (usize, LsBufItem);
 type MatchesType = MatchesVec<MatchType>;
 
-/// The type of the `ls_output_buf` buffer of the app state
-type LsBufType = Vec<std::path::PathBuf>;
 
 #[derive(Default)]
 struct SearchState {
