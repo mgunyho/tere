@@ -87,7 +87,7 @@ impl From<std::fs::DirEntry> for CustomDirEntry
     }
 }
 
-type LsBufItem = std::fs::DirEntry;
+type LsBufItem = CustomDirEntry;
 /// The type of the `ls_output_buf` buffer of the app state
 type LsBufType = Vec<LsBufItem>;
 type MatchType = (usize, LsBufItem);
@@ -120,7 +120,7 @@ impl SearchState {
             s.file_name().to_str()
             .map(|x| x.starts_with(&self.search_string))
             .unwrap_or(false)
-        ).map(|(i, s)| (i, *s.clone())).collect();
+        ).map(|(i, s)| (i, s.clone())).collect();
         //TODO: change indices -> Option<usize>, and put Some only for those that are within view?
     }
 }
@@ -202,17 +202,17 @@ impl TereAppState {
 
     pub fn update_ls_output_buf(&mut self) {
         if let Ok(entries) = std::fs::read_dir(".") {
-            self.ls_output_buf = vec![???]; //TODO: what to put here?
+            //self.ls_output_buf = vec![???]; //TODO: what to put here?
             self.ls_output_buf.extend(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 //TODO: case-insensitive sort???
                 //TODO: config option: show only folders, hide files
                 //TODO: cache file metadata already here when reloading it
-                entries.filter_map(|e| e.ok())
+                entries.filter_map(|e| e.ok()).map(|e| e.into())
             );
             self.ls_output_buf.sort_by(|a, b| {
                 //TODO: can this comparison fail?
-                a.file_name().partial_cmp(&b.file_name()).unwrap()
+                a.file_name().partial_cmp(b.file_name()).unwrap()
             });
         }
         //TODO: show error message (add separate msg box)
@@ -272,7 +272,7 @@ impl TereAppState {
         let final_path = if path.is_empty() {
             let idx = self.cursor_pos + self.scroll_pos;
             self.ls_output_buf.get(idx as usize)
-                .map(|s| s.file_name().into_string().ok())
+                .map(|s| s.file_name().clone().into_string().ok())
                 .flatten()
                 .unwrap_or("".to_string())
         } else {
@@ -287,7 +287,7 @@ impl TereAppState {
         self.scroll_pos = 0;
         if let Ok(old_cwd) = old_cwd {
             if let Some(idx) = self.ls_output_buf.iter()
-                .position(|x| x.path() == old_cwd) {
+                .position(|x| *x.path() == old_cwd) {
                     self.move_cursor(idx as i32);
                 }
         }
