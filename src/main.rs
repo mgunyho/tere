@@ -181,7 +181,7 @@ impl TereTui {
         // Note that refresh() needs to be called externally.
         let row_content = self.app_state.ls_output_buf
             .get((row + self.app_state.scroll_pos) as usize)
-            .map(|s| format!("{}", s.display()))
+            .map(|s| format!("{}", s.path().display()))
             .unwrap_or("".to_string());
 
         self.main_win.clear();
@@ -195,7 +195,8 @@ impl TereTui {
         let scroll_pos = self.app_state.scroll_pos;
         for (i, line) in self.app_state.ls_output_buf.iter().skip(scroll_pos as usize)
             .enumerate().take(max_y as usize) {
-                let line = format!("{}", line.display());
+                //TODO: show  modified date and other info (should query metadata already in update_ls_output_buf)
+                let line = format!("{}", line.path().display());
                 self.main_win.mvaddnstr(i as i32, 0, line, max_x);
         }
 

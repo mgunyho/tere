@@ -91,9 +91,10 @@ impl SearchState {
         self.matches = buf.iter().enumerate().filter(|(_, s)|
             //TODO: take search_anywhere into account
             //TODO: case sensitivity
-            s.to_str().map(|x| x.starts_with(&self.search_string))
-                .unwrap_or(false)
-        ).map(|(i, s)| (i, s.clone())).collect();
+            s.file_name().to_str()
+            .map(|x| x.starts_with(&self.search_string))
+            .unwrap_or(false)
+        ).map(|(i, s)| (i, *s.clone())).collect();
         //TODO: change indices -> Option<usize>, and put Some only for those that are within view?
     }
 }
@@ -173,15 +174,18 @@ impl TereAppState {
 
     pub fn update_ls_output_buf(&mut self) {
         if let Ok(entries) = std::fs::read_dir(".") {
-            self.ls_output_buf = vec!["..".into()];
+            self.ls_output_buf = vec![???]; //TODO: what to put here?
             self.ls_output_buf.extend(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 //TODO: case-insensitive sort???
                 //TODO: config option: show only folders, hide files
+                //TODO: cache file metadata already here when reloading it
                 entries.filter_map(|e| e.ok())
-                .map(|e| e.path().strip_prefix("./").unwrap().to_path_buf())
             );
-            self.ls_output_buf.sort();
+            self.ls_output_buf.sort_by(|a, b| {
+                //TODO: can this comparison fail?
+                a.file_name().partial_cmp(&b.file_name()).unwrap()
+            });
         }
         //TODO: show error message (add separate msg box)
     }
@@ -240,7 +244,8 @@ impl TereAppState {
         let final_path = if path.is_empty() {
             let idx = self.cursor_pos + self.scroll_pos;
             self.ls_output_buf.get(idx as usize)
-                .map(|s| format!("{}", s.display()))
+                .map(|s| s.file_name().into_string().ok())
+                .flatten()
                 .unwrap_or("".to_string())
         } else {
             path.to_string()
@@ -253,12 +258,10 @@ impl TereAppState {
         self.cursor_pos = 0;
         self.scroll_pos = 0;
         if let Ok(old_cwd) = old_cwd {
-            if let Some(dirname) = old_cwd.file_name() {
-                if let Some(idx) = self.ls_output_buf.iter()
-                    .position(|x| std::ffi::OsString::from(x) == dirname) {
+            if let Some(idx) = self.ls_output_buf.iter()
+                .position(|x| x.path() == old_cwd) {
                     self.move_cursor(idx as i32);
                 }
-            }
         }
         Ok(())
     }
