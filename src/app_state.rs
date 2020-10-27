@@ -3,7 +3,6 @@
 
 /// A vector containing a list of matches, which also keeps track of which element
 /// we're pointing at currently
-#[derive(Default)]
 pub struct MatchesVec<T> {
     vec: Vec<T>,
     idx: usize,
@@ -46,6 +45,10 @@ impl<T> MatchesVec<T> {
     pub fn iter(&self) -> std::slice::Iter<'_, T> {
         self.vec.iter()
     }
+}
+
+impl<T> Default for MatchesVec<T> {
+    fn default() -> Self { Self { vec: vec![], idx: 0, } }
 }
 
 impl<T> std::iter::FromIterator<T> for MatchesVec<T> {
