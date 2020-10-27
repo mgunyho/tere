@@ -63,21 +63,26 @@ impl<T> std::iter::FromIterator<T> for MatchesVec<T> {
 
 /// A stripped-down version of ``std::fs::DirEntry``.
 #[derive(Clone)]
-struct CustomDirEntry {
-    path: std::path::PathBuf,
-    metadata: Option<std::fs::Metadata>,
-    file_type: Option<std::fs::FileType>,
-    file_name: std::ffi::OsString,
+pub struct CustomDirEntry {
+    _path: std::path::PathBuf,
+    _metadata: Option<std::fs::Metadata>,
+    _file_type: Option<std::fs::FileType>,
+    _file_name: std::ffi::OsString,
+}
+
+impl CustomDirEntry {
+    pub fn file_name(&self) -> &std::ffi::OsString { &self._file_name }
+    pub fn path(&self) -> &std::path::PathBuf { &self._path }
 }
 
 impl From<std::fs::DirEntry> for CustomDirEntry
 {
     fn from(e: std::fs::DirEntry) -> Self {
         Self {
-            path: e.path(),
-            metadata: e.metadata().ok(),
-            file_type: e.file_type().ok(),
-            file_name: e.file_name(),
+            _path: e.path(),
+            _metadata: e.metadata().ok(),
+            _file_type: e.file_type().ok(),
+            _file_name: e.file_name(),
         }
     }
 }
