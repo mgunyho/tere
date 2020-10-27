@@ -12,6 +12,8 @@ use home::home_dir;
 
 use clap::{App, Arg, ArgMatches};
 
+use std::os::unix::io::IntoRawFd;
+
 const HEADER_SIZE: i32 = 1;
 const INFO_WIN_SIZE: i32 = 1;
 const FOOTER_SIZE: i32 = 1;
@@ -490,7 +492,20 @@ fn main() {
              )
         .get_matches();
 
-    let root_window = initscr();
+    // The window needs to be initialized using newterm instead of initscr to work with command
+    // substitution (i.e. $( ... )).
+    // TODO: Doesn't work yet, might need to add own fork of pancurses...
+    // see https://github.com/ihalila/pancurses/pull/64
+    // and https://github.com/ihalila/pancurses/pull/43
+    let tty = std::fs::File::open("/dev/tty").unwrap();
+    let tty_ptr = unsafe {
+        libc::fdopen(
+            tty.into_raw_fd(),
+            std::ffi::CStr::from_bytes_with_nul_unchecked(b"r+\0").as_ptr(),
+        )
+    };
+    let win_ptr = pancurses::newterm(None, tty_ptr, tty_ptr);
+    let root_window = pancurses::window::new_window(win_ptr, true); //TODO: doesn't work, private module
 
     ncurses::set_escdelay(0);
     //root_window.keypad(true); // enable arrow keys etc

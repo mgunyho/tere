@@ -292,6 +292,7 @@ dependencies = [
  "clap",
  "crossterm",
  "home",
+ "libc",
  "ncurses",
  "pancurses",
 ]
