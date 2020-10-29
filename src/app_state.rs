@@ -203,6 +203,7 @@ impl TereAppState {
     pub fn update_ls_output_buf(&mut self) {
         if let Ok(entries) = std::fs::read_dir(".") {
             //self.ls_output_buf = vec![???]; //TODO: what to put here?
+            self.ls_output_buf.clear(); // TODO: see above...
             self.ls_output_buf.extend(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 //TODO: case-insensitive sort???
