@@ -202,8 +202,15 @@ impl TereAppState {
 
     pub fn update_ls_output_buf(&mut self) {
         if let Ok(entries) = std::fs::read_dir(".") {
-            //self.ls_output_buf = vec![???]; //TODO: what to put here?
-            self.ls_output_buf.clear(); // TODO: see above...
+            let pardir = std::path::Path::new(&std::path::Component::ParentDir);
+            self.ls_output_buf = vec![
+                CustomDirEntry {
+                    _path: pardir.into(),
+                    _metadata: None,
+                    _file_type: None,
+                    _file_name: pardir.into(),
+                }
+            ];
             self.ls_output_buf.extend(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 //TODO: case-insensitive sort???
