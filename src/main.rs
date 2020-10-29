@@ -181,8 +181,8 @@ impl TereTui {
         // Note that refresh() needs to be called externally.
         let row_content = self.app_state.ls_output_buf
             .get((row + self.app_state.scroll_pos) as usize)
-            .map(|s| format!("{}", s.path().display()))
-            .unwrap_or("".to_string());
+            .map(|s| s.file_name().clone().into_string().ok())
+            .flatten().unwrap_or("".to_string());
 
         self.main_win.clear();
         self.main_win.mvaddstr(row as i32, 0, &row_content);
