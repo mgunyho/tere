@@ -71,7 +71,12 @@ pub struct CustomDirEntry {
 }
 
 impl CustomDirEntry {
-    pub fn file_name(&self) -> &std::ffi::OsString { &self._file_name }
+    /// Return the file name of this directory entry. The file name is an OsString,
+    /// which may not be possible to convert to a String. In this case, this
+    /// function returns an empty string.
+    pub fn file_name_checked(&self) -> String {
+        self._file_name.clone().into_string().unwrap_or("".to_string())
+    }
     pub fn path(&self) -> &std::path::PathBuf { &self._path }
 }
 
