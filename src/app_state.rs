@@ -122,9 +122,7 @@ impl SearchState {
         self.matches = buf.iter().enumerate().filter(|(_, s)|
             //TODO: take search_anywhere into account
             //TODO: case sensitivity
-            s.file_name().to_str()
-            .map(|x| x.starts_with(&self.search_string))
-            .unwrap_or(false)
+            s.file_name_checked().starts_with(&self.search_string)
         ).map(|(i, s)| (i, s.clone())).collect();
         //TODO: change indices -> Option<usize>, and put Some only for those that are within view?
     }
@@ -225,7 +223,7 @@ impl TereAppState {
             );
             self.ls_output_buf.sort_by(|a, b| {
                 //TODO: can this comparison fail?
-                a.file_name().partial_cmp(b.file_name()).unwrap()
+                a.file_name_checked().partial_cmp(&b.file_name_checked()).unwrap()
             });
         }
         //TODO: show error message (add separate msg box)
@@ -285,9 +283,7 @@ impl TereAppState {
         let final_path = if path.is_empty() {
             let idx = self.cursor_pos + self.scroll_pos;
             self.ls_output_buf.get(idx as usize)
-                .map(|s| s.file_name().clone().into_string().ok())
-                .flatten()
-                .unwrap_or("".to_string())
+                .map_or("".to_string(), |s| s.file_name_checked())
         } else {
             path.to_string()
         };
@@ -300,6 +296,7 @@ impl TereAppState {
         self.scroll_pos = 0;
         if let Ok(old_cwd) = old_cwd {
             if let Some(idx) = self.ls_output_buf.iter()
+                //TODO: this comparison fails atm
                 .position(|x| *x.path() == old_cwd) {
                     self.move_cursor(idx as i32);
                 }
