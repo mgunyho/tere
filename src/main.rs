@@ -2,6 +2,8 @@ use pancurses::{initscr, endwin, noecho, Input, curs_set};
 use ncurses;
 use std::convert::TryInto;
 
+use clap::{App, Arg, ArgMatches};
+
 const HEADER_SIZE: i32 = 1;
 const INFO_WIN_SIZE: i32 = 1;
 const FOOTER_SIZE: i32 = 1;
@@ -83,9 +85,11 @@ impl TereTui {
         Ok(footer)
     }
 
-    pub fn init(root_win: &pancurses::Window) -> Result<Self, TereError> {
+    pub fn init(args: &ArgMatches,
+                root_win: &pancurses::Window) -> Result<Self, TereError> {
         let main_win = Self::create_main_window(root_win)?;
         let state = TereAppState::init(
+            args,
             main_win.get_max_x().try_into().unwrap_or(1),
             main_win.get_max_y().try_into().unwrap_or(1)
         );
@@ -233,7 +237,7 @@ impl TereTui {
 
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
-    pub fn move_cursor(&mut self, amount: i32) {
+    pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
 
         //TODO: moving cursor removes highlights
         // (in principle. currently on_arrow_key redraws the whole screen so this
@@ -242,7 +246,7 @@ impl TereTui {
 
         let old_scroll_pos = self.app_state.scroll_pos;
 
-        self.app_state.move_cursor(amount);
+        self.app_state.move_cursor(amount, wrap);
 
         if self.app_state.scroll_pos != old_scroll_pos {
             // redraw_main_window takes care of highlighting the cursor row
@@ -318,36 +322,79 @@ impl TereTui {
     pub fn on_arrow_key(&mut self, up: bool) {
         let dir = if up { -1 } else { 1 };
         if self.app_state.is_searching() {
+            //TODO: handle case where 'is_searching' but there are no matches - move cursor?
             self.app_state.move_cursor_to_adjacent_match(dir);
             self.redraw_main_window();
         } else {
-            self.move_cursor(dir);
+            self.move_cursor(dir, true);
         }
         self.redraw_footer();
+    }
+
+    // When the 'page up' or 'page down' keys are pressed
+    pub fn on_page_up_down(&mut self, up: bool) {
+        if !self.app_state.is_searching() {
+            let (h, _) = self.main_win.get_max_yx();
+            let mut delta = 2 * h - 3;
+            if up {
+                delta *= -1;
+            }
+            self.move_cursor(- (self.app_state.cursor_pos as i32) + delta, false);
+            self.redraw_footer();
+        } //TODO: how to handle page up / page down while searching? jump to the next match below view?
     }
 
     pub fn main_event_loop(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
         // root_win is the window created by initscr()
         loop {
             match root_win.getch() {
+                //TODO: home/pg up / pg dn keys
                 Some(Input::KeyUp) => {
                     self.on_arrow_key(true);
-                }
+                },
                 Some(Input::KeyDown) => {
                     self.on_arrow_key(false);
-                }
+                },
                 Some(Input::KeyRight) | Some(Input::Character('\n')) => {
                     self.change_dir("");
-                }
+                },
                 Some(Input::KeyLeft) => {
                     self.change_dir("..");
-                }
+                },
+                Some(Input::KeyPPage) => {
+                    self.on_page_up_down(true);
+                },
+                Some(Input::KeyNPage) => {
+                    self.on_page_up_down(false);
+                },
+                Some(Input::KeyHome) => {
+                    if !self.app_state.is_searching() {
+                        self.app_state.move_cursor_to(0);
+                        self.redraw_main_window();
+                    } // TODO: jump to first match
+                },
+                Some(Input::KeyEnd) => {
+                    if !self.app_state.is_searching() {
+                        let end = self.app_state.ls_output_buf.len() as u32;
+                        self.app_state.move_cursor_to(end);
+                        self.redraw_main_window();
+                    } // TODO: jump to last match
+                },
                 Some(Input::Character('\x1B')) => {
                     // Either ESC or ALT+key. If it's ESC, the next getch will be
                     // err. If it's ALT+key, next getch will contain the key
                     root_win.nodelay(true);
                     match root_win.getch() {
-                        Some(Input::Character(c)) => { self.info_message(&format!("ALT+{}", c)); },  //TODO: alt+hjkl -> arrow keys
+                        //TODO: alt+home -> go to home folder (possible?)
+                        // TODO: unify these with the  arrow keys above, with custom 'getch_with_alt' function or something that returns an enum which makes it possible to match alt once
+                        Some(Input::Character('k')) => self.on_arrow_key(true),
+                        Some(Input::Character('j')) => self.on_arrow_key(false),
+                        Some(Input::Character('h')) => self.change_dir(".."),
+                        Some(Input::Character('l')) => self.change_dir(""),
+                        Some(Input::Character('u')) => self.on_page_up_down(true),
+                        Some(Input::Character('d')) => self.on_page_up_down(false),
+
+                        Some(Input::Character(c)) => { self.info_message(&format!("ALT+{}", c)); },  //TODO: alt+up arrow -> move up (possible?)
                         None => {
                             if self.app_state.is_searching() {
                                 self.app_state.clear_search();
@@ -360,10 +407,12 @@ impl TereTui {
                         _ => (),
                     }
                     root_win.nodelay(false);
-                }
+                },
                 Some(Input::KeyDC) => break,
                 Some(Input::Character(c)) => {
-                    self.on_search_char(c);
+                    if c.is_alphanumeric() {
+                        self.on_search_char(c);
+                    }
                 },
                 Some(Input::KeyBackspace) => {
                     self.erase_search_char();
@@ -380,6 +429,17 @@ impl TereTui {
 }
 
 fn main() {
+
+    let cli_args = App::new(env!("CARGO_PKG_NAME"))
+        .version(env!("CARGO_PKG_VERSION"))
+        //.author(env!("CARGO_PKG_AUTHORS")) // TODO: rest of these https://stackoverflow.com/a/27841363
+        .arg(Arg::with_name("folders-only")
+             .long("folders-only")
+             //.short("f")  // TODO: check conflicts
+             .help("only show folders in listing")
+             )
+        .get_matches();
+
     let root_window = initscr();
 
     ncurses::set_escdelay(0);
@@ -396,7 +456,7 @@ fn main() {
         }
     };
 
-    let res = TereTui::init(&root_window)
+    let res = TereTui::init(&cli_args, &root_window)
         .map_err(|e| prepend_err("error in initializing UI: ", e))
         .and_then(|mut ui| ui.main_event_loop(&root_window)
             .map_err(|e| prepend_err("error in main event loop: ", e))

@@ -1,6 +1,12 @@
 /// This module contains structs related to handling the application state,
 /// independent of a "graphical" front-end, such as `ncurses`.
 
+use clap::ArgMatches;
+
+#[path = "settings.rs"]
+mod settings;
+use settings::TereSettings;
+
 /// A vector containing a list of matches, which also keeps track of which element
 /// we're pointing at currently
 pub struct MatchesVec<T> {
@@ -128,6 +134,7 @@ impl SearchState {
     }
 }
 
+
 /// This struct represents the state of the application. Note that it has no
 /// notion of curses windows.
 pub struct TereAppState {
@@ -152,18 +159,18 @@ pub struct TereAppState {
     // The top of the screen corresponds to this row in the `ls_output_buf`.
     pub scroll_pos: u32,
 
-    //TODO
-    //// if this is true, match anywhere, otherwise match only from the beginning
-    //search_anywhere: bool,
+    //search_string: String,
 
     search_state: SearchState,
 
     pub header_msg: String,
     pub info_msg: String,
+
+    pub settings: TereSettings,
 }
 
 impl TereAppState {
-    pub fn init(window_w: u32, window_h: u32) -> Self {
+    pub fn init(cli_args: &ArgMatches, window_w: u32, window_h: u32) -> Self {
         let mut ret = Self {
             main_win_w: window_w,
             main_win_h: window_h,
@@ -174,6 +181,7 @@ impl TereAppState {
             info_msg: "".into(), // TODO: initial help message, like 'tere vXXX, type "?" for help'
             search_state: Default::default(),
             //search_anywhere: false,
+            settings: TereSettings::parse_cli_args(cli_args),
         };
 
         ret.update_header();
@@ -194,7 +202,7 @@ impl TereAppState {
         let delta_h = h.checked_sub(self.main_win_h).unwrap_or(0);
         self.main_win_w = w;
         self.main_win_h = h;
-        self.move_cursor(0); // make sure that cursor is within view
+        self.move_cursor(0, false); // make sure that cursor is within view
         if delta_h > 0 {
             // height is increasing, scroll backwards as much as possible
             let old_scroll_pos = self.scroll_pos;
@@ -214,13 +222,23 @@ impl TereAppState {
                     _file_name: pardir.into(),
                 }
             ];
-            self.ls_output_buf.extend(
+
+            let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> =
+                Box::new(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 //TODO: case-insensitive sort???
-                //TODO: config option: show only folders, hide files
                 //TODO: cache file metadata already here when reloading it
                 entries.filter_map(|e| e.ok()).map(|e| e.into())
+                );
+
+            if self.settings.folders_only {
+                entries = Box::new(entries.filter(|e| e.path().is_dir()));
+            }
+
+            self.ls_output_buf.extend(
+                entries
             );
+
             self.ls_output_buf.sort_by(|a, b| {
                 //TODO: can this comparison fail?
                 a.file_name_checked().partial_cmp(&b.file_name_checked()).unwrap()
@@ -231,7 +249,7 @@ impl TereAppState {
 
     /// Move the cursor up (positive amount) or down (negative amount), and scroll
     /// the view as necessary
-    pub fn move_cursor(&mut self, amount: i32) {
+    pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
         //TOOD: wrap around (when starting from the last row)
 
         let old_cursor_pos = self.cursor_pos;
@@ -239,7 +257,13 @@ impl TereAppState {
         let ls_buf_size = self.ls_output_buf.len() as u32;
         let max_y = self.main_win_h;
 
-        let new_cursor_pos: i32 = old_cursor_pos as i32 + amount;
+        let mut new_cursor_pos: i32 = old_cursor_pos as i32 + amount;
+
+        if wrap && !self.ls_output_buf.is_empty() {
+            let offset = self.scroll_pos as i32;
+            new_cursor_pos = (offset + new_cursor_pos)
+                .rem_euclid(self.ls_output_buf.len() as i32) - offset;
+        }
 
         if new_cursor_pos < 0 {
             // attempting to go above the current view, scroll up
@@ -273,7 +297,8 @@ impl TereAppState {
     pub fn move_cursor_to(&mut self, row: u32) {
         self.move_cursor(row as i32
                          - self.cursor_pos as i32
-                         - self.scroll_pos as i32);
+                         - self.scroll_pos as i32,
+                         false);
     }
 
     pub fn change_dir(&mut self, path: &str) -> std::io::Result<()> {
@@ -298,7 +323,7 @@ impl TereAppState {
             if let Some(idx) = self.ls_output_buf.iter()
                 //TODO: this comparison fails atm
                 .position(|x| *x.path() == old_cwd) {
-                    self.move_cursor(idx as i32);
+                    self.move_cursor(idx as i32, false);
                 }
         }
         Ok(())
@@ -388,23 +413,23 @@ mod tests {
         let mut state = create_test_state(10, 4);
 
         for i in 1..=3 {
-            state.move_cursor(1);
+            state.move_cursor(1, false);
             assert_eq!(state.cursor_pos, i);
             assert_eq!(state.scroll_pos, 0);
         }
 
         for _ in 0..5 {
-            state.move_cursor(1);
+            state.move_cursor(1, false);
             assert_eq!(state.cursor_pos, 3);
             assert_eq!(state.scroll_pos, 0);
         }
 
-        state.move_cursor(100);
+        state.move_cursor(100, false);
         assert_eq!(state.cursor_pos, 3);
         assert_eq!(state.scroll_pos, 0);
 
         for i in 1..=3 {
-            state.move_cursor(-1);
+            state.move_cursor(-1, false);
             assert_eq!(state.cursor_pos, 3 - i);
             assert_eq!(state.scroll_pos, 0);
         }
@@ -412,20 +437,20 @@ mod tests {
         assert_eq!(state.cursor_pos, 0);
 
         for _ in 0..5 {
-            state.move_cursor(-1);
+            state.move_cursor(-1, false);
             assert_eq!(state.cursor_pos, 0);
             assert_eq!(state.scroll_pos, 0);
         }
 
-        state.move_cursor(-100);
+        state.move_cursor(-100, false);
         assert_eq!(state.cursor_pos, 0);
         assert_eq!(state.scroll_pos, 0);
 
         // test jumping all the way to the bottom and back
-        state.move_cursor(100);
+        state.move_cursor(100, false);
         assert_eq!(state.cursor_pos, 3);
         assert_eq!(state.scroll_pos, 0);
-        state.move_cursor(-100);
+        state.move_cursor(-100, false);
         assert_eq!(state.cursor_pos, 0);
         assert_eq!(state.scroll_pos, 0);
     }
@@ -435,28 +460,28 @@ mod tests {
         let mut state = create_test_state(4, 4);
 
         for i in 1..=3 {
-            state.move_cursor(1);
+            state.move_cursor(1, false);
             assert_eq!(state.cursor_pos, i);
             assert_eq!(state.scroll_pos, 0);
         }
 
         for _ in 0..5 {
-            state.move_cursor(1);
+            state.move_cursor(1, false);
             assert_eq!(state.cursor_pos, 3);
             assert_eq!(state.scroll_pos, 0);
         }
 
         for i in 1..=3 {
-            state.move_cursor(-1);
+            state.move_cursor(-1, false);
             assert_eq!(state.cursor_pos, 3-i);
             assert_eq!(state.scroll_pos, 0);
         }
 
         // test jumping all the way to the bottom and back
-        state.move_cursor(100);
+        state.move_cursor(100, false);
         assert_eq!(state.cursor_pos, 3);
         assert_eq!(state.scroll_pos, 0);
-        state.move_cursor(-100);
+        state.move_cursor(-100, false);
         assert_eq!(state.cursor_pos, 0);
         assert_eq!(state.scroll_pos, 0);
 
@@ -472,7 +497,7 @@ mod tests {
 
         // move cursor all the way to the bottom of the window
         for i in 1..=max_cursor {
-            state.move_cursor(1);
+            state.move_cursor(1, false);
             assert_eq!(state.cursor_pos, i);
             assert_eq!(state.scroll_pos, 0);
         }
@@ -481,7 +506,7 @@ mod tests {
         for i in 1..=max_scroll {
             println!("scrolling beyond screen {}, cursor at {}, scroll {}",
                      i, state.cursor_pos, state.scroll_pos);
-            state.move_cursor(1);
+            state.move_cursor(1, false);
             println!("after move: cursor at {}, scroll {}",
                      state.cursor_pos, state.scroll_pos);
             assert_eq!(state.cursor_pos, max_cursor);
@@ -492,17 +517,17 @@ mod tests {
 
         // check that nothing changes when trying to scroll further
         for _ in 0..5 {
-            state.move_cursor(1);
+            state.move_cursor(1, false);
             assert_eq!(state.cursor_pos, max_cursor);
             assert_eq!(state.scroll_pos, max_scroll);
         }
-        state.move_cursor(win_h as i32 + 100);
+        state.move_cursor(win_h as i32 + 100, false);
         assert_eq!(state.cursor_pos, max_cursor);
         assert_eq!(state.scroll_pos, max_scroll);
 
         // scroll back to the top of the window
         for i in 1..=max_cursor {
-            state.move_cursor(-1);
+            state.move_cursor(-1, false);
             assert_eq!(state.cursor_pos, max_cursor-i);
             assert_eq!(state.scroll_pos, max_scroll);
         }
@@ -511,7 +536,7 @@ mod tests {
 
         // scroll back to the top of the list
         for i in 1..=max_scroll {
-            state.move_cursor(-1);
+            state.move_cursor(-1, false);
             assert_eq!(state.cursor_pos, 0);
             assert_eq!(state.scroll_pos, max_scroll-i);
         }
@@ -520,19 +545,19 @@ mod tests {
         assert_eq!(state.cursor_pos, 0);
         assert_eq!(state.scroll_pos, 0);
         for _ in 0..5 {
-            state.move_cursor(-1);
+            state.move_cursor(-1, false);
             assert_eq!(state.cursor_pos, 0);
             assert_eq!(state.scroll_pos, 0);
         }
-        state.move_cursor(-100);
+        state.move_cursor(-100, false);
         assert_eq!(state.cursor_pos, 0);
         assert_eq!(state.scroll_pos, 0);
 
         // test jumping all the way to the bottom and back
-        state.move_cursor(win_h as i32 + 100);
+        state.move_cursor(win_h as i32 + 100, false);
         assert_eq!(state.cursor_pos, max_cursor);
         assert_eq!(state.scroll_pos, max_scroll);
-        state.move_cursor(-100 - win_h as i32);
+        state.move_cursor(-100 - win_h as i32, false);
         assert_eq!(state.cursor_pos, 0);
         assert_eq!(state.scroll_pos, 0);
     }
