@@ -410,9 +410,7 @@ impl TereTui {
                 },
                 Some(Input::KeyDC) => break,
                 Some(Input::Character(c)) => {
-                    if c.is_alphanumeric() {
-                        self.on_search_char(c);
-                    }
+                    self.on_search_char(c);
                 },
                 Some(Input::KeyBackspace) => {
                     self.erase_search_char();
