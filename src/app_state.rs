@@ -84,6 +84,12 @@ impl CustomDirEntry {
         self._file_name.clone().into_string().unwrap_or("".to_string())
     }
     pub fn path(&self) -> &std::path::PathBuf { &self._path }
+    pub fn is_dir(&self) -> bool {
+        match self._file_type {
+            Some(ft) => ft.is_dir(),
+            None => false,
+        }
+    }
 }
 
 impl From<std::fs::DirEntry> for CustomDirEntry
