@@ -98,7 +98,7 @@ impl From<std::fs::DirEntry> for CustomDirEntry
         Self {
             _path: e.path(),
             _metadata: e.metadata().ok(),
-            _file_type: e.file_type().ok(),
+            _file_type: e.file_type().ok(), //TODO: why does file_type return Result? when is it Error?
             _file_name: e.file_name(),
         }
     }
@@ -224,7 +224,7 @@ impl TereAppState {
                 CustomDirEntry {
                     _path: pardir.into(),
                     _metadata: None,
-                    _file_type: None,
+                    _file_type: None, // TODO: how to put std::sys::fs::FileType here? is needed for comparison
                     _file_name: pardir.into(),
                 }
             ];
