@@ -246,8 +246,17 @@ impl TereAppState {
             );
 
             self.ls_output_buf.sort_by(|a, b| {
-                //TODO: can this comparison fail?
-                a.file_name_checked().partial_cmp(&b.file_name_checked()).unwrap()
+                //NOTE: partial_cmp for strings always returns Some, so unwrap is ok here
+                //a.file_name_checked().partial_cmp(&b.file_name_checked()).unwrap()
+                match (a.is_dir(), b.is_dir()) {
+                    (true, true) | (false, false) => {
+                        // both are dirs or files, compare by name
+                        a.file_name_checked().partial_cmp(&b.file_name_checked()).unwrap()
+                    },
+                    // Otherwise, put folders first
+                    (true, false) => std::cmp::Ordering::Less,
+                    (false, true) => std::cmp::Ordering::Greater,
+                }
             });
         }
         //TODO: show error message (add separate msg box)
