@@ -356,6 +356,19 @@ impl TereTui {
         } //TODO: how to handle page up / page down while searching? jump to the next match below view?
     }
 
+    // on 'home' or 'end'
+    fn on_home_end(&mut self, home: bool) {
+        if !self.app_state.is_searching() {
+            let target = if home {
+                0
+            } else {
+                self.app_state.ls_output_buf.len() as u32
+            };
+            self.app_state.move_cursor_to(target);
+            self.redraw_main_window();
+        } // TODO: else jump to first/last match
+    }
+
     pub fn main_event_loop(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
         // root_win is the window created by initscr()
         loop {
@@ -381,20 +394,8 @@ impl TereTui {
                         //KeyCode::Home if k.modifiers == KeyModifiers::CTRL => {
                         //}
 
-                        KeyCode::Home => {
-                            if !self.app_state.is_searching() {
-                                self.app_state.move_cursor_to(0);
-                                self.redraw_main_window();
-                            } // TODO: else jump to first match
-                        }
-
-                        KeyCode::End => {
-                            if !self.app_state.is_searching() {
-                                let end = self.app_state.ls_output_buf.len() as u32;
-                                self.app_state.move_cursor_to(end);
-                                self.redraw_main_window();
-                            } // TODO: else jump to last match
-                        }
+                        KeyCode::Home => self.on_home_end(true),
+                        KeyCode::End => self.on_home_end(false),
 
                         KeyCode::Esc => {
                             if self.app_state.is_searching() {
@@ -429,6 +430,13 @@ impl TereTui {
                         }
                         KeyCode::Char('d') if k.modifiers == KeyModifiers::ALT => {
                             self.on_page_up_down(false);
+                        }
+                        KeyCode::Char('g') if k.modifiers == KeyModifiers::ALT => {
+                            // like vim 'gg'
+                            self.on_home_end(true);
+                        }
+                        KeyCode::Char('G') if k.modifiers.contains(KeyModifiers::ALT) => {
+                            self.on_home_end(false);
                         }
 
                         KeyCode::Char(c) => self.on_search_char(c),
