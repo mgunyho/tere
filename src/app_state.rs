@@ -71,8 +71,7 @@ impl<T> std::iter::FromIterator<T> for MatchesVec<T> {
 #[derive(Clone)]
 pub struct CustomDirEntry {
     _path: std::path::PathBuf,
-    _metadata: Option<std::fs::Metadata>,
-    _file_type: Option<std::fs::FileType>,
+    pub metadata: Option<std::fs::Metadata>,
     _file_name: std::ffi::OsString,
 }
 
@@ -85,8 +84,8 @@ impl CustomDirEntry {
     }
     pub fn path(&self) -> &std::path::PathBuf { &self._path }
     pub fn is_dir(&self) -> bool {
-        match self._file_type {
-            Some(ft) => ft.is_dir(),
+        match &self.metadata {
+            Some(m) => m.is_dir(),
             None => false,
         }
     }
@@ -97,9 +96,19 @@ impl From<std::fs::DirEntry> for CustomDirEntry
     fn from(e: std::fs::DirEntry) -> Self {
         Self {
             _path: e.path(),
-            _metadata: e.metadata().ok(),
-            _file_type: e.file_type().ok(), //TODO: why does file_type return Result? when is it Error?
+            metadata: e.metadata().ok(),
             _file_name: e.file_name(),
+        }
+    }
+}
+
+impl From<&std::path::Path> for CustomDirEntry
+{
+    fn from(p: &std::path::Path) -> Self {
+        Self {
+            _path: p.to_path_buf(),
+            metadata: p.metadata().ok(),
+            _file_name: p.file_name().unwrap_or(p.as_os_str()).to_os_string(),
         }
     }
 }
@@ -221,12 +230,7 @@ impl TereAppState {
         if let Ok(entries) = std::fs::read_dir(".") {
             let pardir = std::path::Path::new(&std::path::Component::ParentDir);
             self.ls_output_buf = vec![
-                CustomDirEntry {
-                    _path: pardir.into(),
-                    _metadata: None,
-                    _file_type: None, // TODO: how to put std::sys::fs::FileType here? is needed for comparison
-                    _file_name: pardir.into(),
-                }
+                pardir.into(),
             ];
 
             let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> =
