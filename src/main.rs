@@ -455,7 +455,7 @@ fn main() {
     let root_window = initscr();
 
     ncurses::set_escdelay(0);
-    root_window.keypad(true); // enable arrow keys etc
+    //root_window.keypad(true); // enable arrow keys etc
     curs_set(0);
 
     noecho();
