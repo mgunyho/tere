@@ -1,6 +1,6 @@
 use pancurses::{initscr, endwin, noecho, Input, curs_set};
 use ncurses;
-use std::convert::TryInto;
+use std::convert::{From, TryInto};
 
 use clap::{App, Arg, ArgMatches};
 
@@ -17,6 +17,13 @@ use app_state::TereAppState;
 #[derive(Debug)]
 enum TereError {
     WindowInit(String, i32),
+    IoError(std::io::Error),
+}
+
+impl From<std::io::Error> for TereError {
+    fn from(e: std::io::Error) -> Self {
+        Self::IoError(e)
+    }
 }
 
 /// This struct groups together ncurses windows for the main content, header and
