@@ -229,9 +229,7 @@ impl TereAppState {
     pub fn update_ls_output_buf(&mut self) {
         if let Ok(entries) = std::fs::read_dir(".") {
             let pardir = std::path::Path::new(&std::path::Component::ParentDir);
-            self.ls_output_buf = vec![
-                pardir.into(),
-            ];
+            self.ls_output_buf = vec![pardir.into()];
 
             let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> =
                 Box::new(
