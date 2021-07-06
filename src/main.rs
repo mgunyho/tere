@@ -452,18 +452,10 @@ fn main() {
 
     noecho();
 
-    let prepend_err = |msg: &str, e: TereError| {
-        match e {
-            TereError::WindowInit(desc, code) => {
-                TereError::WindowInit(msg.to_string() + &desc, code)
-            }
-        }
-    };
-
     let res = TereTui::init(&cli_args, &root_window)
-        .map_err(|e| prepend_err("error in initializing UI: ", e))
+        .map_err(|e| format!("error in initializing UI: {:?}", e))
         .and_then(|mut ui| ui.main_event_loop(&root_window)
-            .map_err(|e| prepend_err("error in main event loop: ", e))
+            .map_err(|e| format!("error in main event loop: {:?}", e))
         );
 
     // clean up even if there was an error
