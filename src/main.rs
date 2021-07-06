@@ -375,45 +375,29 @@ impl TereTui {
                         },
                         KeyCode::Down => self.on_arrow_key(false),
 
-                        _ => self.info_message(&format!("{:?}", k)),
-                    }
-                },
-                /*
-                Some(Input::KeyPPage) => {
-                    self.on_page_up_down(true);
-                },
-                Some(Input::KeyNPage) => {
-                    self.on_page_up_down(false);
-                },
-                Some(Input::KeyHome) => {
-                    if !self.app_state.is_searching() {
-                        self.app_state.move_cursor_to(0);
-                        self.redraw_main_window();
-                    } // TODO: jump to first match
-                },
-                Some(Input::KeyEnd) => {
-                    if !self.app_state.is_searching() {
-                        let end = self.app_state.ls_output_buf.len() as u32;
-                        self.app_state.move_cursor_to(end);
-                        self.redraw_main_window();
-                    } // TODO: jump to last match
-                },
-                Some(Input::Character('\x1B')) => {
-                    // Either ESC or ALT+key. If it's ESC, the next getch will be
-                    // err. If it's ALT+key, next getch will contain the key
-                    root_win.nodelay(true);
-                    match root_win.getch() {
-                        //TODO: alt+home -> go to home folder (possible?)
-                        // TODO: unify these with the  arrow keys above, with custom 'getch_with_alt' function or something that returns an enum which makes it possible to match alt once
-                        Some(Input::Character('k')) => self.on_arrow_key(true),
-                        Some(Input::Character('j')) => self.on_arrow_key(false),
-                        Some(Input::Character('h')) => self.change_dir(".."),
-                        Some(Input::Character('l')) => self.change_dir(""),
-                        Some(Input::Character('u')) => self.on_page_up_down(true),
-                        Some(Input::Character('d')) => self.on_page_up_down(false),
+                        KeyCode::PageUp => self.on_page_up_down(true),
+                        KeyCode::PageDown => self.on_page_up_down(false),
 
-                        Some(Input::Character(c)) => { self.info_message(&format!("ALT+{}", c)); },  //TODO: alt+up arrow -> move up (possible?)
-                        None => {
+                        //TODO: go to home folder
+                        //KeyCode::Home if k.modifiers == KeyModifiers::CTRL => {
+                        //}
+
+                        KeyCode::Home => {
+                            if !self.app_state.is_searching() {
+                                self.app_state.move_cursor_to(0);
+                                self.redraw_main_window();
+                            } // TODO: else jump to first match
+                        }
+
+                        KeyCode::End => {
+                            if !self.app_state.is_searching() {
+                                let end = self.app_state.ls_output_buf.len() as u32;
+                                self.app_state.move_cursor_to(end);
+                                self.redraw_main_window();
+                            } // TODO: else jump to last match
+                        }
+
+                        KeyCode::Esc => {
                             if self.app_state.is_searching() {
                                 self.app_state.clear_search();
                                 self.redraw_main_window();
@@ -422,21 +406,43 @@ impl TereTui {
                                 break;
                             }
                         },
-                        _ => (),
+
+                        // alt + hjkl
+                        KeyCode::Char('h') if k.modifiers == KeyModifiers::ALT => {
+                            self.change_dir("..");
+                        }
+                        KeyCode::Char('j') if k.modifiers == KeyModifiers::ALT => {
+                            self.on_arrow_key(false);
+                        }
+                        KeyCode::Char('k') if k.modifiers == KeyModifiers::ALT => {
+                            self.on_arrow_key(true);
+                        }
+                        KeyCode::Char('l') if k.modifiers == KeyModifiers::ALT => {
+                            self.change_dir("");
+                        }
+
+                        // other chars with modifiers
+                        KeyCode::Char('q') if k.modifiers == KeyModifiers::ALT => {
+                            break;
+                        }
+                        KeyCode::Char('u') if k.modifiers == KeyModifiers::ALT => {
+                            self.on_page_up_down(true);
+                        }
+                        KeyCode::Char('d') if k.modifiers == KeyModifiers::ALT => {
+                            self.on_page_up_down(false);
+                        }
+
+                        KeyCode::Char(c) => self.on_search_char(c),
+
+                        KeyCode::Backspace => self.erase_search_char(),
+
+                        _ => self.info_message(&format!("{:?}", k)),
                     }
-                    root_win.nodelay(false);
                 },
-                Some(Input::KeyDC) => break,
-                Some(Input::Character(c)) => {
-                    self.on_search_char(c);
-                },
-                Some(Input::KeyBackspace) => {
-                    self.erase_search_char();
-                },
-                Some(Input::KeyResize) => { self.on_resize(root_win)? },
-                Some(input) => { self.info_message(&format!("{:?}", input)); },
-                None => (),
-            */
+
+                Event::Resize(_, _) => self.on_resize(root_win)?,
+
+                //TODO don't show this in release
                 e => self.info_message(&format!("{:?}", e)),
             }
             self.main_win.refresh();
