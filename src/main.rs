@@ -110,6 +110,7 @@ impl TereTui {
         self.header_win.clear();
         //TODO: what to do if window is narrower than path?
         // add "..." to beginning? or collapse folder names? make configurable?
+        // at least, truncate towards the left instead of to the right
         self.header_win.mvaddstr(0, 0, &self.app_state.header_msg);
         self.header_win.refresh();
     }
@@ -305,6 +306,7 @@ impl TereTui {
         // so we have to hack around and destroy/recreate the main
         // window every time. Doesn't seem to be too much of a
         // performance issue.
+        //TODO: doesn't seem to work correctly when decreasing window height
         self.main_win = Self::create_main_window(root_win)?;
         self.header_win = Self::create_header_window(root_win)?;
         self.info_win = Self::create_info_window(root_win)?;
