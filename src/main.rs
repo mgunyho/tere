@@ -1,6 +1,14 @@
-use pancurses::{initscr, endwin, noecho, Input, curs_set};
+use pancurses::{initscr, endwin, noecho, curs_set};
 use ncurses;
-use std::convert::TryInto;
+use std::convert::{From, TryInto};
+use crossterm::event::{
+    read as read_event,
+    Event,
+    KeyEvent,
+    KeyCode,
+    KeyModifiers,
+};
+use home::home_dir;
 
 use clap::{App, Arg, ArgMatches};
 
@@ -17,6 +25,13 @@ use app_state::TereAppState;
 #[derive(Debug)]
 enum TereError {
     WindowInit(String, i32),
+    IoError(std::io::Error),
+}
+
+impl From<std::io::Error> for TereError {
+    fn from(e: std::io::Error) -> Self {
+        Self::IoError(e)
+    }
 }
 
 /// This struct groups together ncurses windows for the main content, header and
@@ -110,6 +125,7 @@ impl TereTui {
         self.header_win.clear();
         //TODO: what to do if window is narrower than path?
         // add "..." to beginning? or collapse folder names? make configurable?
+        // at least, truncate towards the left instead of to the right
         self.header_win.mvaddstr(0, 0, &self.app_state.header_msg);
         self.header_win.refresh();
     }
@@ -306,6 +322,7 @@ impl TereTui {
         // so we have to hack around and destroy/recreate the main
         // window every time. Doesn't seem to be too much of a
         // performance issue.
+        //TODO: doesn't seem to work correctly when decreasing window height
         self.main_win = Self::create_main_window(root_win)?;
         self.header_win = Self::create_header_window(root_win)?;
         self.info_win = Self::create_info_window(root_win)?;
@@ -335,67 +352,57 @@ impl TereTui {
     pub fn on_page_up_down(&mut self, up: bool) {
         if !self.app_state.is_searching() {
             let (h, _) = self.main_win.get_max_yx();
-            let mut delta = 2 * h - 3;
-            if up {
-                delta *= -1;
-            }
-            self.move_cursor(- (self.app_state.cursor_pos as i32) + delta, false);
+            let delta = (h - 1) * if up { -1 } else { 1 };
+            self.move_cursor(delta, false);
             self.redraw_footer();
         } //TODO: how to handle page up / page down while searching? jump to the next match below view?
+    }
+
+    // on 'home' or 'end'
+    fn on_home_end(&mut self, home: bool) {
+        if !self.app_state.is_searching() {
+            let target = if home {
+                0
+            } else {
+                self.app_state.ls_output_buf.len() as u32
+            };
+            self.app_state.move_cursor_to(target);
+            self.redraw_main_window();
+        } // TODO: else jump to first/last match
     }
 
     pub fn main_event_loop(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
         // root_win is the window created by initscr()
         loop {
-            match root_win.getch() {
-                //TODO: home/pg up / pg dn keys
-                Some(Input::KeyUp) => {
-                    self.on_arrow_key(true);
-                },
-                Some(Input::KeyDown) => {
-                    self.on_arrow_key(false);
-                },
-                Some(Input::KeyRight) | Some(Input::Character('\n')) => {
-                    self.change_dir("");
-                },
-                Some(Input::KeyLeft) => {
-                    self.change_dir("..");
-                },
-                Some(Input::KeyPPage) => {
-                    self.on_page_up_down(true);
-                },
-                Some(Input::KeyNPage) => {
-                    self.on_page_up_down(false);
-                },
-                Some(Input::KeyHome) => {
-                    if !self.app_state.is_searching() {
-                        self.app_state.move_cursor_to(0);
-                        self.redraw_main_window();
-                    } // TODO: jump to first match
-                },
-                Some(Input::KeyEnd) => {
-                    if !self.app_state.is_searching() {
-                        let end = self.app_state.ls_output_buf.len() as u32;
-                        self.app_state.move_cursor_to(end);
-                        self.redraw_main_window();
-                    } // TODO: jump to last match
-                },
-                Some(Input::Character('\x1B')) => {
-                    // Either ESC or ALT+key. If it's ESC, the next getch will be
-                    // err. If it's ALT+key, next getch will contain the key
-                    root_win.nodelay(true);
-                    match root_win.getch() {
-                        //TODO: alt+home -> go to home folder (possible?)
-                        // TODO: unify these with the  arrow keys above, with custom 'getch_with_alt' function or something that returns an enum which makes it possible to match alt once
-                        Some(Input::Character('k')) => self.on_arrow_key(true),
-                        Some(Input::Character('j')) => self.on_arrow_key(false),
-                        Some(Input::Character('h')) => self.change_dir(".."),
-                        Some(Input::Character('l')) => self.change_dir(""),
-                        Some(Input::Character('u')) => self.on_page_up_down(true),
-                        Some(Input::Character('d')) => self.on_page_up_down(false),
+            match read_event()? {
+                Event::Key(k) => {
+                    match k.code {
+                        KeyCode::Right | KeyCode::Enter => self.change_dir(""),
+                        KeyCode::Left => self.change_dir(".."),
+                        KeyCode::Up if k.modifiers == KeyModifiers::ALT => {
+                            self.change_dir("..");
+                        },
+                        KeyCode::Up => self.on_arrow_key(true),
+                        KeyCode::Down if k.modifiers == KeyModifiers::ALT => {
+                            self.change_dir("");
+                        },
+                        KeyCode::Down => self.on_arrow_key(false),
 
-                        Some(Input::Character(c)) => { self.info_message(&format!("ALT+{}", c)); },  //TODO: alt+up arrow -> move up (possible?)
-                        None => {
+                        KeyCode::PageUp => self.on_page_up_down(true),
+                        KeyCode::PageDown => self.on_page_up_down(false),
+
+                        KeyCode::Home if k.modifiers == KeyModifiers::CONTROL => {
+                            if let Some(path) = home_dir() {
+                                if let Some(path) = path.to_str() {
+                                    self.change_dir(path);
+                                }
+                            }
+                        }
+
+                        KeyCode::Home => self.on_home_end(true),
+                        KeyCode::End => self.on_home_end(false),
+
+                        KeyCode::Esc => {
                             if self.app_state.is_searching() {
                                 self.app_state.clear_search();
                                 self.redraw_main_window();
@@ -404,20 +411,51 @@ impl TereTui {
                                 break;
                             }
                         },
-                        _ => (),
+
+                        // alt + hjkl
+                        KeyCode::Char('h') if k.modifiers == KeyModifiers::ALT => {
+                            self.change_dir("..");
+                        }
+                        KeyCode::Char('j') if k.modifiers == KeyModifiers::ALT => {
+                            self.on_arrow_key(false);
+                        }
+                        KeyCode::Char('k') if k.modifiers == KeyModifiers::ALT => {
+                            self.on_arrow_key(true);
+                        }
+                        KeyCode::Char('l') if k.modifiers == KeyModifiers::ALT => {
+                            self.change_dir("");
+                        }
+
+                        // other chars with modifiers
+                        KeyCode::Char('q') if k.modifiers == KeyModifiers::ALT => {
+                            break;
+                        }
+                        KeyCode::Char('u') if k.modifiers == KeyModifiers::ALT => {
+                            self.on_page_up_down(true);
+                        }
+                        KeyCode::Char('d') if k.modifiers == KeyModifiers::ALT => {
+                            self.on_page_up_down(false);
+                        }
+                        KeyCode::Char('g') if k.modifiers == KeyModifiers::ALT => {
+                            // like vim 'gg'
+                            self.on_home_end(true);
+                        }
+                        KeyCode::Char('G') if k.modifiers.contains(KeyModifiers::ALT) => {
+                            self.on_home_end(false);
+                        }
+
+                        KeyCode::Char(c) => self.on_search_char(c),
+
+                        KeyCode::Backspace => self.erase_search_char(),
+
+                        _ => self.info_message(&format!("{:?}", k)),
                     }
-                    root_win.nodelay(false);
                 },
-                Some(Input::KeyDC) => break,
-                Some(Input::Character(c)) => {
-                    self.on_search_char(c);
-                },
-                Some(Input::KeyBackspace) => {
-                    self.erase_search_char();
-                },
-                Some(Input::KeyResize) => { self.on_resize(root_win)? },
-                Some(input) => { self.info_message(&format!("{:?}", input)); },
-                None => (),
+
+                Event::Resize(_, _) => self.on_resize(root_win)?,
+
+                //TODO don't show this in release
+                e => self.info_message(&format!("{:?}", e)),
             }
             self.main_win.refresh();
         }
@@ -441,23 +479,15 @@ fn main() {
     let root_window = initscr();
 
     ncurses::set_escdelay(0);
-    root_window.keypad(true); // enable arrow keys etc
+    //root_window.keypad(true); // enable arrow keys etc
     curs_set(0);
 
     noecho();
 
-    let prepend_err = |msg: &str, e: TereError| {
-        match e {
-            TereError::WindowInit(desc, code) => {
-                TereError::WindowInit(msg.to_string() + &desc, code)
-            }
-        }
-    };
-
     let res = TereTui::init(&cli_args, &root_window)
-        .map_err(|e| prepend_err("error in initializing UI: ", e))
+        .map_err(|e| format!("error in initializing UI: {:?}", e))
         .and_then(|mut ui| ui.main_event_loop(&root_window)
-            .map_err(|e| prepend_err("error in main event loop: ", e))
+            .map_err(|e| format!("error in main event loop: {:?}", e))
         );
 
     // clean up even if there was an error
