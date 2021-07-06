@@ -8,6 +8,7 @@ use crossterm::event::{
     KeyCode,
     KeyModifiers,
 };
+use home::home_dir;
 
 use clap::{App, Arg, ArgMatches};
 
@@ -390,9 +391,13 @@ impl TereTui {
                         KeyCode::PageUp => self.on_page_up_down(true),
                         KeyCode::PageDown => self.on_page_up_down(false),
 
-                        //TODO: go to home folder
-                        //KeyCode::Home if k.modifiers == KeyModifiers::CTRL => {
-                        //}
+                        KeyCode::Home if k.modifiers == KeyModifiers::CONTROL => {
+                            if let Some(path) = home_dir() {
+                                if let Some(path) = path.to_str() {
+                                    self.change_dir(path);
+                                }
+                            }
+                        }
 
                         KeyCode::Home => self.on_home_end(true),
                         KeyCode::End => self.on_home_end(false),

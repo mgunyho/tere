@@ -12,6 +12,7 @@ edition = "2018"
 pancurses = { version = "0.16", features = ["wide"] }
 ncurses = { version = "5.91" }
 crossterm = "0.20.0"
+home = "0.5.3"
 
 [dependencies.clap]
 version = "2"
