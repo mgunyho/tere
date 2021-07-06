@@ -1,6 +1,7 @@
-use pancurses::{initscr, endwin, noecho, Input, curs_set};
+use pancurses::{initscr, endwin, noecho, curs_set};
 use ncurses;
 use std::convert::{From, TryInto};
+use crossterm::event::{read as read_event, Event, KeyEvent, KeyCode};
 
 use clap::{App, Arg, ArgMatches};
 
@@ -353,11 +354,16 @@ impl TereTui {
     pub fn main_event_loop(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
         // root_win is the window created by initscr()
         loop {
-            match root_win.getch() {
+            match read_event()? {
                 //TODO: home/pg up / pg dn keys
-                Some(Input::KeyUp) => {
-                    self.on_arrow_key(true);
+                Event::Key(k) => {
+                    match k.code {
+                        KeyCode::Down => self.on_arrow_key(false),
+                        //self.on_arrow_key(true);
+                        _ => self.info_message(&format!("{:?}", k)),
+                    }
                 },
+                /*
                 Some(Input::KeyDown) => {
                     self.on_arrow_key(false);
                 },
@@ -424,6 +430,8 @@ impl TereTui {
                 Some(Input::KeyResize) => { self.on_resize(root_win)? },
                 Some(input) => { self.info_message(&format!("{:?}", input)); },
                 None => (),
+            */
+                e => self.info_message(&format!("{:?}", e)),
             }
             self.main_win.refresh();
         }
