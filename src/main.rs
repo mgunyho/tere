@@ -374,7 +374,6 @@ impl TereTui {
         // root_win is the window created by initscr()
         loop {
             match read_event()? {
-                //TODO: home/pg up / pg dn keys
                 Event::Key(k) => {
                     match k.code {
                         KeyCode::Right | KeyCode::Enter => self.change_dir(""),
