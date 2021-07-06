@@ -1,7 +1,13 @@
 use pancurses::{initscr, endwin, noecho, curs_set};
 use ncurses;
 use std::convert::{From, TryInto};
-use crossterm::event::{read as read_event, Event, KeyEvent, KeyCode};
+use crossterm::event::{
+    read as read_event,
+    Event,
+    KeyEvent,
+    KeyCode,
+    KeyModifiers,
+};
 
 use clap::{App, Arg, ArgMatches};
 
@@ -358,21 +364,21 @@ impl TereTui {
                 //TODO: home/pg up / pg dn keys
                 Event::Key(k) => {
                     match k.code {
+                        KeyCode::Right | KeyCode::Enter => self.change_dir(""),
+                        KeyCode::Left => self.change_dir(".."),
+                        KeyCode::Up if k.modifiers == KeyModifiers::ALT => {
+                            self.change_dir("..");
+                        },
+                        KeyCode::Up => self.on_arrow_key(true),
+                        KeyCode::Down if k.modifiers == KeyModifiers::ALT => {
+                            self.change_dir("");
+                        },
                         KeyCode::Down => self.on_arrow_key(false),
-                        //self.on_arrow_key(true);
+
                         _ => self.info_message(&format!("{:?}", k)),
                     }
                 },
                 /*
-                Some(Input::KeyDown) => {
-                    self.on_arrow_key(false);
-                },
-                Some(Input::KeyRight) | Some(Input::Character('\n')) => {
-                    self.change_dir("");
-                },
-                Some(Input::KeyLeft) => {
-                    self.change_dir("..");
-                },
                 Some(Input::KeyPPage) => {
                     self.on_page_up_down(true);
                 },
