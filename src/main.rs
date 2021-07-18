@@ -187,6 +187,7 @@ impl TereTui {
     }
 
     pub fn unhighlight_row(&self, row: u32) {
+        //TODO: take folders into account
         self.change_row_attr(row, pancurses::Attribute::Normal.into());
     }
 
@@ -217,6 +218,13 @@ impl TereTui {
                 //TODO: show  modified date and other info (should query metadata already in update_ls_output_buf)
                 let line = entry.file_name_checked();
                 self.main_win.mvaddnstr(i as i32, 0, line, max_x);
+                let attr = if entry.is_dir() {
+                    pancurses::Attribute::Bold.into()
+                } else {
+                    pancurses::Attribute::Dim.into()
+                };
+                let (_, color_pair) = self.main_win.attrget();
+                self.main_win.mvchgat(i as i32, 0, -1, attr, color_pair);
         }
 
         self.highlight_row(self.app_state.cursor_pos);
