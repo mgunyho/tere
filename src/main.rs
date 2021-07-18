@@ -187,8 +187,14 @@ impl TereTui {
     }
 
     pub fn unhighlight_row(&self, row: u32) {
-        //TODO: take folders into account
-        self.change_row_attr(row, pancurses::Attribute::Normal.into());
+        let idx = (self.app_state.scroll_pos + row) as usize;
+        let bold = self.app_state.ls_output_buf.get(idx).map_or(false, |itm| itm.is_dir());
+        let attr = if bold {
+            pancurses::Attribute::Bold
+        } else {
+            pancurses::Attribute::Normal
+        };
+        self.change_row_attr(row, attr.into());
     }
 
     pub fn highlight_row(&self, row: u32) {
