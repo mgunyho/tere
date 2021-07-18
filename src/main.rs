@@ -77,7 +77,7 @@ impl TereTui {
         let header = Self::subwin_helper(root_win, HEADER_SIZE, 0, "header")?;
 
         //TODO: make header bg/font color configurable via settings
-        header.attrset(pancurses::Attribute::Bold);
+        header.attrset(pancurses::Attribute::Bold | pancurses::Attribute::Underline);
         Ok(header)
     }
 
