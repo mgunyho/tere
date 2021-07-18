@@ -77,7 +77,7 @@ impl TereTui {
         let header = Self::subwin_helper(root_win, HEADER_SIZE, 0, "header")?;
 
         //TODO: make header bg/font color configurable via settings
-        header.attrset(pancurses::Attribute::Bold);
+        header.attrset(pancurses::Attribute::Bold | pancurses::Attribute::Underline);
         Ok(header)
     }
 
@@ -187,7 +187,14 @@ impl TereTui {
     }
 
     pub fn unhighlight_row(&self, row: u32) {
-        self.change_row_attr(row, pancurses::Attribute::Normal.into());
+        let idx = (self.app_state.scroll_pos + row) as usize;
+        let bold = self.app_state.ls_output_buf.get(idx).map_or(false, |itm| itm.is_dir());
+        let attr = if bold {
+            pancurses::Attribute::Bold
+        } else {
+            pancurses::Attribute::Normal
+        };
+        self.change_row_attr(row, attr.into());
     }
 
     pub fn highlight_row(&self, row: u32) {
@@ -217,6 +224,13 @@ impl TereTui {
                 //TODO: show  modified date and other info (should query metadata already in update_ls_output_buf)
                 let line = entry.file_name_checked();
                 self.main_win.mvaddnstr(i as i32, 0, line, max_x);
+                let attr = if entry.is_dir() {
+                    pancurses::Attribute::Bold.into()
+                } else {
+                    pancurses::Attribute::Dim.into()
+                };
+                let (_, color_pair) = self.main_win.attrget();
+                self.main_win.mvchgat(i as i32, 0, -1, attr, color_pair);
         }
 
         self.highlight_row(self.app_state.cursor_pos);
