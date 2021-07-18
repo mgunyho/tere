@@ -199,13 +199,12 @@ impl TereTui {
     pub fn highlight_row_exclusive(&self, row: u32) {
         // Highlight the row `row` exclusively, and hide all other rows.
         // Note that refresh() needs to be called externally.
-        let row_content: &str = self.app_state.ls_output_buf
+        let row_content = self.app_state.ls_output_buf
             .get((row + self.app_state.scroll_pos) as usize)
-            .map(|s| s.as_ref())
-            .unwrap_or("");
+            .map_or("".to_string(), |s| s.file_name_checked());
 
         self.main_win.clear();
-        self.main_win.mvaddstr(row as i32, 0, row_content);
+        self.main_win.mvaddstr(row as i32, 0, &row_content);
         self.change_row_attr(row, pancurses::A_STANDOUT);
     }
 
@@ -213,9 +212,11 @@ impl TereTui {
         self.main_win.clear();
         let (max_y, max_x) = self.main_win.get_max_yx();
         let scroll_pos = self.app_state.scroll_pos;
-        for (i, line) in self.app_state.ls_output_buf.iter().skip(scroll_pos as usize)
+        for (i, entry) in self.app_state.ls_output_buf.iter().skip(scroll_pos as usize)
             .enumerate().take(max_y as usize) {
-            self.main_win.mvaddnstr(i as i32, 0, line, max_x);
+                //TODO: show  modified date and other info (should query metadata already in update_ls_output_buf)
+                let line = entry.file_name_checked();
+                self.main_win.mvaddnstr(i as i32, 0, line, max_x);
         }
 
         self.highlight_row(self.app_state.cursor_pos);

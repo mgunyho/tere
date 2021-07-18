@@ -9,7 +9,6 @@ use settings::TereSettings;
 
 /// A vector containing a list of matches, which also keeps track of which element
 /// we're pointing at currently
-#[derive(Default)]
 pub struct MatchesVec<T> {
     vec: Vec<T>,
     idx: usize,
@@ -54,6 +53,10 @@ impl<T> MatchesVec<T> {
     }
 }
 
+impl<T> Default for MatchesVec<T> {
+    fn default() -> Self { Self { vec: vec![], idx: 0, } }
+}
+
 impl<T> std::iter::FromIterator<T> for MatchesVec<T> {
     // so that MatchesVec can be `collect()`ed from an iterator.
     fn from_iter<I: std::iter::IntoIterator<Item=T>>(iter: I) -> Self {
@@ -64,8 +67,58 @@ impl<T> std::iter::FromIterator<T> for MatchesVec<T> {
     }
 }
 
-type MatchType = (usize, String);
+/// A stripped-down version of ``std::fs::DirEntry``.
+#[derive(Clone)]
+pub struct CustomDirEntry {
+    _path: std::path::PathBuf,
+    pub metadata: Option<std::fs::Metadata>,
+    _file_name: std::ffi::OsString,
+}
+
+impl CustomDirEntry {
+    /// Return the file name of this directory entry. The file name is an OsString,
+    /// which may not be possible to convert to a String. In this case, this
+    /// function returns an empty string.
+    pub fn file_name_checked(&self) -> String {
+        self._file_name.clone().into_string().unwrap_or("".to_string())
+    }
+    pub fn path(&self) -> &std::path::PathBuf { &self._path }
+    pub fn is_dir(&self) -> bool {
+        match &self.metadata {
+            Some(m) => m.is_dir(),
+            None => false,
+        }
+    }
+}
+
+impl From<std::fs::DirEntry> for CustomDirEntry
+{
+    fn from(e: std::fs::DirEntry) -> Self {
+        Self {
+            _path: e.path(),
+            metadata: e.metadata().ok(),
+            _file_name: e.file_name(),
+        }
+    }
+}
+
+impl From<&std::path::Path> for CustomDirEntry
+{
+    fn from(p: &std::path::Path) -> Self {
+        Self {
+            _path: p.to_path_buf(),
+            metadata: p.metadata().ok(),
+            _file_name: p.file_name().unwrap_or(p.as_os_str()).to_os_string(),
+        }
+    }
+}
+
+type LsBufItem = CustomDirEntry;
+/// The type of the `ls_output_buf` buffer of the app state
+type LsBufType = Vec<LsBufItem>;
+type MatchType = (usize, LsBufItem);
 type MatchesType = MatchesVec<MatchType>;
+
 
 #[derive(Default)]
 struct SearchState {
@@ -85,12 +138,12 @@ impl SearchState {
 
     /// Find the elements in `buf` that match with the current
     /// search string and store them in self.matches.
-    fn update_matches(&mut self, buf: &Vec<String>) {
+    fn update_matches(&mut self, buf: &LsBufType) {
         // TODO: if matches is not empty, iterate over only that and not the whole buffer?
         self.matches = buf.iter().enumerate().filter(|(_, s)|
             //TODO: take search_anywhere into account
             //TODO: case sensitivity
-            s.starts_with(&self.search_string)
+            s.file_name_checked().starts_with(&self.search_string)
         ).map(|(i, s)| (i, s.clone())).collect();
         //TODO: change indices -> Option<usize>, and put Some only for those that are within view?
     }
@@ -109,7 +162,9 @@ pub struct TereAppState {
 
     // This vector will hold the list of files/folders in the current directory,
     // including ".." (the parent folder).
-    pub ls_output_buf: Vec<String>,
+    pub ls_output_buf: LsBufType,
+
+    //sort_mode: SortMode // TODO: sort by date etc
 
     // The row on which the cursor is currently on, counted starting from the
     // top of the screen (not from the start of `ls_output_buf`). Note that this
@@ -173,13 +228,15 @@ impl TereAppState {
 
     pub fn update_ls_output_buf(&mut self) {
         if let Ok(entries) = std::fs::read_dir(".") {
-            self.ls_output_buf = vec!["..".into()];
+            let pardir = std::path::Path::new(&std::path::Component::ParentDir);
+            self.ls_output_buf = vec![pardir.into()];
 
-            let mut entries: Box<dyn Iterator<Item = std::fs::DirEntry>> =
+            let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> =
                 Box::new(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 //TODO: case-insensitive sort???
-                entries.filter_map(|e| e.ok())
+                //TODO: cache file metadata already here when reloading it
+                entries.filter_map(|e| e.ok()).map(|e| e.into())
                 );
 
             if self.settings.folders_only {
@@ -187,10 +244,22 @@ impl TereAppState {
             }
 
             self.ls_output_buf.extend(
-                entries.map(|e| e.file_name().into_string().ok())
-                    .filter_map(|e| e)
+                entries
             );
-            self.ls_output_buf.sort();
+
+            self.ls_output_buf.sort_by(|a, b| {
+                //NOTE: partial_cmp for strings always returns Some, so unwrap is ok here
+                //a.file_name_checked().partial_cmp(&b.file_name_checked()).unwrap()
+                match (a.is_dir(), b.is_dir()) {
+                    (true, true) | (false, false) => {
+                        // both are dirs or files, compare by name
+                        a.file_name_checked().partial_cmp(&b.file_name_checked()).unwrap()
+                    },
+                    // Otherwise, put folders first
+                    (true, false) => std::cmp::Ordering::Less,
+                    (false, true) => std::cmp::Ordering::Greater,
+                }
+            });
         }
         //TODO: show error message (add separate msg box)
     }
@@ -253,27 +322,26 @@ impl TereAppState {
         // TODO: add option to use xdg-open (or similar) on files?
         // check out https://crates.io/crates/open
         // (or https://docs.rs/opener/0.4.1/opener/)
-        let final_path: &str = if path.is_empty() {
+        let final_path = if path.is_empty() {
             let idx = self.cursor_pos + self.scroll_pos;
-            self.ls_output_buf.get(idx as usize).map(|s| s.as_ref())
-                .unwrap_or("")
+            self.ls_output_buf.get(idx as usize)
+                .map_or("".to_string(), |s| s.file_name_checked())
         } else {
-            path
+            path.to_string()
         };
         let old_cwd = std::env::current_dir();
         self.search_state.clear();
-        std::env::set_current_dir(final_path)?;
+        std::env::set_current_dir(&final_path)?;
         self.update_ls_output_buf();
         //TODO: proper history
         self.cursor_pos = 0;
         self.scroll_pos = 0;
         if let Ok(old_cwd) = old_cwd {
-            if let Some(dirname) = old_cwd.file_name() {
-                if let Some(idx) = self.ls_output_buf.iter()
-                    .position(|x| std::ffi::OsString::from(x) == dirname) {
+            if let Some(idx) = self.ls_output_buf.iter()
+                //TODO: this comparison fails atm
+                .position(|x| *x.path() == old_cwd) {
                     self.move_cursor(idx as i32, false);
                 }
-            }
         }
         Ok(())
     }
@@ -340,7 +408,7 @@ impl TereAppState {
 mod tests {
     use super::*;
 
-    fn create_test_filenames(n: u32) -> Vec<String> {
+    fn create_test_filenames(n: u32) -> LsBufType {
         (1..=n).map(|i| format!("file {}", i)).collect()
     }
 
