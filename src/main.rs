@@ -50,7 +50,7 @@ struct TereTui<'a> {
 impl<'a> TereTui<'a> {
 
     pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> Result<Self, TereError> {
-        let (w, h) = crossterm::terminal::size()?;
+        let (w, h) = terminal::size()?;
         let state = TereAppState::init(
             args,
             // TODO: have to convert to u32 here. but correct solution would be to use u16 instead in app_state as well
