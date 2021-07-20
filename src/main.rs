@@ -87,6 +87,7 @@ impl<'a> TereTui<'a> {
         execute!(
             win,
             cursor::MoveTo(0, 0),
+            style::SetAttribute(Attribute::Reset),
             style::Print(&self.app_state.header_msg.clone().bold().underlined()),
         )?;
         Ok(())
@@ -107,6 +108,7 @@ impl<'a> TereTui<'a> {
         execute!(
             win,
             cursor::MoveTo(0, info_win_row),
+            style::SetAttribute(Attribute::Reset),
             style::Print(&self.app_state.info_msg.clone().bold()),
         )
     }
@@ -138,6 +140,7 @@ impl<'a> TereTui<'a> {
             queue!(
                 win,
                 cursor::MoveTo(0, footer_win_row),
+                style::SetAttribute(Attribute::Reset),
                 style::Print(&self.app_state.search_string().clone().bold()),
             )?;
             extra_msg.push_str(&format!("{} / {} / {}",
@@ -156,6 +159,7 @@ impl<'a> TereTui<'a> {
         execute!(
             win,
             cursor::MoveTo(w - extra_msg.len() as u16, footer_win_row),
+            style::SetAttribute(Attribute::Reset),
             style::Print(extra_msg.bold()),
         )
     }
@@ -227,7 +231,6 @@ impl<'a> TereTui<'a> {
                 //TODO: show  modified date and other info (should query metadata already in update_ls_output_buf)
                 let row = view_idx as u16 + HEADER_SIZE;
 
-                //TODO: for some reason, on app startup, if the first thing I do is type to search, bold breaks
                 let attr = if entry.is_dir() {
                     Attribute::Bold
                 } else {
@@ -245,6 +248,7 @@ impl<'a> TereTui<'a> {
                 queue!(
                     win,
                     cursor::MoveTo(0, row),
+                    style::SetAttribute(Attribute::Reset),
                     style::SetAttribute(attr),
                     style::SetAttribute(Attribute::Underlined),
                     style::Print(line.get(..match_len).unwrap_or(&line)),
