@@ -35,82 +35,21 @@ impl From<std::io::Error> for TereError {
 /// This struct groups together ncurses windows for the main content, header and
 /// footer, and an application state object
 struct TereTui {
-    header_win: pancurses::Window,
-    info_win: pancurses::Window,
-    footer_win: pancurses::Window,
-    main_win: pancurses::Window,
     app_state: TereAppState,
 }
 
 impl TereTui {
 
-    // Helper function for creating subwindows. if `begy` is negative, it is counted
-    // bacwards from `root_win.get_max_y()`.
-    fn subwin_helper(root_win: &pancurses::Window,
-                     nlines: i32,
-                     begy: i32,
-                     label: &str,
-                     ) -> Result<pancurses::Window, TereError> {
-
-        let begy = if begy < 0 { root_win.get_max_y() + begy } else { begy };
-        root_win.subwin(nlines, 0, begy, 0)
-            .map_err(|e| TereError::WindowInit(
-                format!("failed to create {} window!", label), e)
-            )
-    }
-
-    /// Helper function for (re)creating the main window
-    pub fn create_main_window(root_win: &pancurses::Window)
-        -> Result<pancurses::Window, TereError> {
-        Self::subwin_helper(
-            root_win,
-            root_win.get_max_y() - HEADER_SIZE - INFO_WIN_SIZE - FOOTER_SIZE,
-            HEADER_SIZE,
-            "main")
-    }
-
-    /// Helper function for (re)creating the header window
-    pub fn create_header_window(root_win: &pancurses::Window)
-        -> Result<pancurses::Window, TereError> {
-        let header = Self::subwin_helper(root_win, HEADER_SIZE, 0, "header")?;
-
-        //TODO: make header bg/font color configurable via settings
-        header.attrset(pancurses::Attribute::Bold | pancurses::Attribute::Underline);
-        Ok(header)
-    }
-
-    pub fn create_info_window(root_win: &pancurses::Window)
-        -> Result<pancurses::Window, TereError> {
-        let infobox = Self::subwin_helper(
-            root_win,
-            INFO_WIN_SIZE,
-            -INFO_WIN_SIZE - FOOTER_SIZE,
-            "info")?;
-        infobox.attrset(pancurses::Attribute::Bold);
-        Ok(infobox)
-    }
-
-    pub fn create_footer_window(root_win: &pancurses::Window)
-        -> Result<pancurses::Window, TereError> {
-        let footer = Self::subwin_helper(root_win, FOOTER_SIZE, -FOOTER_SIZE,
-                                         "footer")?;
-        footer.attrset(pancurses::Attribute::Bold);
-        Ok(footer)
-    }
-
     pub fn init(args: &ArgMatches,
                 root_win: &pancurses::Window) -> Result<Self, TereError> {
-        let main_win = Self::create_main_window(root_win)?;
+        //let main_win = Self::create_main_window(root_win)?;
+        let (w, h) = crossterm::terminal::size()?;
         let state = TereAppState::init(
             args,
-            main_win.get_max_x().try_into().unwrap_or(1),
-            main_win.get_max_y().try_into().unwrap_or(1)
+            // TODO: have to convert to u32 here. but correct solution would be to use u16 instead in app_state as well
+            w.into(), h.into()
         );
         let mut ret = Self {
-            header_win: Self::create_header_window(root_win)?,
-            main_win: main_win,
-            info_win: Self::create_info_window(root_win)?,
-            footer_win: Self::create_footer_window(root_win)?,
             app_state: state,
         };
 
