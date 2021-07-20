@@ -1,5 +1,5 @@
 use std::convert::{From, TryInto};
-use std::io::Write;
+use std::io::{Stderr, Write};
 use crossterm::{
     execute, queue,
     terminal,
@@ -41,12 +41,13 @@ impl From<std::io::Error> for TereError {
 /// This struct groups together ncurses windows for the main content, header and
 /// footer, and an application state object
 struct TereTui {
+    window: Stderr,
     app_state: TereAppState,
 }
 
 impl TereTui {
 
-    pub fn init(args: &ArgMatches) -> Result<Self, TereError> {
+    pub fn init(args: &ArgMatches, window: Stderr) -> Result<Self, TereError> {
         let (w, h) = crossterm::terminal::size()?;
         let state = TereAppState::init(
             args,
@@ -54,6 +55,7 @@ impl TereTui {
             w.into(), h.into()
         );
         let mut ret = Self {
+            window: window,
             app_state: state,
         };
 
@@ -445,7 +447,7 @@ fn main() -> crossterm::Result<()> {
 
     terminal::enable_raw_mode()?;
 
-    let res = TereTui::init(&cli_args)
+    let res = TereTui::init(&cli_args, stderr)
         .map_err(|e| format!("error in initializing UI: {:?}", e))
         .and_then(|mut ui| ui.main_event_loop()
             .map_err(|e| format!("error in main event loop: {:?}", e))
