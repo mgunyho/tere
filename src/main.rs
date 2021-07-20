@@ -462,13 +462,13 @@ fn main() -> crossterm::Result<()> {
              )
         .get_matches();
 
-    let stderr = std::io::stderr();
+    let mut stderr = std::io::stderr();
 
     //ncurses::set_escdelay(0); //TODO: check if this is needed w/ crossterm
     //root_window.keypad(true); // enable arrow keys etc //TODO: check if needed w/ crossterm
     execute!(
         stderr,
-        EnterAlternateScreen,
+        terminal::EnterAlternateScreen,
         cursor::Hide,
     )?;
 
@@ -485,7 +485,7 @@ fn main() -> crossterm::Result<()> {
     // TODO: clean up even if there was an error
     execute!(
         stderr,
-        LeaveAlternateScreen,
+        terminal::LeaveAlternateScreen,
         cursor::Show
         )?;
 
