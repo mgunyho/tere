@@ -360,14 +360,13 @@ impl<'a> TereTui<'a> {
     // When the 'page up' or 'page down' keys are pressed
     pub fn on_page_up_down(&mut self, up: bool) {
         //TODO
-        /*
         if !self.app_state.is_searching() {
-            let (h, _) = self.main_win.get_max_yx();
-            let delta = (h - 1) * if up { -1 } else { 1 };
+            //let (h, _) = self.main_win.get_max_yx();
+            let (_, h) = terminal::size().unwrap(); //TODO: error handling...
+            let delta = ((h - 1) as i32)* if up { -1 } else { 1 };
             self.move_cursor(delta, false);
             self.redraw_footer();
         } //TODO: how to handle page up / page down while searching? jump to the next match below view?
-        */
     }
 
     // on 'home' or 'end'
