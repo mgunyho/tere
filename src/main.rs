@@ -98,20 +98,23 @@ impl<'a> TereTui<'a> {
         self.redraw_header();
     }
 
-    pub fn redraw_info_window(&self) {
-        //TODO
-        /*
-        self.info_win.clear();
-        self.info_win.mvaddstr(0, 0, &self.app_state.info_msg);
-        self.info_win.refresh();
-        */
+    pub fn redraw_info_window(&mut self) -> CTResult<()> {
+        let (_, h) = crossterm::terminal::size()?;
+        let info_win_row = h - FOOTER_SIZE - INFO_WIN_SIZE;
+
+        self.queue_clear_row(info_win_row);
+        let mut win = self.window;
+        execute!(
+            win,
+            cursor::MoveTo(0, info_win_row),
+            style::Print(&self.app_state.info_msg.clone().bold()),
+        )
     }
 
     /// Set/update the current info message and redraw the info window
     pub fn info_message(&mut self, msg: &str) {
         //TODO: add thread with timeout that will clear the info message after x seconds?
         self.app_state.info_msg = msg.to_string();
-        //self.info_win.attrset(pancurses::Attribute::Bold); //TODO
         self.redraw_info_window();
     }
 
