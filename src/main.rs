@@ -261,8 +261,6 @@ impl<'a> TereTui<'a> {
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
     pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
-        //TODO
-        /*
         //TODO: moving cursor removes highlights
         // (in principle. currently on_arrow_key redraws the whole screen so this
         // is not a problem)
@@ -278,10 +276,8 @@ impl<'a> TereTui<'a> {
             self.redraw_main_window();
         } else {
             self.highlight_row(self.app_state.cursor_pos);
-            self.main_win.refresh();
+            //TODO: make sure we're flushing here
         }
-
-        */
     }
 
     pub fn change_dir(&mut self, path: &str) {
