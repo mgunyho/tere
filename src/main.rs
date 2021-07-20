@@ -1,4 +1,4 @@
-use std::convert::{From, TryInto};
+use std::convert::{From, TryFrom, TryInto};
 use std::io::{Stderr, Write};
 use crossterm::{
     execute, queue,
@@ -164,33 +164,37 @@ impl<'a> TereTui<'a> {
         )
     }
 
-    fn change_row_attr(&self, row: u32 /*, attr: pancurses::chtype*/) {
-        //TODO
-        /*
-        let (_, color_pair) = self.main_win.attrget();
-        self.main_win.mvchgat(row as i32, 0, -1, attr, color_pair);
-        */
+    //TODO: thing through redraw_main_window_row_with_attr, highlight_row, unghighlight_row and redraw_main_window...
+    fn redraw_main_window_row_with_attr(&mut self, row: u16, attr: Attribute) {
+        let idx = (self.app_state.scroll_pos + row as u32) as usize;
+        let item = self.app_state.ls_output_buf.get(idx).map_or("".to_string(), |itm| itm.file_name_checked());
+
+        self.queue_clear_row(row + HEADER_SIZE);
+        execute!(
+            self.window,
+            cursor::MoveTo(0, row as u16 + HEADER_SIZE),
+            style::SetAttribute(Attribute::Reset),
+            style::SetAttribute(attr),
+            style::Print(item),
+        );
     }
 
-    pub fn unhighlight_row(&self, row: u32) {
-        /*
-        let idx = (self.app_state.scroll_pos + row) as usize;
+    pub fn unhighlight_row(&mut self, row: u16) {
+        let idx = (self.app_state.scroll_pos + row as u32 + HEADER_SIZE as u32) as usize;
         let bold = self.app_state.ls_output_buf.get(idx).map_or(false, |itm| itm.is_dir());
         let attr = if bold {
-            pancurses::Attribute::Bold
+            Attribute::Bold
         } else {
-            pancurses::Attribute::Normal
+            Attribute::Dim
         };
-        self.change_row_attr(row, attr.into());
-        */
+        self.redraw_main_window_row_with_attr(row, attr); // TODO: "error handling"
     }
 
-    pub fn highlight_row(&self, row: u32) {
+    pub fn highlight_row(&mut self, row: u32) {
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
-        //TODO
-        //self.change_row_attr(row, pancurses::A_STANDOUT);
-        //TODO: flush (?)
+        //TODO: different attr than underline (change bg color?)
+        self.redraw_main_window_row_with_attr(u16::try_from(row).unwrap_or(u16::MAX), Attribute::Underlined);
     }
 
     pub fn highlight_row_exclusive(&self, row: u32) {
@@ -278,7 +282,7 @@ impl<'a> TereTui<'a> {
         //TODO: moving cursor removes highlights
         // (in principle. currently on_arrow_key redraws the whole screen so this
         // is not a problem)
-        self.unhighlight_row(self.app_state.cursor_pos);
+        self.unhighlight_row(u16::try_from(self.app_state.cursor_pos).unwrap_or(u16::MAX));
 
         let old_scroll_pos = self.app_state.scroll_pos;
 
