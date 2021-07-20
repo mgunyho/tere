@@ -1,5 +1,3 @@
-use pancurses::{initscr, endwin, noecho, curs_set};
-use ncurses;
 use std::convert::{From, TryInto};
 use crossterm::event::{
     read as read_event,
