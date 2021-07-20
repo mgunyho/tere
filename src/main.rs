@@ -1,10 +1,16 @@
 use std::convert::{From, TryInto};
-use crossterm::event::{
-    read as read_event,
-    Event,
-    KeyEvent,
-    KeyCode,
-    KeyModifiers,
+use std::io::Write;
+use crossterm::{
+    execute, queue,
+    terminal,
+    cursor,
+    event::{
+        read as read_event,
+        Event,
+        KeyEvent,
+        KeyCode,
+        KeyModifiers,
+    },
 };
 use home::home_dir;
 
@@ -415,7 +421,7 @@ impl TereTui {
     }
 }
 
-fn main() {
+fn main() -> crossterm::Result<()> {
 
     let cli_args = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
@@ -427,13 +433,19 @@ fn main() {
              )
         .get_matches();
 
-    let root_window = initscr();
+    let stderr = std::io::stderr();
 
-    ncurses::set_escdelay(0);
-    //root_window.keypad(true); // enable arrow keys etc
-    curs_set(0);
+    //ncurses::set_escdelay(0); //TODO: check if this is needed w/ crossterm
+    //root_window.keypad(true); // enable arrow keys etc //TODO: check if needed w/ crossterm
+    execute!(
+        stderr,
+        EnterAlternateScreen,
+        cursor::Hide,
+    )?;
 
-    noecho();
+    stderr.flush();
+
+    terminal::enable_raw_mode()?;
 
     let res = TereTui::init(&cli_args, &root_window)
         .map_err(|e| format!("error in initializing UI: {:?}", e))
@@ -441,8 +453,14 @@ fn main() {
             .map_err(|e| format!("error in main event loop: {:?}", e))
         );
 
-    // clean up even if there was an error
-    endwin();
+    // TODO: clean up even if there was an error
+    execute!(
+        stderr,
+        LeaveAlternateScreen,
+        cursor::Show
+        )?;
+
+    terminal::disable_raw_mode()?;
 
     // panic if there was an error
     res.unwrap();
@@ -450,4 +468,6 @@ fn main() {
     // no error, print cwd
     let cwd = std::env::current_dir().expect("error getting cwd");
     println!("{}", cwd.display());
+
+    Ok(())
 }
