@@ -66,6 +66,16 @@ impl<'a> TereTui<'a> {
         Ok(ret)
     }
 
+    /// Queue up a command to clear a given row (starting from 0). Must be executed/flushed
+    /// separately.
+    fn queue_clear_row(&mut self, row: u16) -> CTResult<()> {
+        queue!(
+            self.window,
+            cursor::MoveTo(0, row),
+            terminal::Clear(terminal::ClearType::CurrentLine),
+        )
+    }
+
     pub fn redraw_header(&mut self) -> CTResult<()> {
         //TODO: what to do if window is narrower than path?
         // add "..." to beginning? or collapse folder names? make configurable?
@@ -73,10 +83,9 @@ impl<'a> TereTui<'a> {
 
         // must use variable here b/c can't borrow 'self' twice in execute!() below
         let mut win = self.window;
+        self.queue_clear_row(0);
         execute!(
             win,
-            cursor::MoveTo(0, 0),
-            terminal::Clear(terminal::ClearType::CurrentLine),
             cursor::MoveTo(0, 0),
             style::Print(&self.app_state.header_msg.clone().bold().underlined()),
         )?;
