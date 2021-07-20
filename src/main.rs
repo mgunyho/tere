@@ -18,9 +18,9 @@ use home::home_dir;
 
 use clap::{App, Arg, ArgMatches};
 
-const HEADER_SIZE: i32 = 1;
-const INFO_WIN_SIZE: i32 = 1;
-const FOOTER_SIZE: i32 = 1;
+const HEADER_SIZE: u16 = 1;
+const INFO_WIN_SIZE: u16 = 1;
+const FOOTER_SIZE: u16 = 1;
 
 //TODO: rustfmt
 //TODO: clippy
