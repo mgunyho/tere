@@ -46,9 +46,7 @@ struct TereTui {
 
 impl TereTui {
 
-    pub fn init(args: &ArgMatches,
-                root_win: &pancurses::Window) -> Result<Self, TereError> {
-        //let main_win = Self::create_main_window(root_win)?;
+    pub fn init(args: &ArgMatches) -> Result<Self, TereError> {
         let (w, h) = crossterm::terminal::size()?;
         let state = TereAppState::init(
             args,
@@ -447,7 +445,7 @@ fn main() -> crossterm::Result<()> {
 
     terminal::enable_raw_mode()?;
 
-    let res = TereTui::init(&cli_args, &root_window)
+    let res = TereTui::init(&cli_args)
         .map_err(|e| format!("error in initializing UI: {:?}", e))
         .and_then(|mut ui| ui.main_event_loop(&root_window)
             .map_err(|e| format!("error in main event loop: {:?}", e))
