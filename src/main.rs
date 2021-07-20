@@ -186,6 +186,7 @@ impl<'a> TereTui<'a> {
         // the main window
         //TODO
         //self.change_row_attr(row, pancurses::A_STANDOUT);
+        //TODO: flush (?)
     }
 
     pub fn highlight_row_exclusive(&self, row: u32) {
