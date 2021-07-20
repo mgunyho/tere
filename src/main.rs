@@ -326,7 +326,7 @@ impl TereTui {
         } // TODO: else jump to first/last match
     }
 
-    pub fn main_event_loop(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
+    pub fn main_event_loop(&mut self) -> Result<(), TereError> {
         // root_win is the window created by initscr()
         loop {
             match read_event()? {
@@ -407,7 +407,7 @@ impl TereTui {
                     }
                 },
 
-                Event::Resize(_, _) => self.on_resize(root_win)?,
+                Event::Resize(_, _) => self.on_resize()?,
 
                 //TODO don't show this in release
                 e => self.info_message(&format!("{:?}", e)),
@@ -447,7 +447,7 @@ fn main() -> crossterm::Result<()> {
 
     let res = TereTui::init(&cli_args)
         .map_err(|e| format!("error in initializing UI: {:?}", e))
-        .and_then(|mut ui| ui.main_event_loop(&root_window)
+        .and_then(|mut ui| ui.main_event_loop()
             .map_err(|e| format!("error in main event loop: {:?}", e))
         );
 
