@@ -80,16 +80,19 @@ impl TereTui {
     }
 
     pub fn redraw_info_window(&self) {
+        //TODO
+        /*
         self.info_win.clear();
         self.info_win.mvaddstr(0, 0, &self.app_state.info_msg);
         self.info_win.refresh();
+        */
     }
 
     /// Set/update the current info message and redraw the info window
     pub fn info_message(&mut self, msg: &str) {
         //TODO: add thread with timeout that will clear the info message after x seconds?
         self.app_state.info_msg = msg.to_string();
-        self.info_win.attrset(pancurses::Attribute::Bold);
+        //self.info_win.attrset(pancurses::Attribute::Bold); //TODO
         self.redraw_info_window();
     }
 
@@ -101,6 +104,7 @@ impl TereTui {
     }
 
     pub fn redraw_footer(&self) {
+        /*
         self.footer_win.clear();
         let mut extra_msg = String::new();
         if self.app_state.is_searching() {
@@ -122,14 +126,19 @@ impl TereTui {
                                  self.main_win.get_max_x() - extra_msg.len() as i32,
                                  extra_msg);
         self.footer_win.refresh();
+        */
     }
 
-    fn change_row_attr(&self, row: u32, attr: pancurses::chtype) {
+    fn change_row_attr(&self, row: u32 /*, attr: pancurses::chtype*/) {
+        //TODO
+        /*
         let (_, color_pair) = self.main_win.attrget();
         self.main_win.mvchgat(row as i32, 0, -1, attr, color_pair);
+        */
     }
 
     pub fn unhighlight_row(&self, row: u32) {
+        /*
         let idx = (self.app_state.scroll_pos + row) as usize;
         let bold = self.app_state.ls_output_buf.get(idx).map_or(false, |itm| itm.is_dir());
         let attr = if bold {
@@ -138,12 +147,14 @@ impl TereTui {
             pancurses::Attribute::Normal
         };
         self.change_row_attr(row, attr.into());
+        */
     }
 
     pub fn highlight_row(&self, row: u32) {
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
-        self.change_row_attr(row, pancurses::A_STANDOUT);
+        //TODO
+        //self.change_row_attr(row, pancurses::A_STANDOUT);
     }
 
     pub fn highlight_row_exclusive(&self, row: u32) {
@@ -153,12 +164,17 @@ impl TereTui {
             .get((row + self.app_state.scroll_pos) as usize)
             .map_or("".to_string(), |s| s.file_name_checked());
 
+        // TODO
+        /*
         self.main_win.clear();
         self.main_win.mvaddstr(row as i32, 0, &row_content);
         self.change_row_attr(row, pancurses::A_STANDOUT);
+        */
     }
 
     pub fn redraw_main_window(&self) {
+        //TODO
+        /*
         self.main_win.clear();
         let (max_y, max_x) = self.main_win.get_max_yx();
         let scroll_pos = self.app_state.scroll_pos;
@@ -199,6 +215,7 @@ impl TereTui {
             });
 
         self.main_win.refresh();
+        */
     }
 
     fn redraw_all_windows(&mut self) {
@@ -211,7 +228,8 @@ impl TereTui {
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
     pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
-
+        //TODO
+        /*
         //TODO: moving cursor removes highlights
         // (in principle. currently on_arrow_key redraws the whole screen so this
         // is not a problem)
@@ -230,6 +248,7 @@ impl TereTui {
             self.main_win.refresh();
         }
 
+        */
     }
 
     pub fn change_dir(&mut self, path: &str) {
@@ -251,6 +270,8 @@ impl TereTui {
     }
 
     pub fn on_search_char(&mut self, c: char) {
+        //TODO
+        /*
         self.app_state.advance_search(&c.to_string());
         if self.app_state.search_matches().len() == 1 {
             // There's only one match, highlight it and then change dir
@@ -265,6 +286,7 @@ impl TereTui {
         }
         self.redraw_main_window();
         self.redraw_footer();
+        */
     }
 
     pub fn erase_search_char(&mut self) {
@@ -273,7 +295,10 @@ impl TereTui {
         self.redraw_footer();
     }
 
-    pub fn on_resize(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
+    pub fn on_resize(&mut self /*, root_win: &pancurses::Window*/) -> Result<(), TereError> {
+        //TODO
+        Ok(())
+        /*
         //TODO: see https://github.com/ihalila/pancurses/pull/65
         // it's not possible to resize windows with pancurses ATM,
         // so we have to hack around and destroy/recreate the main
@@ -291,6 +316,7 @@ impl TereTui {
 
         self.redraw_all_windows();
         Ok(())
+        */
     }
 
     pub fn on_arrow_key(&mut self, up: bool) {
@@ -307,12 +333,15 @@ impl TereTui {
 
     // When the 'page up' or 'page down' keys are pressed
     pub fn on_page_up_down(&mut self, up: bool) {
+        //TODO
+        /*
         if !self.app_state.is_searching() {
             let (h, _) = self.main_win.get_max_yx();
             let delta = (h - 1) * if up { -1 } else { 1 };
             self.move_cursor(delta, false);
             self.redraw_footer();
         } //TODO: how to handle page up / page down while searching? jump to the next match below view?
+        */
     }
 
     // on 'home' or 'end'
@@ -414,7 +443,7 @@ impl TereTui {
                 //TODO don't show this in release
                 e => self.info_message(&format!("{:?}", e)),
             }
-            self.main_win.refresh();
+            //self.main_win.refresh(); //TODO
         }
 
         Ok(())
