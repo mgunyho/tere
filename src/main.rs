@@ -4,7 +4,7 @@ use crossterm::{
     execute, queue,
     terminal,
     cursor,
-    style::{self, Stylize},
+    style::{self, Stylize, Attribute},
     event::{
         read as read_event,
         Event,
@@ -205,50 +205,60 @@ impl<'a> TereTui<'a> {
         //TODO: make sure to flush at the end of this (?)
     }
 
-    pub fn redraw_main_window(&self) {
-        //TODO
-        /*
-        self.main_win.clear();
-        let (max_y, max_x) = self.main_win.get_max_yx();
+    pub fn redraw_main_window(&mut self) -> CTResult<()> {
+
+        let (max_x, max_y) = terminal::size()?;
+        let max_y = max_y - (INFO_WIN_SIZE + FOOTER_SIZE);
         let scroll_pos = self.app_state.scroll_pos;
-        for (i, entry) in self.app_state.ls_output_buf.iter().skip(scroll_pos as usize)
-            .enumerate().take(max_y as usize) {
-                //TODO: show  modified date and other info (should query metadata already in update_ls_output_buf)
-                let line = entry.file_name_checked();
-                self.main_win.mvaddnstr(i as i32, 0, line, max_x);
-                let attr = if entry.is_dir() {
-                    pancurses::Attribute::Bold.into()
-                } else {
-                    pancurses::Attribute::Dim.into()
-                };
-                let (_, color_pair) = self.main_win.attrget();
-                self.main_win.mvchgat(i as i32, 0, -1, attr, color_pair);
+        let mut win = self.window;
+
+        let match_indices: std::collections::HashSet<usize> = self.app_state
+            .search_matches().iter().map(|(i, _)| *i).collect();
+
+        // clear main window
+        for i in 1..max_y {
+            self.queue_clear_row(i);
         }
 
+        // draw entries
+        let all_lines = self.app_state.ls_output_buf.iter();
+        for (view_idx, (buf_idx, entry)) in all_lines.enumerate().skip(scroll_pos as usize)
+            .enumerate().take(max_y as usize) {
+                //TODO: show  modified date and other info (should query metadata already in update_ls_output_buf)
+                let row = view_idx as u16 + HEADER_SIZE;
+
+                //TODO: for some reason, on app startup, if the first thing I do is type to search, bold breaks
+                let attr = if entry.is_dir() {
+                    Attribute::Bold
+                } else {
+                    Attribute::Dim
+                };
+
+                let line = entry.file_name_checked();
+
+                let match_len = if match_indices.contains(&buf_idx) {
+                    self.app_state.search_string().len()
+                } else {
+                    0
+                };
+
+                queue!(
+                    win,
+                    cursor::MoveTo(0, row),
+                    style::SetAttribute(attr),
+                    style::SetAttribute(Attribute::Underlined),
+                    style::Print(line.get(..match_len).unwrap_or(&line)),
+                    style::SetAttribute(Attribute::NoUnderline),
+                    style::Print(line.get(match_len..).unwrap_or("")),
+                );
+        }
+
+        // show "cursor"
         self.highlight_row(self.app_state.cursor_pos);
 
-        // highlight matches that are in view
-        let is_in_view = |i: usize| {
-            let i = i as u32;
-            let above = i.checked_sub(scroll_pos).unwrap_or(0) < max_y as u32;
-            let below = scroll_pos <= i;
-            above && below
-        };
-        //TODO: search_anywhere...
-        let match_range = 0..self.app_state.search_string().len();
-        self.app_state.search_matches().iter()
-            .filter(|(i, _)| is_in_view(*i))
-            .map(|(i, _)| *i as i32 - scroll_pos as i32) // map indices to cursor positions
-            .for_each(|i| {
-                self.main_win.mv(i, match_range.start as i32);
-                let (_, color_pair) = self.main_win.attrget();
-                self.main_win.chgat(match_range.len() as i32,
-                                    pancurses::Attribute::Underline.into(),
-                                    color_pair);
-            });
+        //TODO: do underlining of matches only after highlight? like originally?
 
-        self.main_win.refresh();
-        */
+        win.flush()
     }
 
     fn redraw_all_windows(&mut self) {
