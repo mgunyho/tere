@@ -125,12 +125,21 @@ impl<'a> TereTui<'a> {
         self.info_message(&error_msg);
     }
 
-    pub fn redraw_footer(&self) {
-        /*
-        self.footer_win.clear();
+    pub fn redraw_footer(&mut self) -> CTResult<()> {
+        let (w, h) = crossterm::terminal::size()?;
+        let footer_win_row = h - FOOTER_SIZE;
+        self.queue_clear_row(footer_win_row);
+
+        let mut win = self.window;
         let mut extra_msg = String::new();
+
         if self.app_state.is_searching() {
-            self.footer_win.mvaddstr(0, 0, &self.app_state.search_string());
+            //self.footer_win.mvaddstr(0, 0, &self.app_state.search_string());
+            queue!(
+                win,
+                cursor::MoveTo(0, footer_win_row),
+                style::Print(&self.app_state.search_string().clone().bold()),
+            )?;
             extra_msg.push_str(&format!("{} / {} / {}",
                                self.app_state.search_matches()
                                    .current_pos().map(|i| i + 1).unwrap_or(0),
@@ -144,11 +153,11 @@ impl<'a> TereTui<'a> {
                                cursor_idx,
                                self.app_state.ls_output_buf.len()));
         }
-        self.footer_win.mvaddstr(0,
-                                 self.main_win.get_max_x() - extra_msg.len() as i32,
-                                 extra_msg);
-        self.footer_win.refresh();
-        */
+        execute!(
+            win,
+            cursor::MoveTo(w - extra_msg.len() as u16, footer_win_row),
+            style::Print(extra_msg.bold()),
+        )
     }
 
     fn change_row_attr(&self, row: u32 /*, attr: pancurses::chtype*/) {
