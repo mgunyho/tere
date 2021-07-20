@@ -4,6 +4,7 @@ use crossterm::{
     execute, queue,
     terminal,
     cursor,
+    style::{self, Stylize},
     event::{
         read as read_event,
         Event,
@@ -11,6 +12,7 @@ use crossterm::{
         KeyCode,
         KeyModifiers,
     },
+    Result as CTResult,
 };
 use home::home_dir;
 
@@ -64,13 +66,21 @@ impl<'a> TereTui<'a> {
         Ok(ret)
     }
 
-    pub fn redraw_header(&mut self) {
-        self.header_win.clear();
+    pub fn redraw_header(&mut self) -> CTResult<()> {
         //TODO: what to do if window is narrower than path?
         // add "..." to beginning? or collapse folder names? make configurable?
         // at least, truncate towards the left instead of to the right
-        self.header_win.mvaddstr(0, 0, &self.app_state.header_msg);
-        self.header_win.refresh();
+
+        // must use variable here b/c can't borrow 'self' twice in execute!() below
+        let mut win = self.window;
+        execute!(
+            win,
+            cursor::MoveTo(0, 0),
+            terminal::Clear(terminal::ClearType::CurrentLine),
+            cursor::MoveTo(0, 0),
+            style::Print(&self.app_state.header_msg.clone().bold().underlined()),
+        )?;
+        Ok(())
     }
 
     pub fn update_header(&mut self) {
