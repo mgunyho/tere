@@ -387,6 +387,7 @@ impl<'a> TereTui<'a> {
             } else {
                 self.app_state.ls_output_buf.len() as u32
             };
+            //TODO: this breaks highlighting of folders (?)
             self.app_state.move_cursor_to(target);
             self.redraw_main_window();
         } // TODO: else jump to first/last match
