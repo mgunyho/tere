@@ -232,20 +232,13 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn highlight_row_exclusive(&self, row: u32) {
+    pub fn highlight_row_exclusive(&mut self, row: u32) {
         // Highlight the row `row` exclusively, and hide all other rows.
-        // Note that refresh() needs to be called externally.
-        let row_content = self.app_state.ls_output_buf
-            .get((row + self.app_state.scroll_pos) as usize)
-            .map_or("".to_string(), |s| s.file_name_checked());
+        let row_content = self.get_item_at_row(row as u16)
+            .map_or("".to_string(), |itm| itm.file_name_checked());
 
-        // TODO
-        /*
-        self.main_win.clear();
-        self.main_win.mvaddstr(row as i32, 0, &row_content);
-        self.change_row_attr(row, pancurses::A_STANDOUT);
-        */
-        //TODO: make sure to flush at the end of this (?)
+        self.queue_clear_main_window();
+        self.highlight_row(row);
     }
 
     pub fn redraw_main_window(&mut self) -> CTResult<()> {
