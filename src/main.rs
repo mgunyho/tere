@@ -444,10 +444,10 @@ impl TereTui {
                         KeyCode::Char('q') if k.modifiers == KeyModifiers::ALT => {
                             break;
                         }
-                        KeyCode::Char('u') if k.modifiers == KeyModifiers::ALT => {
+                        KeyCode::Char('u') if (k.modifiers == KeyModifiers::ALT || k.modifiers == KeyModifiers::CONTROL) => {
                             self.on_page_up_down(true);
                         }
-                        KeyCode::Char('d') if k.modifiers == KeyModifiers::ALT => {
+                        KeyCode::Char('d') if (k.modifiers == KeyModifiers::ALT || k.modifiers == KeyModifiers::CONTROL) => {
                             self.on_page_up_down(false);
                         }
                         KeyCode::Char('g') if k.modifiers == KeyModifiers::ALT => {
