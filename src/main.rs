@@ -207,12 +207,34 @@ impl<'a> TereTui<'a> {
             self.window,
             cursor::MoveTo(0, row_abs),
             style::SetAttribute(Attribute::Reset),
+            style::ResetColor,
             style::SetAttribute(attr),
         );
 
         if let Some(n) = search_match_len {
             // print underlined part
-            //TODO
+            let n = n as usize;
+            let item_underline = item.get(..n).unwrap_or(&item);
+            let item_no_underline = item.get(n..).unwrap_or("");
+            queue!(
+                self.window,
+                style::SetAttribute(Attribute::Underlined),
+                style::Print(item_underline.get(..w).unwrap_or(&item_underline)),
+                style::SetAttribute(Attribute::NoUnderline),
+            );
+            if highlight {
+                queue!(
+                    self.window,
+                    style::SetBackgroundColor(style::Color::White),
+                    style::SetForegroundColor(style::Color::Black),
+                )?;
+            }
+            queue!(
+                self.window,
+                style::Print(item_no_underline.get(..w.checked_sub(n).unwrap_or(0)).unwrap_or(&item_no_underline)),
+                style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
+            )?;
+
         } else {
             if highlight {
                 queue!(
@@ -221,18 +243,20 @@ impl<'a> TereTui<'a> {
                     style::SetForegroundColor(style::Color::Black),
                     style::Print(item.get(..w).unwrap_or(&item)),
                     style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
-                    style::ResetColor,
                 )?;
             } else {
                 queue!(
                     self.window,
-                    style::ResetColor,
                     style::Print(item.get(..w).unwrap_or(&item)),
                 )?;
             }
         }
+        execute!(
+            self.window,
+            style::ResetColor,
+            style::SetAttribute(Attribute::Reset),
+        )
 
-        self.window.flush()
     }
 
     // redraw row 'row' (relative to the top of the main window) without highlighting
