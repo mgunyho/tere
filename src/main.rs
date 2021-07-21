@@ -273,23 +273,12 @@ impl<'a> TereTui<'a> {
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
         //TODO: underline search match...
-
-        let (w, _) = main_window_size().unwrap(); //TODO: error handling
-        let w = w as usize;
-        let item = self.get_item_at_row(row as u16).map_or("".to_string(), |itm| itm.file_name_checked());
-        let item_size = item.len();
-
-        self.queue_clear_row(row as u16 + HEADER_SIZE);
-        execute!(
-            self.window,
-            cursor::MoveTo(0, row as u16 + HEADER_SIZE),
-            style::SetAttribute(Attribute::Reset),
-            style::SetBackgroundColor(style::Color::White),
-            style::SetForegroundColor(style::Color::Black),
-            style::Print(item.get(..w).unwrap_or(&item)),
-            style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
-            style::ResetColor,
-        );
+        let match_len = if self.app_state.is_searching() {
+            Some(u16::try_from(self.app_state.search_string().len()).unwrap_or(u16::MAX))
+        } else {
+            None
+        };
+        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), true, match_len);
     }
 
     fn queue_clear_main_window(&mut self) -> CTResult<()> {
