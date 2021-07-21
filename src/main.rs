@@ -386,6 +386,8 @@ impl TereTui {
     }
 
     pub fn main_event_loop(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
+        let ALT = KeyModifiers::ALT;
+        let CONTROL = KeyModifiers::CONTROL;
         // root_win is the window created by initscr()
         loop {
             match read_event()? {
@@ -393,11 +395,11 @@ impl TereTui {
                     match k.code {
                         KeyCode::Right | KeyCode::Enter => self.change_dir(""),
                         KeyCode::Left => self.change_dir(".."),
-                        KeyCode::Up if k.modifiers == KeyModifiers::ALT => {
+                        KeyCode::Up if k.modifiers == ALT => {
                             self.change_dir("..");
                         },
                         KeyCode::Up => self.on_arrow_key(true),
-                        KeyCode::Down if k.modifiers == KeyModifiers::ALT => {
+                        KeyCode::Down if k.modifiers == ALT => {
                             self.change_dir("");
                         },
                         KeyCode::Down => self.on_arrow_key(false),
@@ -405,7 +407,7 @@ impl TereTui {
                         KeyCode::PageUp => self.on_page_up_down(true),
                         KeyCode::PageDown => self.on_page_up_down(false),
 
-                        KeyCode::Home if k.modifiers == KeyModifiers::CONTROL => {
+                        KeyCode::Home if k.modifiers == CONTROL => {
                             if let Some(path) = home_dir() {
                                 if let Some(path) = path.to_str() {
                                     self.change_dir(path);
@@ -427,34 +429,34 @@ impl TereTui {
                         },
 
                         // alt + hjkl
-                        KeyCode::Char('h') if k.modifiers == KeyModifiers::ALT => {
+                        KeyCode::Char('h') if k.modifiers == ALT => {
                             self.change_dir("..");
                         }
-                        KeyCode::Char('j') if k.modifiers == KeyModifiers::ALT => {
+                        KeyCode::Char('j') if k.modifiers == ALT => {
                             self.on_arrow_key(false);
                         }
-                        KeyCode::Char('k') if k.modifiers == KeyModifiers::ALT => {
+                        KeyCode::Char('k') if k.modifiers == ALT => {
                             self.on_arrow_key(true);
                         }
-                        KeyCode::Char('l') if k.modifiers == KeyModifiers::ALT => {
+                        KeyCode::Char('l') if k.modifiers == ALT => {
                             self.change_dir("");
                         }
 
                         // other chars with modifiers
-                        KeyCode::Char('q') if k.modifiers == KeyModifiers::ALT => {
+                        KeyCode::Char('q') if k.modifiers == ALT => {
                             break;
                         }
-                        KeyCode::Char('u') if (k.modifiers == KeyModifiers::ALT || k.modifiers == KeyModifiers::CONTROL) => {
+                        KeyCode::Char('u') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
                             self.on_page_up_down(true);
                         }
-                        KeyCode::Char('d') if (k.modifiers == KeyModifiers::ALT || k.modifiers == KeyModifiers::CONTROL) => {
+                        KeyCode::Char('d') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
                             self.on_page_up_down(false);
                         }
-                        KeyCode::Char('g') if k.modifiers == KeyModifiers::ALT => {
+                        KeyCode::Char('g') if k.modifiers == ALT => {
                             // like vim 'gg'
                             self.on_home_end(true);
                         }
-                        KeyCode::Char('G') if k.modifiers.contains(KeyModifiers::ALT) => {
+                        KeyCode::Char('G') if k.modifiers.contains(ALT) => {
                             self.on_home_end(false);
                         }
 
