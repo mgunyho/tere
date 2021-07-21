@@ -47,10 +47,16 @@ struct TereTui<'a> {
     app_state: TereAppState,
 }
 
+// Dimensions of main window
+fn main_window_size() -> CTResult<(u16, u16)> {
+    let (w, h) = terminal::size()?;
+    Ok((w, h - HEADER_SIZE - INFO_WIN_SIZE - FOOTER_SIZE))
+}
+
 impl<'a> TereTui<'a> {
 
     pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> Result<Self, TereError> {
-        let (w, h) = terminal::size()?;
+        let (w, h) = main_window_size()?;
         let state = TereAppState::init(
             args,
             // TODO: have to convert to u32 here. but correct solution would be to use u16 instead in app_state as well
@@ -215,8 +221,7 @@ impl<'a> TereTui<'a> {
 
     pub fn redraw_main_window(&mut self) -> CTResult<()> {
 
-        let (max_x, max_y) = terminal::size()?;
-        let max_y = max_y - (INFO_WIN_SIZE + FOOTER_SIZE);
+        let (max_x, max_y) = main_window_size()?;
         let scroll_pos = self.app_state.scroll_pos;
         let mut win = self.window;
 
@@ -224,7 +229,7 @@ impl<'a> TereTui<'a> {
             .search_matches().iter().map(|(i, _)| *i).collect();
 
         // clear main window
-        for i in 1..max_y {
+        for i in HEADER_SIZE..max_y+HEADER_SIZE {
             self.queue_clear_row(i);
         }
 
