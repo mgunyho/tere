@@ -206,6 +206,7 @@ impl<'a> TereTui<'a> {
         //TODO: underline search match...
 
         let (w, _) = main_window_size().unwrap(); //TODO: error handling
+        let w = w as usize;
         let item = self.get_item_at_row(row as u16).map_or("".to_string(), |itm| itm.file_name_checked());
         let item_size = item.len();
 
@@ -217,8 +218,8 @@ impl<'a> TereTui<'a> {
             //style::SetAttribute(attr),
             style::SetBackgroundColor(style::Color::White),
             style::SetForegroundColor(style::Color::Black),
-            style::Print(item),
-            style::Print(" ".repeat(w as usize - item_size)),
+            style::Print(item.get(..w).unwrap_or(&item)),
+            style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
             style::ResetColor,
         );
     }
