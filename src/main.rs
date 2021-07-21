@@ -49,7 +49,7 @@ struct TereTui<'a> {
 // Dimensions of main window
 fn main_window_size() -> CTResult<(u16, u16)> {
     let (w, h) = terminal::size()?;
-    Ok((w, h - HEADER_SIZE - INFO_WIN_SIZE - FOOTER_SIZE))
+    Ok((w, h.checked_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE).unwrap_or(0)))
 }
 
 impl<'a> TereTui<'a> {
