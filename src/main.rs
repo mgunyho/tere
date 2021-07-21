@@ -182,6 +182,59 @@ impl<'a> TereTui<'a> {
         self.app_state.ls_output_buf.get(idx)
     }
 
+    fn draw_main_window_row(&mut self,
+                            row: u16,
+                            highlight: bool,
+                            search_match_len: Option<u16>) -> CTResult<()> {
+        let row_abs = row  + HEADER_SIZE;
+        let w: usize = main_window_size()?.0.into();
+
+        let (item, bold) = self.get_item_at_row(row).map_or(
+            ("".to_string(), false),
+            |itm| (itm.file_name_checked(), itm.is_dir())
+        );
+        let item_size = item.len();
+
+        let attr = if bold {
+            Attribute::Bold
+        } else {
+            Attribute::Dim
+        };
+
+        self.queue_clear_row(row_abs);
+
+        queue!(
+            self.window,
+            cursor::MoveTo(0, row_abs),
+            style::SetAttribute(Attribute::Reset),
+            style::SetAttribute(attr),
+        );
+
+        if let Some(n) = search_match_len {
+            // print underlined part
+            //TODO
+        } else {
+            if highlight {
+                queue!(
+                    self.window,
+                    style::SetBackgroundColor(style::Color::White),
+                    style::SetForegroundColor(style::Color::Black),
+                    style::Print(item.get(..w).unwrap_or(&item)),
+                    style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
+                    style::ResetColor,
+                )?;
+            } else {
+                queue!(
+                    self.window,
+                    style::ResetColor,
+                    style::Print(item.get(..w).unwrap_or(&item)),
+                )?;
+            }
+        }
+
+        self.window.flush()
+    }
+
     // redraw row 'row' (relative to the top of the main window) without highlighting
     pub fn unhighlight_row(&mut self, row: u16) {
         let row_abs = row  + HEADER_SIZE;
