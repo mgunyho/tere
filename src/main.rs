@@ -366,8 +366,8 @@ impl<'a> TereTui<'a> {
 
     pub fn on_resize(&mut self /*, root_win: &pancurses::Window*/) -> Result<(), TereError> {
 
-        let (h, w) = main_window_size()?;
-        let (h, w) = (h as u32, w as u32);
+        let (w, h) = main_window_size()?;
+        let (w, h) = (w as u32, h as u32);
         self.app_state.update_main_window_dimensions(w, h);
 
         self.redraw_all_windows();
