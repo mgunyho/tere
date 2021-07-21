@@ -391,7 +391,7 @@ impl<'a> TereTui<'a> {
         //TODO
         if !self.app_state.is_searching() {
             //let (h, _) = self.main_win.get_max_yx();
-            let (_, h) = terminal::size().unwrap(); //TODO: error handling...
+            let (_, h) = main_window_size().unwrap(); //TODO: error handling...
             let delta = ((h - 1) as i32)* if up { -1 } else { 1 };
             self.move_cursor(delta, false);
             self.redraw_footer();
