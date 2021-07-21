@@ -26,7 +26,7 @@ const FOOTER_SIZE: u16 = 1;
 //TODO: clippy
 
 mod app_state;
-use app_state::TereAppState;
+use app_state::{TereAppState, CustomDirEntry};
 
 #[derive(Debug)]
 enum TereError {
@@ -170,19 +170,11 @@ impl<'a> TereTui<'a> {
         )
     }
 
-    //TODO: thing through redraw_main_window_row_with_attr, highlight_row, unghighlight_row and redraw_main_window...
-    fn redraw_main_window_row_with_attr(&mut self, row: u16, attr: Attribute) {
+    /// Get the item from ls_output_buf that should be displayed on row `row` of the main window.
+    /// Row 0 is the first row of the main window.
+    fn get_item_at_row(&self, row: u16) -> Option<&CustomDirEntry> {
         let idx = (self.app_state.scroll_pos + row as u32) as usize;
-        let item = self.app_state.ls_output_buf.get(idx).map_or("".to_string(), |itm| itm.file_name_checked());
-
-        self.queue_clear_row(row + HEADER_SIZE);
-        execute!(
-            self.window,
-            cursor::MoveTo(0, row as u16 + HEADER_SIZE),
-            style::SetAttribute(Attribute::Reset),
-            style::SetAttribute(attr),
-            style::Print(item),
-        );
+        self.app_state.ls_output_buf.get(idx)
     }
 
     // redraw row 'row' (relative to the top of the main window) without highlighting
