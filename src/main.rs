@@ -215,7 +215,6 @@ impl<'a> TereTui<'a> {
             self.window,
             cursor::MoveTo(0, row as u16 + HEADER_SIZE),
             style::SetAttribute(Attribute::Reset),
-            //style::SetAttribute(attr),
             style::SetBackgroundColor(style::Color::White),
             style::SetForegroundColor(style::Color::Black),
             style::Print(item.get(..w).unwrap_or(&item)),
@@ -300,9 +299,6 @@ impl<'a> TereTui<'a> {
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
     pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
-        //TODO: moving cursor removes highlights
-        // (in principle. currently on_arrow_key redraws the whole screen so this
-        // is not a problem)
         self.unhighlight_row(u16::try_from(self.app_state.cursor_pos).unwrap_or(u16::MAX));
 
         let old_scroll_pos = self.app_state.scroll_pos;
@@ -315,7 +311,6 @@ impl<'a> TereTui<'a> {
             self.redraw_main_window();
         } else {
             self.highlight_row(self.app_state.cursor_pos);
-            //TODO: make sure we're flushing here
         }
     }
 
@@ -364,7 +359,7 @@ impl<'a> TereTui<'a> {
         self.redraw_footer();
     }
 
-    pub fn on_resize(&mut self /*, root_win: &pancurses::Window*/) -> Result<(), TereError> {
+    pub fn on_resize(&mut self) -> Result<(), TereError> {
 
         let (w, h) = main_window_size()?;
         let (w, h) = (w as u32, h as u32);
@@ -388,9 +383,7 @@ impl<'a> TereTui<'a> {
 
     // When the 'page up' or 'page down' keys are pressed
     pub fn on_page_up_down(&mut self, up: bool) {
-        //TODO
         if !self.app_state.is_searching() {
-            //let (h, _) = self.main_win.get_max_yx();
             let (_, h) = main_window_size().unwrap(); //TODO: error handling...
             let delta = ((h - 1) as i32)* if up { -1 } else { 1 };
             self.move_cursor(delta, false);
@@ -406,7 +399,6 @@ impl<'a> TereTui<'a> {
             } else {
                 self.app_state.ls_output_buf.len() as u32
             };
-            //TODO: this breaks highlighting of folders (?)
             self.app_state.move_cursor_to(target);
             self.redraw_main_window();
         } // TODO: else jump to first/last match
@@ -498,7 +490,6 @@ impl<'a> TereTui<'a> {
                 //TODO don't show this in release
                 e => self.info_message(&format!("{:?}", e)),
             }
-            //self.main_win.refresh(); //TODO
         }
 
         Ok(())
@@ -519,8 +510,6 @@ fn main() -> crossterm::Result<()> {
 
     let mut stderr = std::io::stderr();
 
-    //ncurses::set_escdelay(0); //TODO: check if this is needed w/ crossterm
-    //root_window.keypad(true); // enable arrow keys etc //TODO: check if needed w/ crossterm
     execute!(
         stderr,
         terminal::EnterAlternateScreen,
