@@ -307,42 +307,16 @@ impl<'a> TereTui<'a> {
         self.queue_clear_main_window();
 
         // draw entries
-        let all_lines = self.app_state.ls_output_buf.iter();
-        for (view_idx, (buf_idx, entry)) in all_lines.enumerate().skip(scroll_pos as usize)
-            .enumerate().take(max_y as usize) {
-                //TODO: show  modified date and other info (should query metadata already in update_ls_output_buf)
-                let row = view_idx as u16 + HEADER_SIZE;
+        for row in 0..max_y {
+            let buf_idx = self.row_to_buf_idx(row);
+            let match_len = if match_indices.contains(&buf_idx) {
+                Some(u16::try_from(self.app_state.search_string().len()).unwrap_or(u16::MAX))
+            } else {
+                None
+            };
 
-                let attr = if entry.is_dir() {
-                    Attribute::Bold
-                } else {
-                    Attribute::Dim
-                };
-
-                let line = entry.file_name_checked();
-
-                let match_len = if match_indices.contains(&buf_idx) {
-                    self.app_state.search_string().len()
-                } else {
-                    0
-                };
-
-                queue!(
-                    win,
-                    cursor::MoveTo(0, row),
-                    style::SetAttribute(Attribute::Reset),
-                    style::SetAttribute(attr),
-                    style::SetAttribute(Attribute::Underlined),
-                    style::Print(line.get(..match_len).unwrap_or(&line)),
-                    style::SetAttribute(Attribute::NoUnderline),
-                    style::Print(line.get(match_len..).unwrap_or("")),
-                );
+            self.draw_main_window_row(row, self.app_state.cursor_pos == row.into(), match_len);
         }
-
-        // show "cursor"
-        self.highlight_row(self.app_state.cursor_pos);
-
-        //TODO: do underlining of matches only after highlight? like originally?
 
         win.flush()
     }
