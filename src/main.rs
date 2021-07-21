@@ -224,6 +224,14 @@ impl<'a> TereTui<'a> {
         );
     }
 
+    fn queue_clear_main_window(&mut self) -> CTResult<()> {
+        let (_, h) = main_window_size()?;
+        for row in HEADER_SIZE..h+HEADER_SIZE {
+            self.queue_clear_row(row)?;
+        }
+        Ok(())
+    }
+
     pub fn highlight_row_exclusive(&self, row: u32) {
         // Highlight the row `row` exclusively, and hide all other rows.
         // Note that refresh() needs to be called externally.
@@ -249,10 +257,7 @@ impl<'a> TereTui<'a> {
         let match_indices: std::collections::HashSet<usize> = self.app_state
             .search_matches().iter().map(|(i, _)| *i).collect();
 
-        // clear main window
-        for i in HEADER_SIZE..max_y+HEADER_SIZE {
-            self.queue_clear_row(i);
-        }
+        self.queue_clear_main_window();
 
         // draw entries
         let all_lines = self.app_state.ls_output_buf.iter();
