@@ -289,7 +289,7 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn highlight_row_exclusive(&mut self, row: u32) {
+    pub fn highlight_row_exclusive(&mut self, row: u32) { //TODO: make row u16
         // Highlight the row `row` exclusively, and hide all other rows.
         self.queue_clear_main_window();
         self.highlight_row(row);
