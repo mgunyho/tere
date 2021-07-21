@@ -204,7 +204,7 @@ impl<'a> TereTui<'a> {
     pub fn highlight_row(&mut self, row: u32) { //TODO: change row to u16
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
-        //TODO: different attr than underline (change bg color?)
+        //TODO: underline search match...
 
         let (w, _) = main_window_size().unwrap(); //TODO: error handling
         let item = self.get_item_at_row(row as u16).map_or("".to_string(), |itm| itm.file_name_checked());
