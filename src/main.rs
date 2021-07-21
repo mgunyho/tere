@@ -364,27 +364,13 @@ impl<'a> TereTui<'a> {
     }
 
     pub fn on_resize(&mut self /*, root_win: &pancurses::Window*/) -> Result<(), TereError> {
-        //TODO
-        Ok(())
-        /*
-        //TODO: see https://github.com/ihalila/pancurses/pull/65
-        // it's not possible to resize windows with pancurses ATM,
-        // so we have to hack around and destroy/recreate the main
-        // window every time. Doesn't seem to be too much of a
-        // performance issue.
-        //TODO: doesn't seem to work correctly when decreasing window height
-        self.main_win = Self::create_main_window(root_win)?;
-        self.header_win = Self::create_header_window(root_win)?;
-        self.info_win = Self::create_info_window(root_win)?;
-        self.footer_win = Self::create_footer_window(root_win)?;
 
-        let (h, w) = self.main_win.get_max_yx();
+        let (h, w) = main_window_size()?;
         let (h, w) = (h as u32, w as u32);
         self.app_state.update_main_window_dimensions(w, h);
 
         self.redraw_all_windows();
         Ok(())
-        */
     }
 
     pub fn on_arrow_key(&mut self, up: bool) {
