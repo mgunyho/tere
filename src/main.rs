@@ -185,22 +185,51 @@ impl<'a> TereTui<'a> {
         );
     }
 
+    // redraw row 'row' (relative to the top of the main window) without highlighting
     pub fn unhighlight_row(&mut self, row: u16) {
-        let idx = (self.app_state.scroll_pos + row as u32 + HEADER_SIZE as u32) as usize;
-        let bold = self.app_state.ls_output_buf.get(idx).map_or(false, |itm| itm.is_dir());
+        let row_abs = row  + HEADER_SIZE;
+
+        let (item, bold) = self.get_item_at_row(row).map_or(
+            ("".to_string(), false),
+            |itm| (itm.file_name_checked(), itm.is_dir())
+        );
+
         let attr = if bold {
             Attribute::Bold
         } else {
             Attribute::Dim
         };
-        self.redraw_main_window_row_with_attr(row, attr); // TODO: "error handling"
+        self.queue_clear_row(row_abs);
+        execute!(
+            self.window,
+            cursor::MoveTo(0, row_abs),
+            style::SetAttribute(Attribute::Reset),
+            style::SetAttribute(attr),
+            style::Print(item),
+        );
     }
 
-    pub fn highlight_row(&mut self, row: u32) {
+    pub fn highlight_row(&mut self, row: u32) { //TODO: change row to u16
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
         //TODO: different attr than underline (change bg color?)
-        self.redraw_main_window_row_with_attr(u16::try_from(row).unwrap_or(u16::MAX), Attribute::Underlined);
+
+        let (w, _) = main_window_size().unwrap(); //TODO: error handling
+        let item = self.get_item_at_row(row as u16).map_or("".to_string(), |itm| itm.file_name_checked());
+        let item_size = item.len();
+
+        self.queue_clear_row(row as u16 + HEADER_SIZE);
+        execute!(
+            self.window,
+            cursor::MoveTo(0, row as u16 + HEADER_SIZE),
+            style::SetAttribute(Attribute::Reset),
+            //style::SetAttribute(attr),
+            style::SetBackgroundColor(style::Color::White),
+            style::SetForegroundColor(style::Color::Black),
+            style::Print(item),
+            style::Print(" ".repeat(w as usize - item_size)),
+            style::ResetColor,
+        );
     }
 
     pub fn highlight_row_exclusive(&self, row: u32) {
