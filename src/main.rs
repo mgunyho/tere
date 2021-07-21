@@ -240,7 +240,7 @@ impl<'a> TereTui<'a> {
 
     pub fn redraw_main_window(&mut self) -> CTResult<()> {
 
-        let (max_x, max_y) = main_window_size()?;
+        let (_, max_y) = main_window_size()?;
         let scroll_pos = self.app_state.scroll_pos;
         let mut win = self.window;
 
