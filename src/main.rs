@@ -261,26 +261,12 @@ impl<'a> TereTui<'a> {
 
     // redraw row 'row' (relative to the top of the main window) without highlighting
     pub fn unhighlight_row(&mut self, row: u16) {
-        let row_abs = row  + HEADER_SIZE;
-
-        let (item, bold) = self.get_item_at_row(row).map_or(
-            ("".to_string(), false),
-            |itm| (itm.file_name_checked(), itm.is_dir())
-        );
-
-        let attr = if bold {
-            Attribute::Bold
+        let match_len = if self.app_state.is_searching() {
+            Some(u16::try_from(self.app_state.search_string().len()).unwrap_or(u16::MAX))
         } else {
-            Attribute::Dim
+            None
         };
-        self.queue_clear_row(row_abs);
-        execute!(
-            self.window,
-            cursor::MoveTo(0, row_abs),
-            style::SetAttribute(Attribute::Reset),
-            style::SetAttribute(attr),
-            style::Print(item),
-        );
+        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), false, match_len);
     }
 
     pub fn highlight_row(&mut self, row: u32) { //TODO: change row to u16
