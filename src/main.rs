@@ -348,8 +348,12 @@ impl<'a> TereTui<'a> {
 
             //TODO: make duration configurable
             std::thread::sleep(std::time::Duration::from_millis(200));
-            //TODO: reimplement this with crossterm...
-            //pancurses::flushinp(); // ignore keys pressed during sleep
+
+            // ignore keys that were pressed during sleep
+            while crossterm::event::poll(std::time::Duration::from_secs(0))
+                .unwrap_or(false) {
+                read_event();
+            }
 
             self.change_dir("");
         }
