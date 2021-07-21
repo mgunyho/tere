@@ -169,10 +169,16 @@ impl<'a> TereTui<'a> {
         )
     }
 
+    /// Convert a row number (starting from 0 at the top of the main window)
+    /// to an index into the ls_output_buf
+    fn row_to_buf_idx(&self, row: u16) -> usize {
+        (self.app_state.scroll_pos + row as u32) as usize
+    }
+
     /// Get the item from ls_output_buf that should be displayed on row `row` of the main window.
     /// Row 0 is the first row of the main window.
     fn get_item_at_row(&self, row: u16) -> Option<&CustomDirEntry> {
-        let idx = (self.app_state.scroll_pos + row as u32) as usize;
+        let idx = self.row_to_buf_idx(row);
         self.app_state.ls_output_buf.get(idx)
     }
 
