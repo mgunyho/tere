@@ -46,7 +46,7 @@ struct TereTui<'a> {
     app_state: TereAppState,
 }
 
-// Dimensions of main window
+// Dimensions (width, height) of main window
 fn main_window_size() -> CTResult<(u16, u16)> {
     let (w, h) = terminal::size()?;
     Ok((w, h.checked_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE).unwrap_or(0)))
