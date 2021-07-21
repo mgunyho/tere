@@ -234,9 +234,6 @@ impl<'a> TereTui<'a> {
 
     pub fn highlight_row_exclusive(&mut self, row: u32) {
         // Highlight the row `row` exclusively, and hide all other rows.
-        let row_content = self.get_item_at_row(row as u16)
-            .map_or("".to_string(), |itm| itm.file_name_checked());
-
         self.queue_clear_main_window();
         self.highlight_row(row);
     }
