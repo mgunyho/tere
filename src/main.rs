@@ -1,4 +1,4 @@
-use std::convert::{From, TryFrom, TryInto};
+use std::convert::{From, TryFrom};
 use std::io::{Stderr, Write};
 use crossterm::{
     execute, queue,
@@ -8,7 +8,6 @@ use crossterm::{
     event::{
         read as read_event,
         Event,
-        KeyEvent,
         KeyCode,
         KeyModifiers,
     },
