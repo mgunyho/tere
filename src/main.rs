@@ -212,14 +212,14 @@ impl<'a> TereTui<'a> {
         );
 
         if let Some(n) = search_match_len {
-            // print underlined part
+            // print matching part
             let n = n as usize;
-            let item_underline = item.get(..n).unwrap_or(&item);
-            let item_no_underline = item.get(n..).unwrap_or("");
+            let item_matching = item.get(..n).unwrap_or(&item);
+            let item_not_matching = item.get(n..).unwrap_or("");
             queue!(
                 self.window,
                 style::SetAttribute(Attribute::Underlined),
-                style::Print(item_underline.get(..w).unwrap_or(&item_underline)),
+                style::Print(item_matching.get(..w).unwrap_or(&item_matching)),
                 style::SetAttribute(Attribute::NoUnderline),
             );
             if highlight {
@@ -231,7 +231,7 @@ impl<'a> TereTui<'a> {
             }
             queue!(
                 self.window,
-                style::Print(item_no_underline.get(..w.checked_sub(n).unwrap_or(0)).unwrap_or(&item_no_underline)),
+                style::Print(item_not_matching.get(..w.checked_sub(n).unwrap_or(0)).unwrap_or(&item_not_matching)),
                 style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
             )?;
 
