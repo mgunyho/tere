@@ -219,8 +219,10 @@ impl<'a> TereTui<'a> {
             queue!(
                 self.window,
                 style::SetAttribute(Attribute::Underlined),
+                style::SetBackgroundColor(style::Color::DarkGrey),
                 style::Print(item_matching.get(..w).unwrap_or(&item_matching)),
                 style::SetAttribute(Attribute::NoUnderline),
+                style::SetBackgroundColor(style::Color::Reset),
             );
             if highlight {
                 queue!(
