@@ -225,7 +225,7 @@ impl<'a> TereTui<'a> {
             if highlight {
                 queue!(
                     self.window,
-                    style::SetBackgroundColor(style::Color::White),
+                    style::SetBackgroundColor(style::Color::Grey),
                     style::SetForegroundColor(style::Color::Black),
                 )?;
             }
@@ -239,7 +239,7 @@ impl<'a> TereTui<'a> {
             if highlight {
                 queue!(
                     self.window,
-                    style::SetBackgroundColor(style::Color::White),
+                    style::SetBackgroundColor(style::Color::Grey),
                     style::SetForegroundColor(style::Color::Black),
                     style::Print(item.get(..w).unwrap_or(&item)),
                     style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
