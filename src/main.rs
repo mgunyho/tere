@@ -185,7 +185,7 @@ impl<'a> TereTui<'a> {
     fn draw_main_window_row(&mut self,
                             row: u16,
                             highlight: bool,
-                            search_match_len: Option<u16>) -> CTResult<()> {
+                            ) -> CTResult<()> {
         let row_abs = row  + HEADER_SIZE;
         let w: usize = main_window_size()?.0.into();
 
@@ -211,9 +211,10 @@ impl<'a> TereTui<'a> {
             style::SetAttribute(attr),
         );
 
-        if let Some(n) = search_match_len {
+        if self.app_state.is_searching()
+            && self.app_state.search_matches().len() > 0 {
             // print matching part
-            let n = n as usize;
+            let n = self.app_state.search_string().len();
             let item_matching = item.get(..n).unwrap_or(&item);
             let item_not_matching = item.get(n..).unwrap_or("");
             queue!(
@@ -263,24 +264,13 @@ impl<'a> TereTui<'a> {
 
     // redraw row 'row' (relative to the top of the main window) without highlighting
     pub fn unhighlight_row(&mut self, row: u16) {
-        let match_len = if self.app_state.is_searching() {
-            Some(u16::try_from(self.app_state.search_string().len()).unwrap_or(u16::MAX))
-        } else {
-            None
-        };
-        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), false, match_len);
+        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), false);
     }
 
     pub fn highlight_row(&mut self, row: u32) { //TODO: change row to u16
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
-        //TODO: underline search match...
-        let match_len = if self.app_state.is_searching() {
-            Some(u16::try_from(self.app_state.search_string().len()).unwrap_or(u16::MAX))
-        } else {
-            None
-        };
-        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), true, match_len);
+        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), true);
     }
 
     fn queue_clear_main_window(&mut self) -> CTResult<()> {
@@ -310,14 +300,7 @@ impl<'a> TereTui<'a> {
 
         // draw entries
         for row in 0..max_y {
-            let buf_idx = self.row_to_buf_idx(row);
-            let match_len = if match_indices.contains(&buf_idx) {
-                Some(u16::try_from(self.app_state.search_string().len()).unwrap_or(u16::MAX))
-            } else {
-                None
-            };
-
-            self.draw_main_window_row(row, self.app_state.cursor_pos == row.into(), match_len);
+            self.draw_main_window_row(row, self.app_state.cursor_pos == row.into());
         }
 
         win.flush()
