@@ -215,7 +215,7 @@ impl<'a> TereTui<'a> {
             self.window,
             cursor::MoveTo(0, row as u16 + HEADER_SIZE),
             style::SetAttribute(Attribute::Reset),
-            style::SetBackgroundColor(style::Color::Grey),
+            style::SetBackgroundColor(style::Color::White),
             style::SetForegroundColor(style::Color::Black),
             style::Print(item.get(..w).unwrap_or(&item)),
             style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
