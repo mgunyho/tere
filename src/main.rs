@@ -169,58 +169,112 @@ impl<'a> TereTui<'a> {
         )
     }
 
+    /// Convert a row number (starting from 0 at the top of the main window)
+    /// to an index into the ls_output_buf
+    fn row_to_buf_idx(&self, row: u16) -> usize {
+        (self.app_state.scroll_pos + row as u32) as usize
+    }
+
     /// Get the item from ls_output_buf that should be displayed on row `row` of the main window.
     /// Row 0 is the first row of the main window.
     fn get_item_at_row(&self, row: u16) -> Option<&CustomDirEntry> {
-        let idx = (self.app_state.scroll_pos + row as u32) as usize;
+        let idx = self.row_to_buf_idx(row);
         self.app_state.ls_output_buf.get(idx)
     }
 
-    // redraw row 'row' (relative to the top of the main window) without highlighting
-    pub fn unhighlight_row(&mut self, row: u16) {
+    fn draw_main_window_row(&mut self,
+                            row: u16,
+                            highlight: bool,
+                            ) -> CTResult<()> {
         let row_abs = row  + HEADER_SIZE;
+        let w: usize = main_window_size()?.0.into();
 
         let (item, bold) = self.get_item_at_row(row).map_or(
             ("".to_string(), false),
             |itm| (itm.file_name_checked(), itm.is_dir())
         );
+        let item_size = item.len();
 
         let attr = if bold {
             Attribute::Bold
         } else {
             Attribute::Dim
         };
+
         self.queue_clear_row(row_abs);
-        execute!(
+
+        queue!(
             self.window,
             cursor::MoveTo(0, row_abs),
             style::SetAttribute(Attribute::Reset),
+            style::ResetColor,
             style::SetAttribute(attr),
-            style::Print(item),
         );
+
+        //TODO: don't recompute this here every time, but store the hashset (or a hashmap or something) in the matches struct...
+        let match_indices: std::collections::HashSet<usize> = self.app_state
+            .search_matches().iter().map(|(i, _)| *i).collect();
+
+        if self.app_state.is_searching()
+            && match_indices.contains(&self.row_to_buf_idx(row)) {
+            // print matching part
+            let n = self.app_state.search_string().len();
+            let item_matching = item.get(..n).unwrap_or(&item);
+            let item_not_matching = item.get(n..).unwrap_or("");
+            queue!(
+                self.window,
+                style::SetAttribute(Attribute::Underlined),
+                style::SetBackgroundColor(style::Color::DarkGrey),
+                style::Print(item_matching.get(..w).unwrap_or(&item_matching)),
+                style::SetAttribute(Attribute::NoUnderline),
+                style::SetBackgroundColor(style::Color::Reset),
+            );
+            if highlight {
+                queue!(
+                    self.window,
+                    style::SetBackgroundColor(style::Color::Grey),
+                    style::SetForegroundColor(style::Color::Black),
+                )?;
+            }
+            queue!(
+                self.window,
+                style::Print(item_not_matching.get(..w.checked_sub(n).unwrap_or(0)).unwrap_or(&item_not_matching)),
+                style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
+            )?;
+
+        } else {
+            if highlight {
+                queue!(
+                    self.window,
+                    style::SetBackgroundColor(style::Color::Grey),
+                    style::SetForegroundColor(style::Color::Black),
+                    style::Print(item.get(..w).unwrap_or(&item)),
+                    style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
+                )?;
+            } else {
+                queue!(
+                    self.window,
+                    style::Print(item.get(..w).unwrap_or(&item)),
+                )?;
+            }
+        }
+        execute!(
+            self.window,
+            style::ResetColor,
+            style::SetAttribute(Attribute::Reset),
+        )
+
+    }
+
+    // redraw row 'row' (relative to the top of the main window) without highlighting
+    pub fn unhighlight_row(&mut self, row: u16) {
+        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), false);
     }
 
     pub fn highlight_row(&mut self, row: u32) { //TODO: change row to u16
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
-        //TODO: underline search match...
-
-        let (w, _) = main_window_size().unwrap(); //TODO: error handling
-        let w = w as usize;
-        let item = self.get_item_at_row(row as u16).map_or("".to_string(), |itm| itm.file_name_checked());
-        let item_size = item.len();
-
-        self.queue_clear_row(row as u16 + HEADER_SIZE);
-        execute!(
-            self.window,
-            cursor::MoveTo(0, row as u16 + HEADER_SIZE),
-            style::SetAttribute(Attribute::Reset),
-            style::SetBackgroundColor(style::Color::White),
-            style::SetForegroundColor(style::Color::Black),
-            style::Print(item.get(..w).unwrap_or(&item)),
-            style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
-            style::ResetColor,
-        );
+        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), true);
     }
 
     fn queue_clear_main_window(&mut self) -> CTResult<()> {
@@ -231,7 +285,7 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn highlight_row_exclusive(&mut self, row: u32) {
+    pub fn highlight_row_exclusive(&mut self, row: u32) { //TODO: make row u16
         // Highlight the row `row` exclusively, and hide all other rows.
         self.queue_clear_main_window();
         self.highlight_row(row);
@@ -249,42 +303,9 @@ impl<'a> TereTui<'a> {
         self.queue_clear_main_window();
 
         // draw entries
-        let all_lines = self.app_state.ls_output_buf.iter();
-        for (view_idx, (buf_idx, entry)) in all_lines.enumerate().skip(scroll_pos as usize)
-            .enumerate().take(max_y as usize) {
-                //TODO: show  modified date and other info (should query metadata already in update_ls_output_buf)
-                let row = view_idx as u16 + HEADER_SIZE;
-
-                let attr = if entry.is_dir() {
-                    Attribute::Bold
-                } else {
-                    Attribute::Dim
-                };
-
-                let line = entry.file_name_checked();
-
-                let match_len = if match_indices.contains(&buf_idx) {
-                    self.app_state.search_string().len()
-                } else {
-                    0
-                };
-
-                queue!(
-                    win,
-                    cursor::MoveTo(0, row),
-                    style::SetAttribute(Attribute::Reset),
-                    style::SetAttribute(attr),
-                    style::SetAttribute(Attribute::Underlined),
-                    style::Print(line.get(..match_len).unwrap_or(&line)),
-                    style::SetAttribute(Attribute::NoUnderline),
-                    style::Print(line.get(match_len..).unwrap_or("")),
-                );
+        for row in 0..max_y {
+            self.draw_main_window_row(row, self.app_state.cursor_pos == row.into());
         }
-
-        // show "cursor"
-        self.highlight_row(self.app_state.cursor_pos);
-
-        //TODO: do underlining of matches only after highlight? like originally?
 
         win.flush()
     }
