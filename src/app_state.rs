@@ -339,7 +339,7 @@ impl TereAppState {
         if let Ok(old_cwd) = old_cwd {
             if let Some(idx) = self.ls_output_buf.iter()
                 //TODO: this comparison fails atm
-                .position(|x| *x.path() == old_cwd) {
+                .position(|x| x.path().file_name() == old_cwd.file_name()) {
                     self.move_cursor(idx as i32, false);
                 }
         }
