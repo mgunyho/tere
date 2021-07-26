@@ -282,11 +282,7 @@ impl<'a> TereTui<'a> {
     pub fn redraw_main_window(&mut self) -> CTResult<()> {
 
         let (_, max_y) = main_window_size()?;
-        let scroll_pos = self.app_state.scroll_pos;
         let mut win = self.window;
-
-        let match_indices: std::collections::HashSet<usize> = self.app_state
-            .search_matches().iter().map(|(i, _)| *i).collect();
 
         self.queue_clear_main_window()?;
 
