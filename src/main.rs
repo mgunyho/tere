@@ -1,5 +1,5 @@
 use std::convert::{From, TryFrom};
-use std::io::{Stderr, Write};
+use std::io::{Stderr, Write, Error, ErrorKind};
 use crossterm::{
     execute, queue,
     terminal,
@@ -527,17 +527,17 @@ fn main() -> crossterm::Result<()> {
         cursor::Hide,
     )?;
 
-    stderr.flush();
+    // we are now inside the alternate screen, so collect all errors and attempt
+    // to leave the alt screen in case of an error
 
-    terminal::enable_raw_mode()?;
-
-    let res = TereTui::init(&cli_args, &mut stderr)
-        .map_err(|e| format!("error in initializing UI: {:?}", e))
+    let res = stderr.flush()
+        .and_then(|_| terminal::enable_raw_mode())
+        .and_then(|_| TereTui::init(&cli_args, &mut stderr)
+            .map_err(|e| Error::new(ErrorKind::Other, format!("error in initializing UI: {:?}", e))))
         .and_then(|mut ui| ui.main_event_loop()
-            .map_err(|e| format!("error in main event loop: {:?}", e))
+            .map_err(|e| Error::new(ErrorKind::Other, format!("error in main event loop: {:?}", e)))
         );
 
-    // TODO: clean up even if there was an error
     execute!(
         stderr,
         terminal::LeaveAlternateScreen,
