@@ -416,7 +416,9 @@ impl<'a> TereTui<'a> {
     }
 
     pub fn main_event_loop(&mut self) -> CTResult<()> {
+        #[allow(non_snake_case)]
         let ALT = KeyModifiers::ALT;
+        #[allow(non_snake_case)]
         let CONTROL = KeyModifiers::CONTROL;
         // root_win is the window created by initscr()
         loop {
