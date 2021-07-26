@@ -1,5 +1,5 @@
 use std::convert::{From, TryFrom};
-use std::io::{Stderr, Write};
+use std::io::{Stderr, Write, Error, ErrorKind};
 use crossterm::{
     execute, queue,
     terminal,
@@ -27,18 +27,6 @@ const FOOTER_SIZE: u16 = 1;
 mod app_state;
 use app_state::{TereAppState, CustomDirEntry};
 
-#[derive(Debug)]
-enum TereError {
-    WindowInit(String, i32),
-    IoError(std::io::Error),
-}
-
-impl From<std::io::Error> for TereError {
-    fn from(e: std::io::Error) -> Self {
-        Self::IoError(e)
-    }
-}
-
 /// This struct groups together ncurses windows for the main content, header and
 /// footer, and an application state object
 struct TereTui<'a> {
@@ -54,7 +42,7 @@ fn main_window_size() -> CTResult<(u16, u16)> {
 
 impl<'a> TereTui<'a> {
 
-    pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> Result<Self, TereError> {
+    pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> CTResult<Self> {
         let (w, h) = main_window_size()?;
         let state = TereAppState::init(
             args,
@@ -66,8 +54,8 @@ impl<'a> TereTui<'a> {
             app_state: state,
         };
 
-        ret.update_header();
-        ret.redraw_all_windows();
+        ret.update_header()?;
+        ret.redraw_all_windows()?;
         Ok(ret)
     }
 
@@ -88,27 +76,26 @@ impl<'a> TereTui<'a> {
 
         // must use variable here b/c can't borrow 'self' twice in execute!() below
         let mut win = self.window;
-        self.queue_clear_row(0);
+        self.queue_clear_row(0)?;
         execute!(
             win,
             cursor::MoveTo(0, 0),
             style::SetAttribute(Attribute::Reset),
             style::Print(&self.app_state.header_msg.clone().bold().underlined()),
-        )?;
-        Ok(())
+        )
     }
 
-    pub fn update_header(&mut self) {
+    pub fn update_header(&mut self) -> CTResult<()> {
         self.app_state.update_header();
         // TODO: consider removing redraw here... (is inconsistent with the rest of the 'update' functions)
-        self.redraw_header();
+        self.redraw_header()
     }
 
     pub fn redraw_info_window(&mut self) -> CTResult<()> {
         let (_, h) = crossterm::terminal::size()?;
         let info_win_row = h - FOOTER_SIZE - INFO_WIN_SIZE;
 
-        self.queue_clear_row(info_win_row);
+        self.queue_clear_row(info_win_row)?;
         let mut win = self.window;
         execute!(
             win,
@@ -119,23 +106,23 @@ impl<'a> TereTui<'a> {
     }
 
     /// Set/update the current info message and redraw the info window
-    pub fn info_message(&mut self, msg: &str) {
+    pub fn info_message(&mut self, msg: &str) -> CTResult<()> {
         //TODO: add thread with timeout that will clear the info message after x seconds?
         self.app_state.info_msg = msg.to_string();
-        self.redraw_info_window();
+        self.redraw_info_window()
     }
 
-    pub fn error_message(&mut self, msg: &str) {
+    pub fn error_message(&mut self, msg: &str) -> CTResult<()> {
         //TODO: red color (also: make it configurable)
         let mut error_msg = String::from("error: ");
         error_msg.push_str(msg);
-        self.info_message(&error_msg);
+        self.info_message(&error_msg)
     }
 
     pub fn redraw_footer(&mut self) -> CTResult<()> {
         let (w, h) = crossterm::terminal::size()?;
         let footer_win_row = h - FOOTER_SIZE;
-        self.queue_clear_row(footer_win_row);
+        self.queue_clear_row(footer_win_row)?;
 
         let mut win = self.window;
         let mut extra_msg = String::new();
@@ -201,7 +188,7 @@ impl<'a> TereTui<'a> {
             Attribute::Dim
         };
 
-        self.queue_clear_row(row_abs);
+        self.queue_clear_row(row_abs)?;
 
         queue!(
             self.window,
@@ -209,7 +196,7 @@ impl<'a> TereTui<'a> {
             style::SetAttribute(Attribute::Reset),
             style::ResetColor,
             style::SetAttribute(attr),
-        );
+        )?;
 
         //TODO: don't recompute this here every time, but store the hashset (or a hashmap or something) in the matches struct...
         let match_indices: std::collections::HashSet<usize> = self.app_state
@@ -228,7 +215,7 @@ impl<'a> TereTui<'a> {
                 style::Print(item_matching.get(..w).unwrap_or(&item_matching)),
                 style::SetAttribute(Attribute::NoUnderline),
                 style::SetBackgroundColor(style::Color::Reset),
-            );
+            )?;
             if highlight {
                 queue!(
                     self.window,
@@ -267,14 +254,14 @@ impl<'a> TereTui<'a> {
     }
 
     // redraw row 'row' (relative to the top of the main window) without highlighting
-    pub fn unhighlight_row(&mut self, row: u16) {
-        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), false);
+    pub fn unhighlight_row(&mut self, row: u16) -> CTResult<()> {
+        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), false)
     }
 
-    pub fn highlight_row(&mut self, row: u32) { //TODO: change row to u16
+    pub fn highlight_row(&mut self, row: u32) -> CTResult<()> { //TODO: change row to u16
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
-        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), true);
+        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), true)
     }
 
     fn queue_clear_main_window(&mut self) -> CTResult<()> {
@@ -285,10 +272,11 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn highlight_row_exclusive(&mut self, row: u32) { //TODO: make row u16
+    pub fn highlight_row_exclusive(&mut self, row: u32) -> CTResult<()> { //TODO: make row u16
         // Highlight the row `row` exclusively, and hide all other rows.
-        self.queue_clear_main_window();
-        self.highlight_row(row);
+        self.queue_clear_main_window()?;
+        self.highlight_row(row)?;
+        Ok(())
     }
 
     pub fn redraw_main_window(&mut self) -> CTResult<()> {
@@ -300,27 +288,28 @@ impl<'a> TereTui<'a> {
         let match_indices: std::collections::HashSet<usize> = self.app_state
             .search_matches().iter().map(|(i, _)| *i).collect();
 
-        self.queue_clear_main_window();
+        self.queue_clear_main_window()?;
 
         // draw entries
         for row in 0..max_y {
-            self.draw_main_window_row(row, self.app_state.cursor_pos == row.into());
+            self.draw_main_window_row(row, self.app_state.cursor_pos == row.into())?;
         }
 
         win.flush()
     }
 
-    fn redraw_all_windows(&mut self) {
-        self.redraw_header();
-        self.redraw_info_window();
-        self.redraw_footer();
-        self.redraw_main_window();
+    fn redraw_all_windows(&mut self) -> CTResult<()> {
+        self.redraw_header()?;
+        self.redraw_info_window()?;
+        self.redraw_footer()?;
+        self.redraw_main_window()?;
+        Ok(())
     }
 
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
-    pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
-        self.unhighlight_row(u16::try_from(self.app_state.cursor_pos).unwrap_or(u16::MAX));
+    pub fn move_cursor(&mut self, amount: i32, wrap: bool) -> CTResult<()> {
+        self.unhighlight_row(u16::try_from(self.app_state.cursor_pos).unwrap_or(u16::MAX))?;
 
         let old_scroll_pos = self.app_state.scroll_pos;
 
@@ -329,35 +318,37 @@ impl<'a> TereTui<'a> {
         if self.app_state.scroll_pos != old_scroll_pos {
             // redraw_main_window takes care of highlighting the cursor row
             // and refreshing
-            self.redraw_main_window();
+            self.redraw_main_window()?;
         } else {
-            self.highlight_row(self.app_state.cursor_pos);
+            self.highlight_row(self.app_state.cursor_pos)?;
         }
+        Ok(())
     }
 
-    pub fn change_dir(&mut self, path: &str) {
+    pub fn change_dir(&mut self, path: &str) -> CTResult<()> {
         match self.app_state.change_dir(path) {
             Err(e) => {
                 if cfg!(debug_assertions) {
-                    self.error_message(&format!("{:?}", e));
+                    self.error_message(&format!("{:?}", e))?;
                 } else {
-                    self.error_message(&format!("{}", e));
+                    self.error_message(&format!("{}", e))?;
                 }
             },
             Ok(()) => {
-                self.update_header();
-                self.info_message("");
+                self.update_header()?;
+                self.info_message("")?;
             }
         }
-        self.redraw_main_window();
-        self.redraw_footer();
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
     }
 
-    pub fn on_search_char(&mut self, c: char) {
+    pub fn on_search_char(&mut self, c: char) -> CTResult<()> {
         self.app_state.advance_search(&c.to_string());
         if self.app_state.search_matches().len() == 1 {
             // There's only one match, highlight it and then change dir
-            self.highlight_row_exclusive(self.app_state.cursor_pos);
+            self.highlight_row_exclusive(self.app_state.cursor_pos)?;
 
             //TODO: make duration configurable
             std::thread::sleep(std::time::Duration::from_millis(200));
@@ -365,55 +356,57 @@ impl<'a> TereTui<'a> {
             // ignore keys that were pressed during sleep
             while crossterm::event::poll(std::time::Duration::from_secs(0))
                 .unwrap_or(false) {
-                read_event();
+                read_event()?;
             }
 
-            self.change_dir("");
+            self.change_dir("")?;
         }
-        self.redraw_main_window();
-        self.redraw_footer();
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
     }
 
-    pub fn erase_search_char(&mut self) {
+    pub fn erase_search_char(&mut self) -> CTResult<()> {
         self.app_state.erase_search_char();
-        self.redraw_main_window();
-        self.redraw_footer();
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
     }
 
-    pub fn on_resize(&mut self) -> Result<(), TereError> {
+    pub fn on_resize(&mut self) -> CTResult<()> {
 
         let (w, h) = main_window_size()?;
         let (w, h) = (w as u32, h as u32);
         self.app_state.update_main_window_dimensions(w, h);
 
-        self.redraw_all_windows();
-        Ok(())
+        self.redraw_all_windows()
     }
 
-    pub fn on_arrow_key(&mut self, up: bool) {
+    pub fn on_arrow_key(&mut self, up: bool) -> CTResult<()> {
         let dir = if up { -1 } else { 1 };
         if self.app_state.is_searching() {
             //TODO: handle case where 'is_searching' but there are no matches - move cursor?
             self.app_state.move_cursor_to_adjacent_match(dir);
-            self.redraw_main_window();
+            self.redraw_main_window()?;
         } else {
-            self.move_cursor(dir, true);
+            self.move_cursor(dir, true)?;
         }
-        self.redraw_footer();
+        self.redraw_footer()
     }
 
     // When the 'page up' or 'page down' keys are pressed
-    pub fn on_page_up_down(&mut self, up: bool) {
+    pub fn on_page_up_down(&mut self, up: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
-            let (_, h) = main_window_size().unwrap(); //TODO: error handling...
+            let (_, h) = main_window_size()?;
             let delta = ((h - 1) as i32)* if up { -1 } else { 1 };
-            self.move_cursor(delta, false);
-            self.redraw_footer();
+            self.move_cursor(delta, false)?;
+            self.redraw_footer()?;
         } //TODO: how to handle page up / page down while searching? jump to the next match below view?
+        Ok(())
     }
 
     // on 'home' or 'end'
-    fn on_home_end(&mut self, home: bool) {
+    fn on_home_end(&mut self, home: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
             let target = if home {
                 0
@@ -421,11 +414,12 @@ impl<'a> TereTui<'a> {
                 self.app_state.ls_output_buf.len() as u32
             };
             self.app_state.move_cursor_to(target);
-            self.redraw_main_window();
+            self.redraw_main_window()?;
         } // TODO: else jump to first/last match
+        Ok(())
     }
 
-    pub fn main_event_loop(&mut self) -> Result<(), TereError> {
+    pub fn main_event_loop(&mut self) -> CTResult<()> {
         let ALT = KeyModifiers::ALT;
         let CONTROL = KeyModifiers::CONTROL;
         // root_win is the window created by initscr()
@@ -433,36 +427,36 @@ impl<'a> TereTui<'a> {
             match read_event()? {
                 Event::Key(k) => {
                     match k.code {
-                        KeyCode::Right | KeyCode::Enter => self.change_dir(""),
-                        KeyCode::Left => self.change_dir(".."),
+                        KeyCode::Right | KeyCode::Enter => self.change_dir("")?,
+                        KeyCode::Left => self.change_dir("..")?,
                         KeyCode::Up if k.modifiers == ALT => {
-                            self.change_dir("..");
+                            self.change_dir("..")?;
                         },
-                        KeyCode::Up => self.on_arrow_key(true),
+                        KeyCode::Up => self.on_arrow_key(true)?,
                         KeyCode::Down if k.modifiers == ALT => {
-                            self.change_dir("");
+                            self.change_dir("")?;
                         },
-                        KeyCode::Down => self.on_arrow_key(false),
+                        KeyCode::Down => self.on_arrow_key(false)?,
 
-                        KeyCode::PageUp => self.on_page_up_down(true),
-                        KeyCode::PageDown => self.on_page_up_down(false),
+                        KeyCode::PageUp => self.on_page_up_down(true)?,
+                        KeyCode::PageDown => self.on_page_up_down(false)?,
 
                         KeyCode::Home if k.modifiers == CONTROL => {
                             if let Some(path) = home_dir() {
                                 if let Some(path) = path.to_str() {
-                                    self.change_dir(path);
+                                    self.change_dir(path)?;
                                 }
                             }
                         }
 
-                        KeyCode::Home => self.on_home_end(true),
-                        KeyCode::End => self.on_home_end(false),
+                        KeyCode::Home => self.on_home_end(true)?,
+                        KeyCode::End => self.on_home_end(false)?,
 
                         KeyCode::Esc => {
                             if self.app_state.is_searching() {
                                 self.app_state.clear_search();
-                                self.redraw_main_window();
-                                self.redraw_footer();
+                                self.redraw_main_window()?;
+                                self.redraw_footer()?;
                             } else {
                                 break;
                             }
@@ -470,16 +464,16 @@ impl<'a> TereTui<'a> {
 
                         // alt + hjkl
                         KeyCode::Char('h') if k.modifiers == ALT => {
-                            self.change_dir("..");
+                            self.change_dir("..")?;
                         }
                         KeyCode::Char('j') if k.modifiers == ALT => {
-                            self.on_arrow_key(false);
+                            self.on_arrow_key(false)?;
                         }
                         KeyCode::Char('k') if k.modifiers == ALT => {
-                            self.on_arrow_key(true);
+                            self.on_arrow_key(true)?;
                         }
                         KeyCode::Char('l') if k.modifiers == ALT => {
-                            self.change_dir("");
+                            self.change_dir("")?;
                         }
 
                         // other chars with modifiers
@@ -487,31 +481,31 @@ impl<'a> TereTui<'a> {
                             break;
                         }
                         KeyCode::Char('u') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
-                            self.on_page_up_down(true);
+                            self.on_page_up_down(true)?;
                         }
                         KeyCode::Char('d') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
-                            self.on_page_up_down(false);
+                            self.on_page_up_down(false)?;
                         }
                         KeyCode::Char('g') if k.modifiers == ALT => {
                             // like vim 'gg'
-                            self.on_home_end(true);
+                            self.on_home_end(true)?;
                         }
                         KeyCode::Char('G') if k.modifiers.contains(ALT) => {
-                            self.on_home_end(false);
+                            self.on_home_end(false)?;
                         }
 
-                        KeyCode::Char(c) => self.on_search_char(c),
+                        KeyCode::Char(c) => self.on_search_char(c)?,
 
-                        KeyCode::Backspace => self.erase_search_char(),
+                        KeyCode::Backspace => self.erase_search_char()?,
 
-                        _ => self.info_message(&format!("{:?}", k)),
+                        _ => self.info_message(&format!("{:?}", k))?,
                     }
                 },
 
                 Event::Resize(_, _) => self.on_resize()?,
 
                 //TODO don't show this in release
-                e => self.info_message(&format!("{:?}", e)),
+                e => self.info_message(&format!("{:?}", e))?,
             }
         }
 
@@ -539,17 +533,17 @@ fn main() -> crossterm::Result<()> {
         cursor::Hide,
     )?;
 
-    stderr.flush();
+    // we are now inside the alternate screen, so collect all errors and attempt
+    // to leave the alt screen in case of an error
 
-    terminal::enable_raw_mode()?;
-
-    let res = TereTui::init(&cli_args, &mut stderr)
-        .map_err(|e| format!("error in initializing UI: {:?}", e))
+    let res = stderr.flush()
+        .and_then(|_| terminal::enable_raw_mode())
+        .and_then(|_| TereTui::init(&cli_args, &mut stderr)
+            .map_err(|e| Error::new(ErrorKind::Other, format!("error in initializing UI: {:?}", e))))
         .and_then(|mut ui| ui.main_event_loop()
-            .map_err(|e| format!("error in main event loop: {:?}", e))
+            .map_err(|e| Error::new(ErrorKind::Other, format!("error in main event loop: {:?}", e)))
         );
 
-    // TODO: clean up even if there was an error
     execute!(
         stderr,
         terminal::LeaveAlternateScreen,
