@@ -27,18 +27,6 @@ const FOOTER_SIZE: u16 = 1;
 mod app_state;
 use app_state::{TereAppState, CustomDirEntry};
 
-#[derive(Debug)]
-enum TereError {
-    WindowInit(String, i32),
-    IoError(std::io::Error),
-}
-
-impl From<std::io::Error> for TereError {
-    fn from(e: std::io::Error) -> Self {
-        Self::IoError(e)
-    }
-}
-
 /// This struct groups together ncurses windows for the main content, header and
 /// footer, and an application state object
 struct TereTui<'a> {
@@ -54,7 +42,7 @@ fn main_window_size() -> CTResult<(u16, u16)> {
 
 impl<'a> TereTui<'a> {
 
-    pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> Result<Self, TereError> {
+    pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> CTResult<Self> {
         let (w, h) = main_window_size()?;
         let state = TereAppState::init(
             args,
@@ -380,7 +368,7 @@ impl<'a> TereTui<'a> {
         self.redraw_footer();
     }
 
-    pub fn on_resize(&mut self) -> Result<(), TereError> {
+    pub fn on_resize(&mut self) -> CTResult<()> {
 
         let (w, h) = main_window_size()?;
         let (w, h) = (w as u32, h as u32);
@@ -425,7 +413,7 @@ impl<'a> TereTui<'a> {
         } // TODO: else jump to first/last match
     }
 
-    pub fn main_event_loop(&mut self) -> Result<(), TereError> {
+    pub fn main_event_loop(&mut self) -> CTResult<()> {
         let ALT = KeyModifiers::ALT;
         let CONTROL = KeyModifiers::CONTROL;
         // root_win is the window created by initscr()
