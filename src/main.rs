@@ -1,167 +1,140 @@
-use pancurses::{initscr, endwin, noecho, curs_set};
-use ncurses;
-use std::convert::{From, TryInto};
-use crossterm::event::{
-    read as read_event,
-    Event,
-    KeyEvent,
-    KeyCode,
-    KeyModifiers,
+use std::convert::{From, TryFrom};
+use std::io::{Stderr, Write, Error, ErrorKind};
+use crossterm::{
+    execute, queue,
+    terminal,
+    cursor,
+    style::{self, Stylize, Attribute},
+    event::{
+        read as read_event,
+        Event,
+        KeyCode,
+        KeyModifiers,
+    },
+    Result as CTResult,
 };
 use home::home_dir;
 
 use clap::{App, Arg, ArgMatches};
 
-const HEADER_SIZE: i32 = 1;
-const INFO_WIN_SIZE: i32 = 1;
-const FOOTER_SIZE: i32 = 1;
+const HEADER_SIZE: u16 = 1;
+const INFO_WIN_SIZE: u16 = 1;
+const FOOTER_SIZE: u16 = 1;
 
 //TODO: rustfmt
 //TODO: clippy
 
 mod app_state;
-use app_state::TereAppState;
-
-#[derive(Debug)]
-enum TereError {
-    WindowInit(String, i32),
-    IoError(std::io::Error),
-}
-
-impl From<std::io::Error> for TereError {
-    fn from(e: std::io::Error) -> Self {
-        Self::IoError(e)
-    }
-}
+use app_state::{TereAppState, CustomDirEntry};
 
 /// This struct groups together ncurses windows for the main content, header and
 /// footer, and an application state object
-struct TereTui {
-    header_win: pancurses::Window,
-    info_win: pancurses::Window,
-    footer_win: pancurses::Window,
-    main_win: pancurses::Window,
+struct TereTui<'a> {
+    window: &'a Stderr,
     app_state: TereAppState,
 }
 
-impl TereTui {
+// Dimensions (width, height) of main window
+fn main_window_size() -> CTResult<(u16, u16)> {
+    let (w, h) = terminal::size()?;
+    Ok((w, h.checked_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE).unwrap_or(0)))
+}
 
-    // Helper function for creating subwindows. if `begy` is negative, it is counted
-    // bacwards from `root_win.get_max_y()`.
-    fn subwin_helper(root_win: &pancurses::Window,
-                     nlines: i32,
-                     begy: i32,
-                     label: &str,
-                     ) -> Result<pancurses::Window, TereError> {
+impl<'a> TereTui<'a> {
 
-        let begy = if begy < 0 { root_win.get_max_y() + begy } else { begy };
-        root_win.subwin(nlines, 0, begy, 0)
-            .map_err(|e| TereError::WindowInit(
-                format!("failed to create {} window!", label), e)
-            )
-    }
-
-    /// Helper function for (re)creating the main window
-    pub fn create_main_window(root_win: &pancurses::Window)
-        -> Result<pancurses::Window, TereError> {
-        Self::subwin_helper(
-            root_win,
-            root_win.get_max_y() - HEADER_SIZE - INFO_WIN_SIZE - FOOTER_SIZE,
-            HEADER_SIZE,
-            "main")
-    }
-
-    /// Helper function for (re)creating the header window
-    pub fn create_header_window(root_win: &pancurses::Window)
-        -> Result<pancurses::Window, TereError> {
-        let header = Self::subwin_helper(root_win, HEADER_SIZE, 0, "header")?;
-
-        //TODO: make header bg/font color configurable via settings
-        header.attrset(pancurses::Attribute::Bold | pancurses::Attribute::Underline);
-        Ok(header)
-    }
-
-    pub fn create_info_window(root_win: &pancurses::Window)
-        -> Result<pancurses::Window, TereError> {
-        let infobox = Self::subwin_helper(
-            root_win,
-            INFO_WIN_SIZE,
-            -INFO_WIN_SIZE - FOOTER_SIZE,
-            "info")?;
-        infobox.attrset(pancurses::Attribute::Bold);
-        Ok(infobox)
-    }
-
-    pub fn create_footer_window(root_win: &pancurses::Window)
-        -> Result<pancurses::Window, TereError> {
-        let footer = Self::subwin_helper(root_win, FOOTER_SIZE, -FOOTER_SIZE,
-                                         "footer")?;
-        footer.attrset(pancurses::Attribute::Bold);
-        Ok(footer)
-    }
-
-    pub fn init(args: &ArgMatches,
-                root_win: &pancurses::Window) -> Result<Self, TereError> {
-        let main_win = Self::create_main_window(root_win)?;
+    pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> CTResult<Self> {
+        let (w, h) = main_window_size()?;
         let state = TereAppState::init(
             args,
-            main_win.get_max_x().try_into().unwrap_or(1),
-            main_win.get_max_y().try_into().unwrap_or(1)
+            // TODO: have to convert to u32 here. but correct solution would be to use u16 instead in app_state as well
+            w.into(), h.into()
         );
         let mut ret = Self {
-            header_win: Self::create_header_window(root_win)?,
-            main_win: main_win,
-            info_win: Self::create_info_window(root_win)?,
-            footer_win: Self::create_footer_window(root_win)?,
+            window: window,
             app_state: state,
         };
 
-        ret.update_header();
-        ret.redraw_all_windows();
+        ret.update_header()?;
+        ret.redraw_all_windows()?;
         Ok(ret)
     }
 
-    pub fn redraw_header(&mut self) {
-        self.header_win.clear();
+    /// Queue up a command to clear a given row (starting from 0). Must be executed/flushed
+    /// separately.
+    fn queue_clear_row(&mut self, row: u16) -> CTResult<()> {
+        queue!(
+            self.window,
+            cursor::MoveTo(0, row),
+            terminal::Clear(terminal::ClearType::CurrentLine),
+        )
+    }
+
+    pub fn redraw_header(&mut self) -> CTResult<()> {
         //TODO: what to do if window is narrower than path?
         // add "..." to beginning? or collapse folder names? make configurable?
         // at least, truncate towards the left instead of to the right
-        self.header_win.mvaddstr(0, 0, &self.app_state.header_msg);
-        self.header_win.refresh();
+
+        // must use variable here b/c can't borrow 'self' twice in execute!() below
+        let mut win = self.window;
+        self.queue_clear_row(0)?;
+        execute!(
+            win,
+            cursor::MoveTo(0, 0),
+            style::SetAttribute(Attribute::Reset),
+            style::Print(&self.app_state.header_msg.clone().bold().underlined()),
+        )
     }
 
-    pub fn update_header(&mut self) {
+    pub fn update_header(&mut self) -> CTResult<()> {
         self.app_state.update_header();
         // TODO: consider removing redraw here... (is inconsistent with the rest of the 'update' functions)
-        self.redraw_header();
+        self.redraw_header()
     }
 
-    pub fn redraw_info_window(&self) {
-        self.info_win.clear();
-        self.info_win.mvaddstr(0, 0, &self.app_state.info_msg);
-        self.info_win.refresh();
+    pub fn redraw_info_window(&mut self) -> CTResult<()> {
+        let (_, h) = crossterm::terminal::size()?;
+        let info_win_row = h - FOOTER_SIZE - INFO_WIN_SIZE;
+
+        self.queue_clear_row(info_win_row)?;
+        let mut win = self.window;
+        execute!(
+            win,
+            cursor::MoveTo(0, info_win_row),
+            style::SetAttribute(Attribute::Reset),
+            style::Print(&self.app_state.info_msg.clone().bold()),
+        )
     }
 
     /// Set/update the current info message and redraw the info window
-    pub fn info_message(&mut self, msg: &str) {
+    pub fn info_message(&mut self, msg: &str) -> CTResult<()> {
         //TODO: add thread with timeout that will clear the info message after x seconds?
         self.app_state.info_msg = msg.to_string();
-        self.info_win.attrset(pancurses::Attribute::Bold);
-        self.redraw_info_window();
+        self.redraw_info_window()
     }
 
-    pub fn error_message(&mut self, msg: &str) {
+    pub fn error_message(&mut self, msg: &str) -> CTResult<()> {
         //TODO: red color (also: make it configurable)
         let mut error_msg = String::from("error: ");
         error_msg.push_str(msg);
-        self.info_message(&error_msg);
+        self.info_message(&error_msg)
     }
 
-    pub fn redraw_footer(&self) {
-        self.footer_win.clear();
+    pub fn redraw_footer(&mut self) -> CTResult<()> {
+        let (w, h) = crossterm::terminal::size()?;
+        let footer_win_row = h - FOOTER_SIZE;
+        self.queue_clear_row(footer_win_row)?;
+
+        let mut win = self.window;
         let mut extra_msg = String::new();
+
         if self.app_state.is_searching() {
-            self.footer_win.mvaddstr(0, 0, &self.app_state.search_string());
+            //self.footer_win.mvaddstr(0, 0, &self.app_state.search_string());
+            queue!(
+                win,
+                cursor::MoveTo(0, footer_win_row),
+                style::SetAttribute(Attribute::Reset),
+                style::Print(&self.app_state.search_string().clone().bold()),
+            )?;
             extra_msg.push_str(&format!("{} / {} / {}",
                                self.app_state.search_matches()
                                    .current_pos().map(|i| i + 1).unwrap_or(0),
@@ -175,104 +148,164 @@ impl TereTui {
                                cursor_idx,
                                self.app_state.ls_output_buf.len()));
         }
-        self.footer_win.mvaddstr(0,
-                                 self.main_win.get_max_x() - extra_msg.len() as i32,
-                                 extra_msg);
-        self.footer_win.refresh();
+        execute!(
+            win,
+            cursor::MoveTo(w - extra_msg.len() as u16, footer_win_row),
+            style::SetAttribute(Attribute::Reset),
+            style::Print(extra_msg.bold()),
+        )
     }
 
-    fn change_row_attr(&self, row: u32, attr: pancurses::chtype) {
-        let (_, color_pair) = self.main_win.attrget();
-        self.main_win.mvchgat(row as i32, 0, -1, attr, color_pair);
+    /// Convert a row number (starting from 0 at the top of the main window)
+    /// to an index into the ls_output_buf
+    fn row_to_buf_idx(&self, row: u16) -> usize {
+        (self.app_state.scroll_pos + row as u32) as usize
     }
 
-    pub fn unhighlight_row(&self, row: u32) {
-        let idx = (self.app_state.scroll_pos + row) as usize;
-        let bold = self.app_state.ls_output_buf.get(idx).map_or(false, |itm| itm.is_dir());
+    /// Get the item from ls_output_buf that should be displayed on row `row` of the main window.
+    /// Row 0 is the first row of the main window.
+    fn get_item_at_row(&self, row: u16) -> Option<&CustomDirEntry> {
+        let idx = self.row_to_buf_idx(row);
+        self.app_state.ls_output_buf.get(idx)
+    }
+
+    fn draw_main_window_row(&mut self,
+                            row: u16,
+                            highlight: bool,
+                            ) -> CTResult<()> {
+        let row_abs = row  + HEADER_SIZE;
+        let w: usize = main_window_size()?.0.into();
+
+        let (item, bold) = self.get_item_at_row(row).map_or(
+            ("".to_string(), false),
+            |itm| (itm.file_name_checked(), itm.is_dir())
+        );
+        let item_size = item.len();
+
         let attr = if bold {
-            pancurses::Attribute::Bold
+            Attribute::Bold
         } else {
-            pancurses::Attribute::Normal
+            Attribute::Dim
         };
-        self.change_row_attr(row, attr.into());
+
+        self.queue_clear_row(row_abs)?;
+
+        queue!(
+            self.window,
+            cursor::MoveTo(0, row_abs),
+            style::SetAttribute(Attribute::Reset),
+            style::ResetColor,
+            style::SetAttribute(attr),
+        )?;
+
+        //TODO: don't recompute this here every time, but store the hashset (or a hashmap or something) in the matches struct...
+        let match_indices: std::collections::HashSet<usize> = self.app_state
+            .search_matches().iter().map(|(i, _)| *i).collect();
+
+        if self.app_state.is_searching()
+            && match_indices.contains(&self.row_to_buf_idx(row)) {
+            // print matching part
+            let n = self.app_state.search_string().len();
+            let item_matching = item.get(..n).unwrap_or(&item);
+            let item_not_matching = item.get(n..).unwrap_or("");
+            queue!(
+                self.window,
+                style::SetAttribute(Attribute::Underlined),
+                style::SetBackgroundColor(style::Color::DarkGrey),
+                style::Print(item_matching.get(..w).unwrap_or(&item_matching)),
+                style::SetAttribute(Attribute::NoUnderline),
+                style::SetBackgroundColor(style::Color::Reset),
+            )?;
+            if highlight {
+                queue!(
+                    self.window,
+                    style::SetBackgroundColor(style::Color::Grey),
+                    style::SetForegroundColor(style::Color::Black),
+                )?;
+            }
+            queue!(
+                self.window,
+                style::Print(item_not_matching.get(..w.checked_sub(n).unwrap_or(0)).unwrap_or(&item_not_matching)),
+                style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
+            )?;
+
+        } else {
+            if highlight {
+                queue!(
+                    self.window,
+                    style::SetBackgroundColor(style::Color::Grey),
+                    style::SetForegroundColor(style::Color::Black),
+                    style::Print(item.get(..w).unwrap_or(&item)),
+                    style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
+                )?;
+            } else {
+                queue!(
+                    self.window,
+                    style::Print(item.get(..w).unwrap_or(&item)),
+                )?;
+            }
+        }
+        execute!(
+            self.window,
+            style::ResetColor,
+            style::SetAttribute(Attribute::Reset),
+        )
+
     }
 
-    pub fn highlight_row(&self, row: u32) {
+    // redraw row 'row' (relative to the top of the main window) without highlighting
+    pub fn unhighlight_row(&mut self, row: u16) -> CTResult<()> {
+        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), false)
+    }
+
+    pub fn highlight_row(&mut self, row: u32) -> CTResult<()> { //TODO: change row to u16
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
-        self.change_row_attr(row, pancurses::A_STANDOUT);
+        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), true)
     }
 
-    pub fn highlight_row_exclusive(&self, row: u32) {
+    fn queue_clear_main_window(&mut self) -> CTResult<()> {
+        let (_, h) = main_window_size()?;
+        for row in HEADER_SIZE..h+HEADER_SIZE {
+            self.queue_clear_row(row)?;
+        }
+        Ok(())
+    }
+
+    pub fn highlight_row_exclusive(&mut self, row: u32) -> CTResult<()> { //TODO: make row u16
         // Highlight the row `row` exclusively, and hide all other rows.
-        // Note that refresh() needs to be called externally.
-        let row_content = self.app_state.ls_output_buf
-            .get((row + self.app_state.scroll_pos) as usize)
-            .map_or("".to_string(), |s| s.file_name_checked());
-
-        self.main_win.clear();
-        self.main_win.mvaddstr(row as i32, 0, &row_content);
-        self.change_row_attr(row, pancurses::A_STANDOUT);
+        self.queue_clear_main_window()?;
+        self.highlight_row(row)?;
+        Ok(())
     }
 
-    pub fn redraw_main_window(&self) {
-        self.main_win.clear();
-        let (max_y, max_x) = self.main_win.get_max_yx();
-        let scroll_pos = self.app_state.scroll_pos;
-        for (i, entry) in self.app_state.ls_output_buf.iter().skip(scroll_pos as usize)
-            .enumerate().take(max_y as usize) {
-                //TODO: show  modified date and other info (should query metadata already in update_ls_output_buf)
-                let line = entry.file_name_checked();
-                self.main_win.mvaddnstr(i as i32, 0, line, max_x);
-                let attr = if entry.is_dir() {
-                    pancurses::Attribute::Bold.into()
-                } else {
-                    pancurses::Attribute::Dim.into()
-                };
-                let (_, color_pair) = self.main_win.attrget();
-                self.main_win.mvchgat(i as i32, 0, -1, attr, color_pair);
+    pub fn redraw_main_window(&mut self) -> CTResult<()> {
+
+        let (_, max_y) = main_window_size()?;
+        let mut win = self.window;
+
+        self.queue_clear_main_window()?;
+
+        // draw entries
+        for row in 0..max_y {
+            self.draw_main_window_row(row, self.app_state.cursor_pos == row.into())?;
         }
 
-        self.highlight_row(self.app_state.cursor_pos);
-
-        // highlight matches that are in view
-        let is_in_view = |i: usize| {
-            let i = i as u32;
-            let above = i.checked_sub(scroll_pos).unwrap_or(0) < max_y as u32;
-            let below = scroll_pos <= i;
-            above && below
-        };
-        //TODO: search_anywhere...
-        let match_range = 0..self.app_state.search_string().len();
-        self.app_state.search_matches().iter()
-            .filter(|(i, _)| is_in_view(*i))
-            .map(|(i, _)| *i as i32 - scroll_pos as i32) // map indices to cursor positions
-            .for_each(|i| {
-                self.main_win.mv(i, match_range.start as i32);
-                let (_, color_pair) = self.main_win.attrget();
-                self.main_win.chgat(match_range.len() as i32,
-                                    pancurses::Attribute::Underline.into(),
-                                    color_pair);
-            });
-
-        self.main_win.refresh();
+        win.flush()
     }
 
-    fn redraw_all_windows(&mut self) {
-        self.redraw_header();
-        self.redraw_info_window();
-        self.redraw_footer();
-        self.redraw_main_window();
+    fn redraw_all_windows(&mut self) -> CTResult<()> {
+        self.redraw_header()?;
+        self.redraw_info_window()?;
+        self.redraw_footer()?;
+        self.redraw_main_window()?;
+        Ok(())
     }
 
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
-    pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
-
-        //TODO: moving cursor removes highlights
-        // (in principle. currently on_arrow_key redraws the whole screen so this
-        // is not a problem)
-        self.unhighlight_row(self.app_state.cursor_pos);
+    pub fn move_cursor(&mut self, amount: i32, wrap: bool) -> CTResult<()> {
+        self.unhighlight_row(u16::try_from(self.app_state.cursor_pos).unwrap_or(u16::MAX))?;
 
         let old_scroll_pos = self.app_state.scroll_pos;
 
@@ -281,99 +314,95 @@ impl TereTui {
         if self.app_state.scroll_pos != old_scroll_pos {
             // redraw_main_window takes care of highlighting the cursor row
             // and refreshing
-            self.redraw_main_window();
+            self.redraw_main_window()?;
         } else {
-            self.highlight_row(self.app_state.cursor_pos);
-            self.main_win.refresh();
+            self.highlight_row(self.app_state.cursor_pos)?;
         }
-
-    }
-
-    pub fn change_dir(&mut self, path: &str) {
-        match self.app_state.change_dir(path) {
-            Err(e) => {
-                if cfg!(debug_assertions) {
-                    self.error_message(&format!("{:?}", e));
-                } else {
-                    self.error_message(&format!("{}", e));
-                }
-            },
-            Ok(()) => {
-                self.update_header();
-                self.info_message("");
-            }
-        }
-        self.redraw_main_window();
-        self.redraw_footer();
-    }
-
-    pub fn on_search_char(&mut self, c: char) {
-        self.app_state.advance_search(&c.to_string());
-        if self.app_state.search_matches().len() == 1 {
-            // There's only one match, highlight it and then change dir
-            self.highlight_row_exclusive(self.app_state.cursor_pos);
-            self.main_win.refresh();
-
-            //TODO: make duration configurable
-            std::thread::sleep(std::time::Duration::from_millis(200));
-            pancurses::flushinp(); // ignore keys pressed during sleep
-
-            self.change_dir("");
-        }
-        self.redraw_main_window();
-        self.redraw_footer();
-    }
-
-    pub fn erase_search_char(&mut self) {
-        self.app_state.erase_search_char();
-        self.redraw_main_window();
-        self.redraw_footer();
-    }
-
-    pub fn on_resize(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
-        //TODO: see https://github.com/ihalila/pancurses/pull/65
-        // it's not possible to resize windows with pancurses ATM,
-        // so we have to hack around and destroy/recreate the main
-        // window every time. Doesn't seem to be too much of a
-        // performance issue.
-        //TODO: doesn't seem to work correctly when decreasing window height
-        self.main_win = Self::create_main_window(root_win)?;
-        self.header_win = Self::create_header_window(root_win)?;
-        self.info_win = Self::create_info_window(root_win)?;
-        self.footer_win = Self::create_footer_window(root_win)?;
-
-        let (h, w) = self.main_win.get_max_yx();
-        let (h, w) = (h as u32, w as u32);
-        self.app_state.update_main_window_dimensions(w, h);
-
-        self.redraw_all_windows();
         Ok(())
     }
 
-    pub fn on_arrow_key(&mut self, up: bool) {
+    pub fn change_dir(&mut self, path: &str) -> CTResult<()> {
+        match self.app_state.change_dir(path) {
+            Err(e) => {
+                if cfg!(debug_assertions) {
+                    self.error_message(&format!("{:?}", e))?;
+                } else {
+                    self.error_message(&format!("{}", e))?;
+                }
+            },
+            Ok(()) => {
+                self.update_header()?;
+                self.info_message("")?;
+            }
+        }
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
+    }
+
+    pub fn on_search_char(&mut self, c: char) -> CTResult<()> {
+        self.app_state.advance_search(&c.to_string());
+        if self.app_state.search_matches().len() == 1 {
+            // There's only one match, highlight it and then change dir
+            self.highlight_row_exclusive(self.app_state.cursor_pos)?;
+
+            //TODO: make duration configurable
+            std::thread::sleep(std::time::Duration::from_millis(200));
+
+            // ignore keys that were pressed during sleep
+            while crossterm::event::poll(std::time::Duration::from_secs(0))
+                .unwrap_or(false) {
+                read_event()?;
+            }
+
+            self.change_dir("")?;
+        }
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
+    }
+
+    pub fn erase_search_char(&mut self) -> CTResult<()> {
+        self.app_state.erase_search_char();
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
+    }
+
+    pub fn on_resize(&mut self) -> CTResult<()> {
+
+        let (w, h) = main_window_size()?;
+        let (w, h) = (w as u32, h as u32);
+        self.app_state.update_main_window_dimensions(w, h);
+
+        self.redraw_all_windows()
+    }
+
+    pub fn on_arrow_key(&mut self, up: bool) -> CTResult<()> {
         let dir = if up { -1 } else { 1 };
         if self.app_state.is_searching() {
             //TODO: handle case where 'is_searching' but there are no matches - move cursor?
             self.app_state.move_cursor_to_adjacent_match(dir);
-            self.redraw_main_window();
+            self.redraw_main_window()?;
         } else {
-            self.move_cursor(dir, true);
+            self.move_cursor(dir, true)?;
         }
-        self.redraw_footer();
+        self.redraw_footer()
     }
 
     // When the 'page up' or 'page down' keys are pressed
-    pub fn on_page_up_down(&mut self, up: bool) {
+    pub fn on_page_up_down(&mut self, up: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
-            let (h, _) = self.main_win.get_max_yx();
-            let delta = (h - 1) * if up { -1 } else { 1 };
-            self.move_cursor(delta, false);
-            self.redraw_footer();
+            let (_, h) = main_window_size()?;
+            let delta = ((h - 1) as i32) * if up { -1 } else { 1 };
+            self.move_cursor(delta, false)?;
+            self.redraw_footer()?;
         } //TODO: how to handle page up / page down while searching? jump to the next match below view?
+        Ok(())
     }
 
     // on 'home' or 'end'
-    fn on_home_end(&mut self, home: bool) {
+    fn on_home_end(&mut self, home: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
             let target = if home {
                 0
@@ -381,48 +410,51 @@ impl TereTui {
                 self.app_state.ls_output_buf.len() as u32
             };
             self.app_state.move_cursor_to(target);
-            self.redraw_main_window();
+            self.redraw_main_window()?;
         } // TODO: else jump to first/last match
+        Ok(())
     }
 
-    pub fn main_event_loop(&mut self, root_win: &pancurses::Window) -> Result<(), TereError> {
+    pub fn main_event_loop(&mut self) -> CTResult<()> {
+        #[allow(non_snake_case)]
         let ALT = KeyModifiers::ALT;
+        #[allow(non_snake_case)]
         let CONTROL = KeyModifiers::CONTROL;
         // root_win is the window created by initscr()
         loop {
             match read_event()? {
                 Event::Key(k) => {
                     match k.code {
-                        KeyCode::Right | KeyCode::Enter => self.change_dir(""),
-                        KeyCode::Left => self.change_dir(".."),
+                        KeyCode::Right | KeyCode::Enter => self.change_dir("")?,
+                        KeyCode::Left => self.change_dir("..")?,
                         KeyCode::Up if k.modifiers == ALT => {
-                            self.change_dir("..");
+                            self.change_dir("..")?;
                         },
-                        KeyCode::Up => self.on_arrow_key(true),
+                        KeyCode::Up => self.on_arrow_key(true)?,
                         KeyCode::Down if k.modifiers == ALT => {
-                            self.change_dir("");
+                            self.change_dir("")?;
                         },
-                        KeyCode::Down => self.on_arrow_key(false),
+                        KeyCode::Down => self.on_arrow_key(false)?,
 
-                        KeyCode::PageUp => self.on_page_up_down(true),
-                        KeyCode::PageDown => self.on_page_up_down(false),
+                        KeyCode::PageUp => self.on_page_up_down(true)?,
+                        KeyCode::PageDown => self.on_page_up_down(false)?,
 
                         KeyCode::Home if k.modifiers == CONTROL => {
                             if let Some(path) = home_dir() {
                                 if let Some(path) = path.to_str() {
-                                    self.change_dir(path);
+                                    self.change_dir(path)?;
                                 }
                             }
                         }
 
-                        KeyCode::Home => self.on_home_end(true),
-                        KeyCode::End => self.on_home_end(false),
+                        KeyCode::Home => self.on_home_end(true)?,
+                        KeyCode::End => self.on_home_end(false)?,
 
                         KeyCode::Esc => {
                             if self.app_state.is_searching() {
                                 self.app_state.clear_search();
-                                self.redraw_main_window();
-                                self.redraw_footer();
+                                self.redraw_main_window()?;
+                                self.redraw_footer()?;
                             } else {
                                 break;
                             }
@@ -430,16 +462,16 @@ impl TereTui {
 
                         // alt + hjkl
                         KeyCode::Char('h') if k.modifiers == ALT => {
-                            self.change_dir("..");
+                            self.change_dir("..")?;
                         }
                         KeyCode::Char('j') if k.modifiers == ALT => {
-                            self.on_arrow_key(false);
+                            self.on_arrow_key(false)?;
                         }
                         KeyCode::Char('k') if k.modifiers == ALT => {
-                            self.on_arrow_key(true);
+                            self.on_arrow_key(true)?;
                         }
                         KeyCode::Char('l') if k.modifiers == ALT => {
-                            self.change_dir("");
+                            self.change_dir("")?;
                         }
 
                         // other chars with modifiers
@@ -447,40 +479,39 @@ impl TereTui {
                             break;
                         }
                         KeyCode::Char('u') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
-                            self.on_page_up_down(true);
+                            self.on_page_up_down(true)?;
                         }
                         KeyCode::Char('d') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
-                            self.on_page_up_down(false);
+                            self.on_page_up_down(false)?;
                         }
                         KeyCode::Char('g') if k.modifiers == ALT => {
                             // like vim 'gg'
-                            self.on_home_end(true);
+                            self.on_home_end(true)?;
                         }
                         KeyCode::Char('G') if k.modifiers.contains(ALT) => {
-                            self.on_home_end(false);
+                            self.on_home_end(false)?;
                         }
 
-                        KeyCode::Char(c) => self.on_search_char(c),
+                        KeyCode::Char(c) => self.on_search_char(c)?,
 
-                        KeyCode::Backspace => self.erase_search_char(),
+                        KeyCode::Backspace => self.erase_search_char()?,
 
-                        _ => self.info_message(&format!("{:?}", k)),
+                        _ => self.info_message(&format!("{:?}", k))?,
                     }
                 },
 
-                Event::Resize(_, _) => self.on_resize(root_win)?,
+                Event::Resize(_, _) => self.on_resize()?,
 
                 //TODO don't show this in release
-                e => self.info_message(&format!("{:?}", e)),
+                e => self.info_message(&format!("{:?}", e))?,
             }
-            self.main_win.refresh();
         }
 
         Ok(())
     }
 }
 
-fn main() {
+fn main() -> crossterm::Result<()> {
 
     let cli_args = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
@@ -492,22 +523,32 @@ fn main() {
              )
         .get_matches();
 
-    let root_window = initscr();
+    let mut stderr = std::io::stderr();
 
-    ncurses::set_escdelay(0);
-    //root_window.keypad(true); // enable arrow keys etc
-    curs_set(0);
+    execute!(
+        stderr,
+        terminal::EnterAlternateScreen,
+        cursor::Hide,
+    )?;
 
-    noecho();
+    // we are now inside the alternate screen, so collect all errors and attempt
+    // to leave the alt screen in case of an error
 
-    let res = TereTui::init(&cli_args, &root_window)
-        .map_err(|e| format!("error in initializing UI: {:?}", e))
-        .and_then(|mut ui| ui.main_event_loop(&root_window)
-            .map_err(|e| format!("error in main event loop: {:?}", e))
+    let res = stderr.flush()
+        .and_then(|_| terminal::enable_raw_mode())
+        .and_then(|_| TereTui::init(&cli_args, &mut stderr)
+            .map_err(|e| Error::new(ErrorKind::Other, format!("error in initializing UI: {:?}", e))))
+        .and_then(|mut ui| ui.main_event_loop()
+            .map_err(|e| Error::new(ErrorKind::Other, format!("error in main event loop: {:?}", e)))
         );
 
-    // clean up even if there was an error
-    endwin();
+    execute!(
+        stderr,
+        terminal::LeaveAlternateScreen,
+        cursor::Show
+        )?;
+
+    terminal::disable_raw_mode()?;
 
     // panic if there was an error
     res.unwrap();
@@ -515,4 +556,6 @@ fn main() {
     // no error, print cwd
     let cwd = std::env::current_dir().expect("error getting cwd");
     println!("{}", cwd.display());
+
+    Ok(())
 }
