@@ -168,7 +168,7 @@ pub struct TereAppState {
 
     // The row on which the cursor is currently on, counted starting from the
     // top of the screen (not from the start of `ls_output_buf`). Note that this
-    // doesn't have anything to do with the ncurses curspor position.
+    // doesn't have anything to do with the crossterm cursor position.
     pub cursor_pos: u32,
 
     // The top of the screen corresponds to this row in the `ls_output_buf`.
