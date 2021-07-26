@@ -394,7 +394,7 @@ impl<'a> TereTui<'a> {
     pub fn on_page_up_down(&mut self, up: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
             let (_, h) = main_window_size()?;
-            let delta = ((h - 1) as i32)* if up { -1 } else { 1 };
+            let delta = ((h - 1) as i32) * if up { -1 } else { 1 };
             self.move_cursor(delta, false)?;
             self.redraw_footer()?;
         } //TODO: how to handle page up / page down while searching? jump to the next match below view?
