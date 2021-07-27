@@ -96,7 +96,7 @@ impl From<std::fs::DirEntry> for CustomDirEntry
     fn from(e: std::fs::DirEntry) -> Self {
         Self {
             _path: e.path(),
-            metadata: e.metadata().ok(),
+            metadata: std::fs::metadata(e.path()).ok(),
             _file_name: e.file_name(),
         }
     }
