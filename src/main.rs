@@ -401,6 +401,15 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    fn on_go_to_home(&mut self) -> CTResult<()> {
+        if let Some(path) = home_dir() {
+            if let Some(path) = path.to_str() {
+                self.change_dir(path)?;
+            }
+        }
+        Ok(())
+    }
+
     // on 'home' or 'end'
     fn on_home_end(&mut self, home: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
@@ -440,11 +449,10 @@ impl<'a> TereTui<'a> {
                         KeyCode::PageDown => self.on_page_up_down(false)?,
 
                         KeyCode::Home if k.modifiers == CONTROL => {
-                            if let Some(path) = home_dir() {
-                                if let Some(path) = path.to_str() {
-                                    self.change_dir(path)?;
-                                }
-                            }
+                            self.on_go_to_home()?;
+                        }
+                        KeyCode::Char('h') if k.modifiers == CONTROL | ALT => {
+                            self.on_go_to_home()?;
                         }
 
                         KeyCode::Home => self.on_home_end(true)?,
