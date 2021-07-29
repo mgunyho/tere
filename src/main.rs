@@ -529,6 +529,10 @@ fn main() -> crossterm::Result<()> {
              //.short("f")  // TODO: check conflicts
              .help("only show folders in listing")
              )
+        .arg(Arg::with_name("filter-search")
+             .long("filter-search")
+             .help("Show only items matching the search in listing")
+            )
         .get_matches_safe()
         .unwrap_or_else(|err| {
             // custom error handling: print also '--help' or '--version' to stderr
