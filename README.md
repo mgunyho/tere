@@ -78,6 +78,75 @@ very quickly.
 To stop searching, press <kbd>Esc</kbd> or erase all search characters by
 pressing <kbd>Backspace</kbd>.
 
+### CLI options
+
+You can adjust the behavior of `tere` by passing the following CLI options to it:
+
+- `--help` or `-h`: Print a short help and all CLI options
+- `--version` or `-V`: Print the version of `tere`
+- `--folders-only`: Don't show files, only folders (and symlinks pointing to folders) in the listing
+
+## Prior art
+
+The idea of `tere` is by no means unique. There are actually quite a few CLI
+applications that attempt to make folder navigation faster. Below is a listing of
+such programs. The purpose of this section is to justify the existence of `tere`
+by showing how it is different from all these applications in subtle but
+important ways.
+
+If there is a program that should be mentioned here, feel free to open an issue
+or pull request!
+
+### Terminal file browsers
+
+These programs are designed for basically the same task as `tere`: navigate to a
+folder in the terminal and then `cd` to it.
+
+- [Broot](https://dystroy.org/broot/) - Broot is more focused on browsing large directories, and has a more complex UI than `tere`.
+- [xplr](https://github.com/sayanarijit/xplr) - Lots of features, fully customizable. Not entirely focused on navigation, has file management features. Navigation by searching requires jumping between typing and pressing arrow keys. 
+- [cdir](https://github.com/EskelinenAntti/cdir) - No Vim-like keyboard navigation. Not a standalone binary.
+
+### Fuzzy matching and history-based navigation
+
+These programs have a very similar goal as `tere`, to speed up filesystem
+navigation. However, such programs are not suitable for exploration, as they
+require that you visit a folder before you can jump to it. They also differ from
+`tere` in  philosophy; `tere` aims to be deterministic, while the results of a
+fuzzy match or "frecency"-based query vary over time.
+
+- [z](https://github.com/rupa/z)
+- [autojump](https://github.com/wting/autojump)
+- [zoxide](https://github.com/ajeetdsouza/zoxide)
+- [fasd](https://github.com/clvv/fasd)
+- [jump](https://github.com/gsamokovarov/jump)
+- [bashmarks](https://github.com/huyng/bashmarks)
+- [goto](https://github.com/ankitvad/goto)
+
+### Terminal file managers
+
+There are quite a few terminal file managers, and they can often be used in the
+same way as `tere`, for example using the `--choosedir` option of ranger.
+However, they have a huge number of other features compared to `tere`, which
+usually leads to a more complex UI and a higher learning curve. File managers are
+also not entirely focused on navigation, and therefore often require extra
+keystrokes to search and navigate folders. File management is not in the scope of
+`tere`, so these programs are not directly comparable to it.
+
+- [ranger](https://ranger.github.io/)
+- [nnn](https://github.com/jarun/nnn)
+- [Midnight Commander](https://midnight-commander.org/)
+- [vifm](https://vifm.info/)
+- [clifm](https://github.com/leo-arch/clifm) (C)
+- [clifm](https://github.com/pasqu4le/clifm) (Haskell)
+- [lf](https://github.com/gokcehan/lf)
+- [fff](https://github.com/dylanaraps/fff)
+- [joshuto](https://github.com/kamiyaa/joshuto)
+- [hunter](https://github.com/rabite0/hunter)
+
+### Other similar programs
+
+- [noice](https://git.2f30.org/noice/file/README.html) - Very similar to `tere`, but there is no option to print the current directory on exit. Filtering/searching directory contents requires two extra keystrokes.
+- [twilight commander](https://github.com/golmman/twilight-commander) - Main goal seems to be a folder tree browser embedded in other apps. No search. No option to go above the initial working directory.
 
 
 ## License
