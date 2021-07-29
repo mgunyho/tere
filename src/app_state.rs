@@ -238,7 +238,7 @@ impl TereAppState {
         let mut ret = Self {
             main_win_w: window_w,
             main_win_h: window_h,
-            ls_output_buf: vec![],
+            ls_output_buf: vec![].into(),
             cursor_pos: 0, // TODO: get last value from previous run
             scroll_pos: 0,
             header_msg: "".into(),
@@ -285,7 +285,7 @@ impl TereAppState {
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 //TODO: case-insensitive sort???
                 //TODO: cache file metadata already here when reloading it
-                entries.filter_map(|e| e.ok()).map(|e| e.into())
+                entries.filter_map(|e| e.ok()).map(|e| CustomDirEntry::from(e).into())
                 );
 
             if self.settings.folders_only {
