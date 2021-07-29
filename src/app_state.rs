@@ -165,39 +165,6 @@ impl From<&std::path::Path> for CustomDirEntry
 type LsBufItem = CustomDirEntry;
 /// The type of the `ls_output_buf` buffer of the app state
 type LsBufType = Vec<LsBufItem>;
-type MatchType = (usize, LsBufItem);
-type MatchesType = MatchesVec<MatchType>;
-
-
-#[derive(Default)]
-struct SearchState {
-    search_string: String,
-    // This field contains the items in `ls_output_buf` that match the current
-    // search string, along with their indices (so it's possible to figure out
-    // whether they are in view).
-    matches: MatchesType,
-}
-
-impl SearchState {
-    /// Reset the search state
-    fn clear(&mut self) {
-        self.matches.clear();
-        self.search_string.clear();
-    }
-
-    /// Find the elements in `buf` that match with the current
-    /// search string and store them in self.matches.
-    fn update_matches(&mut self, buf: &LsBufType) {
-        // TODO: if matches is not empty, iterate over only that and not the whole buffer?
-        self.matches = buf.iter().enumerate().filter(|(_, s)|
-            //TODO: take search_anywhere into account
-            //TODO: case sensitivity
-            s.file_name_checked().starts_with(&self.search_string)
-        ).map(|(i, s)| (i, s.clone())).collect();
-        //TODO: change indices -> Option<usize>, and put Some only for those that are within view?
-    }
-}
-
 
 /// This struct represents the state of the application. Note that it has no
 /// notion of curses windows.
@@ -223,9 +190,7 @@ pub struct TereAppState {
     // The top of the screen corresponds to this row in the `ls_output_buf`.
     pub scroll_pos: u32,
 
-    //search_string: String,
-
-    search_state: SearchState,
+    search_string: String,
 
     pub header_msg: String,
     pub info_msg: String,
@@ -243,7 +208,7 @@ impl TereAppState {
             scroll_pos: 0,
             header_msg: "".into(),
             info_msg: "".into(), // TODO: initial help message, like 'tere vXXX, type "?" for help'
-            search_state: Default::default(),
+            search_string: "".into(),
             //search_anywhere: false,
             settings: TereSettings::parse_cli_args(cli_args),
         };
@@ -398,11 +363,11 @@ impl TereAppState {
     }
 
     pub fn is_searching(&self) -> bool {
-        !self.search_state.search_string.is_empty()
+        !self.search_string.is_empty()
     }
 
     pub fn search_string(&self) -> &String {
-        &self.search_state.search_string
+        &self.search_string
     }
 
     /// The current search matches
@@ -436,12 +401,12 @@ impl TereAppState {
     }
 
     pub fn advance_search(&mut self, query: &str) {
-        self.search_state.search_string.push_str(query);
+        self.search_string.push_str(query);
         self.on_search_string_changed();
     }
 
     pub fn erase_search_char(&mut self) {
-        if let Some(_) = self.search_state.search_string.pop() {
+        if let Some(_) = self.search_string.pop() {
             //TODO: keep cursor position. now if we're at the second match and type backspace, the
             //curor jumps back to the first
             self.search_state.update_matches(&self.ls_output_buf);
