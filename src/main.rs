@@ -529,7 +529,16 @@ fn main() -> crossterm::Result<()> {
              //.short("f")  // TODO: check conflicts
              .help("only show folders in listing")
              )
-        .get_matches();
+        .get_matches_safe()
+        .unwrap_or_else(|err| {
+            // custom error handling: print also '--help' or '--version' to stderr
+            // instead of the default behavior of clap, which is to write to stdout.
+            // see the following issues:
+            // - https://github.com/clap-rs/clap/issues/1788
+            // - https://github.com/clap-rs/clap/issues/2429 - '--version' still goes to stdout, will be fixed in clap 3.0
+            eprintln!("{}", err.message);
+            std::process::exit(1);
+        });
 
     let mut stderr = std::io::stderr();
 
