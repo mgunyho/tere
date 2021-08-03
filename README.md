@@ -19,24 +19,24 @@ functionality found in many GUI file managers.
 1. Compile the binary by running `cargo build --release` in the main folder of the repo. This creates the binary in the folder `target/release/tere-rs`.
 1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function instead of an alias, since the latter only changes the working directory of the subshell.
 
-	For bash/zsh, put this into your `.bashrc` or `.zshrc`:
+    For bash/zsh, put this into your `.bashrc` or `.zshrc`:
 
-	```sh
-	tere() {
-		local output=$(/path/to/tere/target/release/tere-rs)
-		[ -n "$output" ] && cd -- "$output"
-	}
-	```
+    ```sh
+    tere() {
+        local output=$(/path/to/tere/target/release/tere-rs)
+        [ -n "$output" ] && cd -- "$output"
+    }
+    ```
 
-	For xonsh, put this in your `.xonshrc`:
+    For xonsh, put this in your `.xonshrc`:
 
-	```py
-	def _tere():
-		@(["cd", $(/path/to/tere/target/release/tere-rs).strip()])
+    ```py
+    def _tere():
+        @(["cd", $(/path/to/tere/target/release/tere-rs).strip()])
 
-	aliases["tere"] = _tere
-	```
-	Note that xonsh v0.10 or newer is required for `tere` to work.
+    aliases["tere"] = _tere
+    ```
+    Note that xonsh v0.10 or newer is required for `tere` to work.
 
 ## User guide
 
