@@ -409,7 +409,9 @@ mod tests {
     use super::*;
 
     fn create_test_filenames(n: u32) -> LsBufType {
-        (1..=n).map(|i| format!("file {}", i)).collect()
+        (1..=n).map(|i| std::path::PathBuf::from(&format!("file {}", i)))
+            .map(|p| CustomDirEntry::from(p.as_ref()))
+            .collect()
     }
 
     fn create_test_state(win_h: u32, n_filenames: u32) -> TereAppState {
@@ -422,6 +424,7 @@ mod tests {
             header_msg: "".into(),
             info_msg: "".into(),
             search_state: Default::default(),
+            settings: Default::default(),
         }
     }
 
