@@ -7,7 +7,56 @@ use clap::ArgMatches;
 mod settings;
 use settings::TereSettings;
 
-/// A vector containing a list of matches, which also keeps track of which element
+/// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
+/// both the vector of filtered items and the whole unfiltered vector.
+struct FilteredVec<T> {
+    all_items: Vec<T>,
+    // This vec contains the indices of the items that have not been filtered out
+    kept_indices: Vec<usize>,
+}
+
+impl<T> FilteredVec<T> {
+
+    /// Return a vector of all items that have been kept
+    pub fn kept_items(&self) -> Vec<&T> {
+        self.kept_indices.iter().filter_map(|idx| self.all_items.get(*idx))
+            .collect()
+    }
+
+    /// Recreate the collection of filtered items by through all items in the unfiltered collection
+    /// and applying a filter function
+    pub fn apply_filter<F>(&mut self, filter: F)
+    where
+        F: Fn(&T) -> bool
+    {
+        self.kept_indices.clear();
+        self.kept_indices = self.all_items.iter()
+            .enumerate()
+            .filter(|(_, x)| filter(&x))
+            .map(|(i, _)| i)
+            .collect();
+    }
+
+    /// Clear the filtered results, so that the kept items contain all items
+    pub fn clear_filter(&mut self) {
+        self.kept_indices.clear();
+        self.kept_indices = (0..self.all_items.len()).collect();
+    }
+}
+
+impl<T> From<Vec<T>> for FilteredVec<T> {
+    fn from(vec: Vec<T>) -> Self {
+        let mut ret = Self {
+            all_items: vec,
+            kept_indices: vec![],
+        };
+        ret.clear_filter();
+        ret
+    }
+}
+
+
+/// A vector containing a list of items, which also keeps track of which element
 /// we're pointing at currently
 pub struct MatchesVec<T> {
     vec: Vec<T>,
