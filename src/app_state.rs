@@ -519,7 +519,8 @@ mod tests {
     fn create_test_filenames(n: u32) -> LsBufType {
         (1..=n).map(|i| std::path::PathBuf::from(&format!("file {}", i)))
             .map(|p| CustomDirEntry::from(p.as_ref()))
-            .collect()
+            .collect::<Vec<CustomDirEntry>>()
+            .into()
     }
 
     fn create_test_state(win_h: u32, n_filenames: u32) -> TereAppState {
@@ -531,7 +532,7 @@ mod tests {
             ls_output_buf: create_test_filenames(n_filenames),
             header_msg: "".into(),
             info_msg: "".into(),
-            search_state: Default::default(),
+            search_string: "".into(),
             settings: Default::default(),
         }
     }
