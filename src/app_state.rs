@@ -725,4 +725,303 @@ mod tests {
     fn test_scrolling_bufsize_larger_than_window_size5() {
         test_scrolling_bufsize_larger_than_window_size_helper(4, 10);
     }
+
+    #[test]
+    fn test_basic_advance_search() {
+        let mut s = create_test_state_with_buf(5, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.move_cursor_to(2);
+
+        // current state:
+        //   ..
+        //   foo
+        // > frob
+        //   bar
+        //   baz
+
+        assert_eq!(s.cursor_pos, 2);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("b");
+        assert_eq!(s.cursor_pos, 3);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 4);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 3);
+    }
+
+    #[test]
+    fn test_advance_search_wrap() {
+        let mut s = create_test_state_with_buf(3, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.move_cursor_to(4);
+
+        // current state: ('|' shows the window position)
+        //   ..
+        //   foo
+        //   frob  |
+        //   bar   |
+        // > baz   |
+
+        assert_eq!(s.cursor_pos, 2);
+        assert_eq!(s.scroll_pos, 2);
+
+        s.advance_search("f");
+
+        // state should now be
+        //   ..
+        // > foo   |
+        //   frob  |
+        //   bar   |
+        //   baz
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 1);
+
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 1);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 0);
+    }
+
+    #[test]
+    fn test_advance_and_erase_search_with_cursor_on_match() {
+        let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.move_cursor_to(3);
+
+        // current state:
+        //   ..
+        //   foo
+        //   frob
+        // > bar
+        //   baz
+
+        assert_eq!(s.cursor_pos, 3);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("b");
+
+        // state shouldn't have changed
+
+        assert_eq!(s.cursor_pos, 3);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 4);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 3);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 4);
+
+        // we're now on 'baz'
+        // erase the search char. should still stay at baz.
+        s.erase_search_char();
+        assert_eq!(s.cursor_pos, 4);
+
+    }
+
+    #[test]
+    fn test_advance_search_with_filter_search() {
+        let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.settings.filter_search = true;
+
+        s.move_cursor_to(3);
+
+        // current state: ('|' shows the window position)
+        //   ..    |
+        //   foo   |
+        //   frob  |
+        // > bar   |
+        //   baz   |
+        //         |
+
+        assert_eq!(s.cursor_pos, 3);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("f");
+
+        // state should now be
+        // > foo
+        //   frob
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 1);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 0);
+    }
+
+    #[test]
+    fn test_advance_search_with_filter_search_and_scrolling() {
+        let mut s = create_test_state_with_buf(3, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.settings.filter_search = true;
+
+        //TODO: this passes with move_cursor_to(4)...
+        s.move_cursor_to(3);
+
+        // current state: ('|' shows the window position)
+        //   ..
+        //   foo   |
+        //   frob  |
+        // > bar   |
+        //   baz
+
+        assert_eq!(s.cursor_pos, 2);
+        assert_eq!(s.scroll_pos, 1);
+
+        s.advance_search("f");
+
+        // state should now be
+        // > foo   |
+        //   frob  |
+        //         |
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 0);
+        assert_eq!(s.visible_items().len(), 2);
+
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 1);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 0);
+    }
+
+    #[test]
+    fn test_advance_and_erase_search_with_filter_and_cursor_on_match() {
+        let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.settings.filter_search = true;
+        s.move_cursor_to(2);
+
+        // current state:
+        //   ..
+        //   foo
+        // > frob
+        //   bar
+        //   baz
+
+        assert_eq!(s.cursor_pos, 2);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("f");
+
+        // state should now be
+        //   foo
+        // > frob
+
+        let visible: Vec<_> = s.visible_items().iter().map(|x| x.file_name_checked()).collect();
+        assert_eq!(visible, vec!["foo", "frob"]);
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 0);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 1);
+
+        // we're now at frob. erase char, we should still be at frob
+
+        s.erase_search_char();
+        assert_eq!(s.cursor_pos, 2);
+
+    }
+
+    #[test]
+    fn test_advance_and_erase_search_with_filter_and_cursor_on_match2() {
+        let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.settings.filter_search = true;
+        s.move_cursor_to(4);
+
+        // current state:
+        //   ..
+        //   foo
+        //   frob
+        //   bar
+        // > baz
+
+        assert_eq!(s.cursor_pos, 4);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("b");
+
+        // state should now be
+        //   bar
+        // > baz
+
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 0);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 1);
+
+        // we're now on 'baz'
+        // erase the search char. now the state should be
+        //   ..
+        //   foo
+        //   frob
+        //   bar
+        // > baz
+
+        s.erase_search_char();
+        assert_eq!(s.cursor_pos, 4);
+
+    }
+
 }
