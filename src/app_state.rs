@@ -454,6 +454,29 @@ impl TereAppState {
 }
 
 #[cfg(test)]
+mod tests_for_filtered_vec {
+    use super::FilteredVec;
+
+    #[test]
+    fn test_filter_basic() {
+        let mut v = FilteredVec::from(vec![1, 2, 3]);
+        v.apply_filter(|n| (n % 2) == 0);
+        assert_eq!(v.all_items, vec![1, 2, 3]);
+        assert_eq!(v.kept_items(), vec![&2]);
+        assert_eq!(v.kept_indices, vec![1]);
+    }
+
+    #[test]
+    fn test_clear_filter() {
+        let mut v = FilteredVec::from(vec![1, 2, 3]);
+        v.apply_filter(|_| false);
+        assert_eq!(v.kept_items(), Vec::<&usize>::new());
+        v.clear_filter();
+        assert_eq!(v.kept_items(), vec![&1, &2, &3]);
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
