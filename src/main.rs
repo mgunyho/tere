@@ -410,6 +410,10 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    fn on_go_to_root(&mut self) -> CTResult<()> {
+        self.change_dir("/")
+    }
+
     // on 'home' or 'end'
     fn on_home_end(&mut self, home: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
@@ -453,6 +457,9 @@ impl<'a> TereTui<'a> {
                         }
                         KeyCode::Char('h') if k.modifiers == CONTROL | ALT => {
                             self.on_go_to_home()?;
+                        }
+                        KeyCode::Char('r') if k.modifiers == CONTROL => {
+                            self.on_go_to_root()?;
                         }
 
                         KeyCode::Home => self.on_home_end(true)?,
