@@ -278,9 +278,9 @@ impl TereAppState {
     pub fn update_ls_output_buf(&mut self) {
         if let Ok(entries) = std::fs::read_dir(".") {
             let pardir = std::path::Path::new(&std::path::Component::ParentDir);
-            self.ls_output_buf = vec![pardir.into()];
+            let mut new_output_buf: Vec<LsBufItem> = vec![CustomDirEntry::from(pardir).into()].into();
 
-            let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> =
+            let mut entries: Box<dyn Iterator<Item = LsBufItem>> =
                 Box::new(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 //TODO: case-insensitive sort???
@@ -292,11 +292,11 @@ impl TereAppState {
                 entries = Box::new(entries.filter(|e| e.path().is_dir()));
             }
 
-            self.ls_output_buf.extend(
+            new_output_buf.extend(
                 entries
             );
 
-            self.ls_output_buf.sort_by(|a, b| {
+            new_output_buf.sort_by(|a, b| {
                 //NOTE: partial_cmp for strings always returns Some, so unwrap is ok here
                 //a.file_name_checked().partial_cmp(&b.file_name_checked()).unwrap()
                 match (a.is_dir(), b.is_dir()) {
@@ -309,6 +309,8 @@ impl TereAppState {
                     (false, true) => std::cmp::Ordering::Greater,
                 }
             });
+
+            self.ls_output_buf = new_output_buf.into();
         }
         //TODO: show error message (add separate msg box)
     }
