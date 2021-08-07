@@ -517,19 +517,29 @@ mod tests {
     use super::*;
 
     fn create_test_filenames(n: u32) -> LsBufType {
-        (1..=n).map(|i| std::path::PathBuf::from(&format!("file {}", i)))
-            .map(|p| CustomDirEntry::from(p.as_ref()))
+        let fnames: Vec<_> = (1..=n).map(|i| format!("file {}", i)).collect();
+        strings_to_ls_buf(fnames)
+    }
+
+    fn strings_to_ls_buf<S: AsRef<std::ffi::OsStr>>(strings: Vec<S>) -> LsBufType {
+        strings.iter()
+            .map(|s| CustomDirEntry::from(std::path::PathBuf::from(&s).as_ref()))
             .collect::<Vec<CustomDirEntry>>()
             .into()
     }
 
     fn create_test_state(win_h: u32, n_filenames: u32) -> TereAppState {
+        create_test_state_with_buf(win_h, create_test_filenames(n_filenames))
+    }
+
+    fn create_test_state_with_buf(win_h: u32,
+                                  buf: LsBufType) -> TereAppState {
         TereAppState {
             cursor_pos: 0,
             scroll_pos: 0,
             main_win_h: win_h,
             main_win_w: 10,
-            ls_output_buf: create_test_filenames(n_filenames),
+            ls_output_buf: buf,
             header_msg: "".into(),
             info_msg: "".into(),
             search_string: "".into(),
