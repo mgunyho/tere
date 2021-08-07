@@ -59,6 +59,7 @@ The main way to navigate folders in `tere` is by using the keyboard to move the 
 | Go to parent directory | <kbd>←</kbd> or <kbd>Alt</kbd> + <kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>h</kbd> |
 |Exit `tere`| <kbd>Esc</kbd> or <kbd>Alt</kbd>+<kbd>q</kbd> |
 |Go to home directory| <kbd>Ctrl</kbd>+<kbd>Home</kbd> or <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>h</kbd>|
+|Go to root directory| <kbd>Ctrl</kbd>+<kbd>r</kbd>|
 |Move cursor up   by one screen| <kbd>Page Up</kbd>   or <kbd>Ctrl</kbd>+<kbd>u</kbd> |
 |Move cursor down by one screen| <kbd>Page Down</kbd> or <kbd>Ctrl</kbd>+<kbd>d</kbd> |
 |Move cursor to the top   | <kbd>Home</kbd> or <kbd>Alt</kbd>+<kbd>g</kbd> |
