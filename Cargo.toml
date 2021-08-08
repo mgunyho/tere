@@ -1,5 +1,5 @@
 [package]
-name = "tere-rs"
+name = "tere"
 version = "0.1.0"
 authors = ["mgunyho <marci.gunyho@gmail.com>"]
 edition = "2018"
