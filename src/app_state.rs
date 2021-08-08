@@ -180,7 +180,7 @@ pub struct TereAppState {
 
     // This vector will hold the list of files/folders in the current directory,
     // including ".." (the parent folder).
-    pub ls_output_buf: LsBufType,
+    ls_output_buf: LsBufType,
 
     //sort_mode: SortMode // TODO: sort by date etc
 
@@ -298,15 +298,16 @@ impl TereAppState {
 
         let old_cursor_pos = self.cursor_pos;
         let old_scroll_pos = self.scroll_pos;
-        let ls_buf_size = self.ls_output_buf.len() as u32;
+        let visible_items = self.visible_items();
+        let n_visible_items = visible_items.len() as u32;
         let max_y = self.main_win_h;
 
         let mut new_cursor_pos: i32 = old_cursor_pos as i32 + amount;
 
-        if wrap && !self.ls_output_buf.is_empty() {
+        if wrap && !visible_items.is_empty() {
             let offset = self.scroll_pos as i32;
             new_cursor_pos = (offset + new_cursor_pos)
-                .rem_euclid(self.ls_output_buf.len() as i32) - offset;
+                .rem_euclid(n_visible_items as i32) - offset;
         }
 
         if new_cursor_pos < 0 {
@@ -314,19 +315,19 @@ impl TereAppState {
             self.scroll_pos = self.scroll_pos
                 .checked_sub(new_cursor_pos.abs() as u32).unwrap_or(0);
             self.cursor_pos = 0;
-        } else if new_cursor_pos as u32 + old_scroll_pos >= ls_buf_size {
+        } else if new_cursor_pos as u32 + old_scroll_pos >= n_visible_items {
             // attempting to go below content
             //TODO: wrap, but only if cursor is starting off at the last row
             // i.e. if pressing pgdown before the end, jump only to the end,
             // but if pressing pgdown at the very end, wrap and start from top
-            self.scroll_pos = ls_buf_size.checked_sub(max_y).unwrap_or(0);
-            self.cursor_pos = ls_buf_size.checked_sub(self.scroll_pos + 1)
+            self.scroll_pos = n_visible_items.checked_sub(max_y).unwrap_or(0);
+            self.cursor_pos = n_visible_items.checked_sub(self.scroll_pos + 1)
                 .unwrap_or(0);
         } else if new_cursor_pos as u32 >= max_y {
             // Attempting to go below current view, scroll down.
             self.cursor_pos = max_y - 1;
             self.scroll_pos = std::cmp::min(
-                ls_buf_size,
+                n_visible_items,
                 old_scroll_pos + new_cursor_pos as u32
             ).checked_sub(self.cursor_pos).unwrap_or(0);
         } else {
@@ -361,7 +362,7 @@ impl TereAppState {
         // (or https://docs.rs/opener/0.4.1/opener/)
         let final_path = if path.is_empty() {
             let idx = self.cursor_pos + self.scroll_pos;
-            self.ls_output_buf.get(idx as usize)
+            self.visible_items().get(idx as usize)
                 .map_or("".to_string(), |s| s.file_name_checked())
         } else {
             path.to_string()
@@ -402,7 +403,7 @@ impl TereAppState {
     /// the previous match, and if it's zero, move to the cursor to the current
     /// match (without modifying the match list).
     pub fn move_cursor_to_adjacent_match(&mut self, dir: i32) {
-        if self.search_state.matches.len() > 0 && self.is_searching() {
+        if self.visible_items().len() > 0 && self.is_searching() {
             if dir < 0 {
                 self.search_state.matches.decrement();
             } else if dir > 0 {
