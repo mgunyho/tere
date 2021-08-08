@@ -325,6 +325,16 @@ impl TereAppState {
 
     }
 
+    fn update_search_matches(&mut self) {
+        let search_string = &self.search_string;
+        self.ls_output_buf.apply_filter(|itm| itm.file_name_checked().starts_with(search_string));
+    }
+
+    pub fn clear_search(&mut self) {
+        self.search_string.clear();
+        self.ls_output_buf.clear_filter();
+    }
+
     /// Move the cursor so that it is at the location `row` in the
     /// `ls_output_buf`, and scroll the view as necessary
     pub fn move_cursor_to(&mut self, row: u32) {
@@ -346,7 +356,7 @@ impl TereAppState {
             path.to_string()
         };
         let old_cwd = std::env::current_dir();
-        self.search_state.clear();
+        self.clear_search();
         std::env::set_current_dir(&final_path)?;
         self.update_ls_output_buf();
         //TODO: proper history
@@ -414,9 +424,6 @@ impl TereAppState {
         };
     }
 
-    pub fn clear_search(&mut self) {
-        self.search_state.clear();
-    }
 
 }
 
