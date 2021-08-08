@@ -398,8 +398,8 @@ impl TereAppState {
         // check out https://crates.io/crates/open
         // (or https://docs.rs/opener/0.4.1/opener/)
         let final_path = if path.is_empty() {
-            let idx = self.cursor_pos + self.scroll_pos;
-            self.visible_items().get(idx as usize)
+            //TODO: error here if result is empty?
+            self.get_item_under_cursor()
                 .map_or("".to_string(), |s| s.file_name_checked())
         } else {
             path.to_string()
@@ -412,11 +412,11 @@ impl TereAppState {
         self.cursor_pos = 0;
         self.scroll_pos = 0;
         if let Ok(old_cwd) = old_cwd {
-            if let Some(idx) = self.ls_output_buf.all_items.iter()
-                //TODO: this comparison fails atm
-                .position(|x| x.path().file_name() == old_cwd.file_name()) {
+            if let Some(old_cwd) = old_cwd.file_name() {
+                if let Some(idx) = self.index_of_filename(old_cwd) {
                     self.move_cursor(idx as i32, false);
                 }
+            }
         }
         Ok(())
     }
