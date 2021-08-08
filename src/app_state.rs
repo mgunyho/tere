@@ -282,6 +282,15 @@ impl TereAppState {
         //TODO: show error message (add separate msg box)
     }
 
+
+    pub fn visible_items(&self) -> Vec<&LsBufItem> {
+        if self.settings.filter_search {
+            self.ls_output_buf.kept_items()
+        } else {
+            self.ls_output_buf.all_items.iter().collect()
+        }
+    }
+
     /// Move the cursor up (positive amount) or down (negative amount), and scroll
     /// the view as necessary
     pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
