@@ -189,13 +189,9 @@ impl<'a> TereTui<'a> {
             style::SetAttribute(attr),
         )?;
 
-        //TODO: don't recompute this here every time, but store the hashset (or a hashmap or something) in the matches struct...
-        let match_indices: std::collections::HashSet<usize> = self.app_state
-            .visible_match_indices().into_iter().collect();
-
         let idx = self.app_state.cursor_pos_to_visible_item_index(row.into());
         if self.app_state.is_searching()
-            && match_indices.contains(&idx) {
+            && self.app_state.visible_match_indices().contains(&idx) {
             // print matching part
             let n = self.app_state.search_string().len();
             let item_matching = item.get(..n).unwrap_or(&item);
