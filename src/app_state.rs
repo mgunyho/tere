@@ -162,9 +162,11 @@ impl From<&std::path::Path> for CustomDirEntry
     }
 }
 
+
 type LsBufItem = CustomDirEntry;
 /// The type of the `ls_output_buf` buffer of the app state
-type LsBufType = Vec<LsBufItem>;
+type LsBufType = FilteredVec<LsBufItem>;
+
 
 /// This struct represents the state of the application. Note that it has no
 /// notion of curses windows.
