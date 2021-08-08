@@ -453,21 +453,42 @@ impl TereAppState {
     }
 
     /// Move the cursor to the next or previous match in the current list of
-    /// matches, and update the match list to point to the new current value.
-    /// If dir is positive, move to the next match, if it's negative, move to
-    /// the previous match, and if it's zero, move to the cursor to the current
-    /// match (without modifying the match list).
+    /// matches. If dir is positive, move to the next match, if it's negative,
+    /// move to the previous match, and if it's zero, move to the cursor to the
+    /// current match.
     pub fn move_cursor_to_adjacent_match(&mut self, dir: i32) {
         if self.num_matching_items() > 0 && self.is_searching() {
-            if dir < 0 {
-                self.search_state.matches.decrement();
-            } else if dir > 0 {
-                self.search_state.matches.increment();
-            }
 
-            let (i, _) = self.search_state.matches.current_item().unwrap();
-            let i = i.clone() as u32;
-            self.move_cursor_to(i);
+            if self.settings.filter_search {
+                // the only visible items are the matches, so we can just move the cursor
+                self.move_cursor(dir.signum(), true);
+            } else {
+
+                let cur_idx = self.cursor_pos_to_visible_item_index(self.cursor_pos);
+                let kept_indices = &self.ls_output_buf.kept_indices;
+                let (cur_idx_in_kept, cur_idx_in_all) = kept_indices.iter()
+                    .enumerate()
+                    .skip_while(|(_, i_in_all)| **i_in_all < cur_idx)
+                    .next()
+                    // if we skipped everything, wrap around and return the first
+                    // item in the kept indices. shouldn't panic, kept_indices
+                    // shouldn't be empty based on the visible_items().len()
+                    // check above.
+                    .unwrap_or((0, &kept_indices[0]));
+
+                let i = if dir < 0 {
+                    let i = cur_idx_in_kept.checked_sub(1).unwrap_or(kept_indices.len() - 1);
+                    kept_indices[i]
+                } else if dir > 0 {
+                    let i = (cur_idx_in_kept + 1) % kept_indices.len();
+                    kept_indices[i]
+                } else {
+                    // dir == 0, just use the current index
+                    *cur_idx_in_all
+                };
+
+                self.move_cursor_to(u32::try_from(i).unwrap_or(u32::MAX));
+            }
         }
     }
 
