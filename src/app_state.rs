@@ -451,7 +451,6 @@ impl TereAppState {
     pub fn advance_search(&mut self, query: &str) {
         self.search_string.push_str(query);
 
-        //TODO: clean up this and erase_search_char...
         let previous_item_under_cursor = self.get_item_under_cursor().cloned();
 
         self.update_search_matches();
@@ -469,15 +468,12 @@ impl TereAppState {
 
     pub fn erase_search_char(&mut self) {
         if let Some(_) = self.search_string.pop() {
-            //TODO: keep cursor position. now if we're at the second match and type backspace, the
-            //curor jumps back to the first
+            //TODO: keep cursor position when there were no matches? should somehow push cursor position onto some stack when advancing search.
 
-            // this is an attempt at keeping cursor position TODO: check
             let previous_item_under_cursor = self.get_item_under_cursor().cloned();
 
             self.update_search_matches();
 
-            //TODO: verify that this is correct.
             if self.settings.filter_search {
                 if let Some(item) = previous_item_under_cursor {
                     if !self.move_cursor_to_filename(item.file_name_checked()) {
@@ -489,7 +485,6 @@ impl TereAppState {
             }
         };
     }
-
 
 }
 
@@ -966,7 +961,6 @@ mod tests {
         );
         s.settings.filter_search = true;
 
-        //TODO: this passes with move_cursor_to(4)...
         s.move_cursor_to(3);
 
         // current state: ('|' shows the window position)
