@@ -375,7 +375,7 @@ impl TereAppState {
         self.cursor_pos = 0;
         self.scroll_pos = 0;
         if let Ok(old_cwd) = old_cwd {
-            if let Some(idx) = self.ls_output_buf.iter()
+            if let Some(idx) = self.ls_output_buf.all_items.iter()
                 //TODO: this comparison fails atm
                 .position(|x| x.path().file_name() == old_cwd.file_name()) {
                     self.move_cursor(idx as i32, false);
