@@ -372,8 +372,10 @@ impl TereAppState {
     }
 
     pub fn clear_search(&mut self) {
+        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
         self.search_string.clear();
         self.ls_output_buf.clear_filter();
+        previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
     }
 
     /// Move the cursor so that it is at the location `row` in the
