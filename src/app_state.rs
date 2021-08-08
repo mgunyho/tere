@@ -458,7 +458,7 @@ impl TereAppState {
     /// the previous match, and if it's zero, move to the cursor to the current
     /// match (without modifying the match list).
     pub fn move_cursor_to_adjacent_match(&mut self, dir: i32) {
-        if self.visible_items().len() > 0 && self.is_searching() {
+        if self.num_matching_items() > 0 && self.is_searching() {
             if dir < 0 {
                 self.search_state.matches.decrement();
             } else if dir > 0 {
