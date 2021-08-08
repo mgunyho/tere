@@ -163,6 +163,77 @@ impl TereAppState {
         return ret;
     }
 
+    ///////////////////////////////////////////
+    // Helpers for reading the current state //
+    ///////////////////////////////////////////
+
+    pub fn is_searching(&self) -> bool {
+        !self.search_string.is_empty()
+    }
+
+    pub fn search_string(&self) -> &String {
+        &self.search_string
+    }
+
+    /// The total number of items in the ls_output_buf.
+    pub fn num_total_items(&self) -> usize {
+        self.ls_output_buf.all_items.len()
+    }
+
+    /// The number of items that match the current search.
+    pub fn num_matching_items(&self) -> usize {
+        self.ls_output_buf.kept_indices.len()
+    }
+
+    /// Return a vector that contains the indices into the currently visible
+    /// items that contain a match
+    pub fn visible_match_indices(&self) -> Vec<usize> {
+        if self.settings.filter_search {
+            (0..self.ls_output_buf.kept_indices.len()).collect()
+        } else {
+            // it's ok to clone here, the kept_indices will be usually quite short.
+            self.ls_output_buf.kept_indices.clone()
+        }
+    }
+
+    pub fn visible_items(&self) -> Vec<&LsBufItem> {
+        if self.settings.filter_search {
+            self.ls_output_buf.kept_items()
+        } else {
+            self.ls_output_buf.all_items.iter().collect()
+        }
+    }
+
+    /// Convert a cursor position (in the range 0..window_height) to an index
+    /// into the currently visible items.
+    pub fn cursor_pos_to_visible_item_index(&self, cursor_pos: u32) -> usize {
+        (cursor_pos + self.scroll_pos) as usize
+    }
+
+    pub fn get_item_at_cursor_pos(&self, cursor_pos: u32) -> Option<&LsBufItem> {
+        let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
+        self.visible_items().get(idx).map(|x| *x)
+    }
+
+    /// Returns None if the visible items is empty, or if the state is
+    /// inconsistent and the cursor is outside the currently visible items.
+    fn get_item_under_cursor(&self) -> Option<&LsBufItem> {
+        self.get_item_at_cursor_pos(self.cursor_pos)
+    }
+
+    /// Get the index of a filename into the currently visible items. Returns
+    /// None if it's not found.
+    fn index_of_filename<S: AsRef<OsStr>>(&self, fname: S) -> Option<usize> {
+        self.visible_items().iter()
+            .position(|x| {
+                AsRef::<OsStr>::as_ref(&x.file_name_checked()) == fname.as_ref()
+            })
+    }
+
+    //////////////////////////////////////
+    // Functions for updating the state //
+    //////////////////////////////////////
+
     pub fn update_header(&mut self) {
         //TODO: add another row to header (or footer?) with info, like 'tere - type ALT+? for help', and show status message when trying to open file etc
         let cwd: std::string::String = match std::env::current_dir() {
@@ -225,40 +296,37 @@ impl TereAppState {
         //TODO: show error message (add separate msg box)
     }
 
-
-    pub fn visible_items(&self) -> Vec<&LsBufItem> {
-        if self.settings.filter_search {
-            self.ls_output_buf.kept_items()
+    pub fn change_dir(&mut self, path: &str) -> std::io::Result<()> {
+        // TODO: add option to use xdg-open (or similar) on files?
+        // check out https://crates.io/crates/open
+        // (or https://docs.rs/opener/0.4.1/opener/)
+        let final_path = if path.is_empty() {
+            //TODO: error here if result is empty?
+            self.get_item_under_cursor()
+                .map_or("".to_string(), |s| s.file_name_checked())
         } else {
-            self.ls_output_buf.all_items.iter().collect()
+            path.to_string()
+        };
+        let old_cwd = std::env::current_dir();
+        self.clear_search();
+        std::env::set_current_dir(&final_path)?;
+        self.update_ls_output_buf();
+        //TODO: proper history
+        self.cursor_pos = 0;
+        self.scroll_pos = 0;
+        if let Ok(old_cwd) = old_cwd {
+            if let Some(old_cwd) = old_cwd.file_name() {
+                if let Some(idx) = self.index_of_filename(old_cwd) {
+                    self.move_cursor(idx as i32, false);
+                }
+            }
         }
+        Ok(())
     }
 
-    /// Convert a cursor position (in the range 0..window_height) to an index
-    /// into the currently visible items.
-    pub fn cursor_pos_to_visible_item_index(&self, cursor_pos: u32) -> usize {
-        (cursor_pos + self.scroll_pos) as usize
-    }
-
-    pub fn get_item_at_cursor_pos(&self, cursor_pos: u32) -> Option<&LsBufItem> {
-        let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
-        self.visible_items().get(idx).map(|x| *x)
-    }
-
-    /// Returns None if the visible items is empty, or if the state is
-    /// inconsistent and the cursor is outside the currently visible items.
-    fn get_item_under_cursor(&self) -> Option<&LsBufItem> {
-        self.get_item_at_cursor_pos(self.cursor_pos)
-    }
-
-    /// Get the index of a filename into the currently visible items. Returns
-    /// None if it's not found.
-    fn index_of_filename<S: AsRef<OsStr>>(&self, fname: S) -> Option<usize> {
-        self.visible_items().iter()
-            .position(|x| {
-                AsRef::<OsStr>::as_ref(&x.file_name_checked()) == fname.as_ref()
-            })
-    }
+    /////////////////////////////////////
+    // Functions for moving the cursor //
+    /////////////////////////////////////
 
     /// Move the cursor up (positive amount) or down (negative amount) in the
     /// currently visible items, and update the scroll position as necessary
@@ -306,18 +374,6 @@ impl TereAppState {
 
     }
 
-    fn update_search_matches(&mut self) {
-        let search_string = &self.search_string;
-        self.ls_output_buf.apply_filter(|itm| itm.file_name_checked().starts_with(search_string));
-    }
-
-    pub fn clear_search(&mut self) {
-        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
-        self.search_string.clear();
-        self.ls_output_buf.clear_filter();
-        previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
-    }
-
     /// Move the cursor so that it is at the location `row` in the
     /// currently visible items, and update the scroll position as necessary
     pub fn move_cursor_to(&mut self, row: u32) {
@@ -335,62 +391,6 @@ impl TereAppState {
             .is_some()
     }
 
-    pub fn change_dir(&mut self, path: &str) -> std::io::Result<()> {
-        // TODO: add option to use xdg-open (or similar) on files?
-        // check out https://crates.io/crates/open
-        // (or https://docs.rs/opener/0.4.1/opener/)
-        let final_path = if path.is_empty() {
-            //TODO: error here if result is empty?
-            self.get_item_under_cursor()
-                .map_or("".to_string(), |s| s.file_name_checked())
-        } else {
-            path.to_string()
-        };
-        let old_cwd = std::env::current_dir();
-        self.clear_search();
-        std::env::set_current_dir(&final_path)?;
-        self.update_ls_output_buf();
-        //TODO: proper history
-        self.cursor_pos = 0;
-        self.scroll_pos = 0;
-        if let Ok(old_cwd) = old_cwd {
-            if let Some(old_cwd) = old_cwd.file_name() {
-                if let Some(idx) = self.index_of_filename(old_cwd) {
-                    self.move_cursor(idx as i32, false);
-                }
-            }
-        }
-        Ok(())
-    }
-
-    pub fn is_searching(&self) -> bool {
-        !self.search_string.is_empty()
-    }
-
-    pub fn search_string(&self) -> &String {
-        &self.search_string
-    }
-
-    /// The total number of items in the ls_output_buf.
-    pub fn num_total_items(&self) -> usize {
-        self.ls_output_buf.all_items.len()
-    }
-
-    /// The number of items that match the current search.
-    pub fn num_matching_items(&self) -> usize {
-        self.ls_output_buf.kept_indices.len()
-    }
-
-    /// Return a vector that contains the indices into the currently visible
-    /// items that contain a match
-    pub fn visible_match_indices(&self) -> Vec<usize> {
-        if self.settings.filter_search {
-            (0..self.ls_output_buf.kept_indices.len()).collect()
-        } else {
-            // it's ok to clone here, the kept_indices will be usually quite short.
-            self.ls_output_buf.kept_indices.clone()
-        }
-    }
 
     /// Move the cursor to the next or previous match in the current list of
     /// matches. If dir is positive, move to the next match, if it's negative,
@@ -430,6 +430,22 @@ impl TereAppState {
                 self.move_cursor_to(u32::try_from(i).unwrap_or(u32::MAX));
             }
         }
+    }
+
+    ///////////
+    // Seach //
+    ///////////
+
+    fn update_search_matches(&mut self) {
+        let search_string = &self.search_string;
+        self.ls_output_buf.apply_filter(|itm| itm.file_name_checked().starts_with(search_string));
+    }
+
+    pub fn clear_search(&mut self) {
+        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
+        self.search_string.clear();
+        self.ls_output_buf.clear_filter();
+        previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
     }
 
     pub fn advance_search(&mut self, query: &str) {
