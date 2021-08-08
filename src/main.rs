@@ -127,6 +127,7 @@ impl<'a> TereTui<'a> {
         let mut win = self.window;
         let mut extra_msg = String::new();
 
+        let cursor_idx = self.app_state.cursor_pos_to_visible_item_index(self.app_state.cursor_pos);
         if self.app_state.is_searching() {
             //self.footer_win.mvaddstr(0, 0, &self.app_state.search_string());
             queue!(
@@ -135,18 +136,21 @@ impl<'a> TereTui<'a> {
                 style::SetAttribute(Attribute::Reset),
                 style::Print(&self.app_state.search_string().clone().bold()),
             )?;
+
+            let index_in_matches = self.app_state
+                .visible_match_indices().iter()
+                .position(|x| *x == cursor_idx)
+                .unwrap_or(0);
+
             extra_msg.push_str(&format!("{} / {} / {}",
-                               self.app_state.search_matches()
-                                   .current_pos().map(|i| i + 1).unwrap_or(0),
-                               self.app_state.search_matches().len(),
-                               self.app_state.ls_output_buf.len()));
+                               index_in_matches + 1,
+                               self.app_state.num_matching_items(),
+                               self.app_state.num_total_items()));
         } else {
             //TODO: show no. of files/folders separately? like 'n folders, n files'
-            let cursor_idx = self.app_state.cursor_pos +
-                             self.app_state.scroll_pos + 1;
             extra_msg.push_str(&format!("{} / {}",
-                               cursor_idx,
-                               self.app_state.ls_output_buf.len()));
+                               cursor_idx + 1,
+                               self.app_state.visible_items().len()));
         }
         execute!(
             win,
