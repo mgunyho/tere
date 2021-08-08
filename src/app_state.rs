@@ -3,6 +3,9 @@
 
 use clap::ArgMatches;
 
+use std::convert::TryFrom;
+use std::ffi::OsStr;
+
 #[path = "settings.rs"]
 mod settings;
 use settings::TereSettings;
@@ -306,6 +309,15 @@ impl TereAppState {
     /// inconsistent and the cursor is outside the currently visible items.
     fn get_item_under_cursor(&self) -> Option<&LsBufItem> {
         self.get_item_at_cursor_pos(self.cursor_pos)
+    }
+
+    /// Get the index of a filename into the currently visible items. Returns
+    /// None if it's not found.
+    fn index_of_filename<S: AsRef<OsStr>>(&self, fname: S) -> Option<usize> {
+        self.visible_items().iter()
+            .position(|x| {
+                AsRef::<OsStr>::as_ref(&x.file_name_checked()) == fname.as_ref()
+            })
     }
 
     /// Move the cursor up (positive amount) or down (negative amount) in the
