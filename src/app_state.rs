@@ -431,11 +431,14 @@ impl TereAppState {
         &self.search_string
     }
 
-    /// A vector containing items that match the current search
-    pub fn matching_items(&self) -> Vec<&LsBufItem> {
-        //TODO: matching_items() is only used for the len(), so should add method for that instead.
-        //now we have to recalculate the kept_items from the indices every time.
-        self.ls_output_buf.kept_items()
+    /// The total number of items in the ls_output_buf.
+    pub fn num_total_items(&self) -> usize {
+        self.ls_output_buf.all_items.len()
+    }
+
+    /// The number of items that match the current search.
+    pub fn num_matching_items(&self) -> usize {
+        self.ls_output_buf.kept_indices.len()
     }
 
     /// Return a vector that contains the indices into the currently visible
