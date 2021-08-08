@@ -25,7 +25,7 @@ const FOOTER_SIZE: u16 = 1;
 //TODO: clippy
 
 mod app_state;
-use app_state::{TereAppState, CustomDirEntry};
+use app_state::TereAppState;
 
 /// This struct groups together ncurses windows for the main content, header and
 /// footer, and an application state object
@@ -127,6 +127,7 @@ impl<'a> TereTui<'a> {
         let mut win = self.window;
         let mut extra_msg = String::new();
 
+        let cursor_idx = self.app_state.cursor_pos_to_visible_item_index(self.app_state.cursor_pos);
         if self.app_state.is_searching() {
             //self.footer_win.mvaddstr(0, 0, &self.app_state.search_string());
             queue!(
@@ -135,18 +136,21 @@ impl<'a> TereTui<'a> {
                 style::SetAttribute(Attribute::Reset),
                 style::Print(&self.app_state.search_string().clone().bold()),
             )?;
+
+            let index_in_matches = self.app_state
+                .visible_match_indices().iter()
+                .position(|x| *x == cursor_idx)
+                .unwrap_or(0);
+
             extra_msg.push_str(&format!("{} / {} / {}",
-                               self.app_state.search_matches()
-                                   .current_pos().map(|i| i + 1).unwrap_or(0),
-                               self.app_state.search_matches().len(),
-                               self.app_state.ls_output_buf.len()));
+                               index_in_matches + 1,
+                               self.app_state.num_matching_items(),
+                               self.app_state.num_total_items()));
         } else {
             //TODO: show no. of files/folders separately? like 'n folders, n files'
-            let cursor_idx = self.app_state.cursor_pos +
-                             self.app_state.scroll_pos + 1;
             extra_msg.push_str(&format!("{} / {}",
-                               cursor_idx,
-                               self.app_state.ls_output_buf.len()));
+                               cursor_idx + 1,
+                               self.app_state.visible_items().len()));
         }
         execute!(
             win,
@@ -156,19 +160,6 @@ impl<'a> TereTui<'a> {
         )
     }
 
-    /// Convert a row number (starting from 0 at the top of the main window)
-    /// to an index into the ls_output_buf
-    fn row_to_buf_idx(&self, row: u16) -> usize {
-        (self.app_state.scroll_pos + row as u32) as usize
-    }
-
-    /// Get the item from ls_output_buf that should be displayed on row `row` of the main window.
-    /// Row 0 is the first row of the main window.
-    fn get_item_at_row(&self, row: u16) -> Option<&CustomDirEntry> {
-        let idx = self.row_to_buf_idx(row);
-        self.app_state.ls_output_buf.get(idx)
-    }
-
     fn draw_main_window_row(&mut self,
                             row: u16,
                             highlight: bool,
@@ -176,7 +167,7 @@ impl<'a> TereTui<'a> {
         let row_abs = row  + HEADER_SIZE;
         let w: usize = main_window_size()?.0.into();
 
-        let (item, bold) = self.get_item_at_row(row).map_or(
+        let (item, bold) = self.app_state.get_item_at_cursor_pos(row.into()).map_or(
             ("".to_string(), false),
             |itm| (itm.file_name_checked(), itm.is_dir())
         );
@@ -198,12 +189,9 @@ impl<'a> TereTui<'a> {
             style::SetAttribute(attr),
         )?;
 
-        //TODO: don't recompute this here every time, but store the hashset (or a hashmap or something) in the matches struct...
-        let match_indices: std::collections::HashSet<usize> = self.app_state
-            .search_matches().iter().map(|(i, _)| *i).collect();
-
+        let idx = self.app_state.cursor_pos_to_visible_item_index(row.into());
         if self.app_state.is_searching()
-            && match_indices.contains(&self.row_to_buf_idx(row)) {
+            && self.app_state.visible_match_indices().contains(&idx) {
             // print matching part
             let n = self.app_state.search_string().len();
             let item_matching = item.get(..n).unwrap_or(&item);
@@ -322,6 +310,7 @@ impl<'a> TereTui<'a> {
     }
 
     pub fn change_dir(&mut self, path: &str) -> CTResult<()> {
+        //TODO: if there are no visible items, don't do anything?
         match self.app_state.change_dir(path) {
             Err(e) => {
                 if cfg!(debug_assertions) {
@@ -342,7 +331,7 @@ impl<'a> TereTui<'a> {
 
     pub fn on_search_char(&mut self, c: char) -> CTResult<()> {
         self.app_state.advance_search(&c.to_string());
-        if self.app_state.search_matches().len() == 1 {
+        if self.app_state.num_matching_items() == 1 {
             // There's only one match, highlight it and then change dir
             self.highlight_row_exclusive(self.app_state.cursor_pos)?;
 
@@ -420,7 +409,7 @@ impl<'a> TereTui<'a> {
             let target = if home {
                 0
             } else {
-                self.app_state.ls_output_buf.len() as u32
+                self.app_state.visible_items().len() as u32
             };
             self.app_state.move_cursor_to(target);
             self.redraw_main_window()?;
@@ -536,6 +525,10 @@ fn main() -> crossterm::Result<()> {
              //.short("f")  // TODO: check conflicts
              .help("only show folders in listing")
              )
+        .arg(Arg::with_name("filter-search")
+             .long("filter-search")
+             .help("Show only items matching the search in listing")
+            )
         .get_matches_safe()
         .unwrap_or_else(|err| {
             // custom error handling: print also '--help' or '--version' to stderr

@@ -3,69 +3,61 @@
 
 use clap::ArgMatches;
 
+use std::convert::TryFrom;
+use std::ffi::OsStr;
+
 #[path = "settings.rs"]
 mod settings;
 use settings::TereSettings;
 
-/// A vector containing a list of matches, which also keeps track of which element
-/// we're pointing at currently
-pub struct MatchesVec<T> {
-    vec: Vec<T>,
-    idx: usize,
+/// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
+/// both the vector of filtered items and the whole unfiltered vector.
+struct FilteredVec<T> {
+    all_items: Vec<T>,
+    // This vec contains the indices of the items that have not been filtered out
+    kept_indices: Vec<usize>,
 }
 
-impl<T> MatchesVec<T> {
-    pub fn increment(&mut self) {
-        self.idx = (self.idx + 1) % self.vec.len();
+impl<T> FilteredVec<T> {
+
+    /// Return a vector of all items that have been kept
+    pub fn kept_items(&self) -> Vec<&T> {
+        self.kept_indices.iter().filter_map(|idx| self.all_items.get(*idx))
+            .collect()
     }
 
-    pub fn decrement(&mut self) {
-        self.idx = self.idx.checked_sub(1).unwrap_or(self.vec.len()-1);
+    /// Recreate the collection of filtered items by through all items in the unfiltered collection
+    /// and applying a filter function
+    pub fn apply_filter<F>(&mut self, filter: F)
+    where
+        F: Fn(&T) -> bool
+    {
+        self.kept_indices.clear();
+        self.kept_indices = self.all_items.iter()
+            .enumerate()
+            .filter(|(_, x)| filter(&x))
+            .map(|(i, _)| i)
+            .collect();
     }
 
-    /// The match we're currently pointing at. Returns None if the list of matches
-    /// is empty.
-    pub fn current_item(&self) -> Option<&T> {
-        self.vec.get(self.idx)
-    }
-
-    /// The index of the match we're currently pointing at. Returs None if the
-    /// list of matches is empty.
-    pub fn current_pos(&self) -> Option<usize> {
-        if self.vec.is_empty() {
-            None
-        } else {
-            Some(self.idx)
-        }
-    }
-
-    pub fn clear(&mut self) {
-        self.vec.clear();
-        self.idx = 0;
-    }
-
-    pub fn len(&self) -> usize {
-        self.vec.len()
-    }
-
-    pub fn iter(&self) -> std::slice::Iter<'_, T> {
-        self.vec.iter()
+    /// Clear the filtered results, so that the kept items contain all items
+    pub fn clear_filter(&mut self) {
+        self.kept_indices.clear();
+        self.kept_indices = (0..self.all_items.len()).collect();
     }
 }
 
-impl<T> Default for MatchesVec<T> {
-    fn default() -> Self { Self { vec: vec![], idx: 0, } }
-}
-
-impl<T> std::iter::FromIterator<T> for MatchesVec<T> {
-    // so that MatchesVec can be `collect()`ed from an iterator.
-    fn from_iter<I: std::iter::IntoIterator<Item=T>>(iter: I) -> Self {
-        Self {
-            vec: iter.into_iter().collect(),
-            idx: 0,
-        }
+impl<T> From<Vec<T>> for FilteredVec<T> {
+    fn from(vec: Vec<T>) -> Self {
+        let mut ret = Self {
+            all_items: vec,
+            kept_indices: vec![],
+        };
+        ret.clear_filter();
+        ret
     }
 }
+
 
 /// A stripped-down version of ``std::fs::DirEntry``.
 #[derive(Clone)]
@@ -113,41 +105,10 @@ impl From<&std::path::Path> for CustomDirEntry
     }
 }
 
+
 type LsBufItem = CustomDirEntry;
 /// The type of the `ls_output_buf` buffer of the app state
-type LsBufType = Vec<LsBufItem>;
-type MatchType = (usize, LsBufItem);
-type MatchesType = MatchesVec<MatchType>;
-
-
-#[derive(Default)]
-struct SearchState {
-    search_string: String,
-    // This field contains the items in `ls_output_buf` that match the current
-    // search string, along with their indices (so it's possible to figure out
-    // whether they are in view).
-    matches: MatchesType,
-}
-
-impl SearchState {
-    /// Reset the search state
-    fn clear(&mut self) {
-        self.matches.clear();
-        self.search_string.clear();
-    }
-
-    /// Find the elements in `buf` that match with the current
-    /// search string and store them in self.matches.
-    fn update_matches(&mut self, buf: &LsBufType) {
-        // TODO: if matches is not empty, iterate over only that and not the whole buffer?
-        self.matches = buf.iter().enumerate().filter(|(_, s)|
-            //TODO: take search_anywhere into account
-            //TODO: case sensitivity
-            s.file_name_checked().starts_with(&self.search_string)
-        ).map(|(i, s)| (i, s.clone())).collect();
-        //TODO: change indices -> Option<usize>, and put Some only for those that are within view?
-    }
-}
+type LsBufType = FilteredVec<LsBufItem>;
 
 
 /// This struct represents the state of the application. Note that it has no
@@ -162,7 +123,7 @@ pub struct TereAppState {
 
     // This vector will hold the list of files/folders in the current directory,
     // including ".." (the parent folder).
-    pub ls_output_buf: LsBufType,
+    ls_output_buf: LsBufType,
 
     //sort_mode: SortMode // TODO: sort by date etc
 
@@ -174,9 +135,7 @@ pub struct TereAppState {
     // The top of the screen corresponds to this row in the `ls_output_buf`.
     pub scroll_pos: u32,
 
-    //search_string: String,
-
-    search_state: SearchState,
+    search_string: String,
 
     pub header_msg: String,
     pub info_msg: String,
@@ -189,12 +148,12 @@ impl TereAppState {
         let mut ret = Self {
             main_win_w: window_w,
             main_win_h: window_h,
-            ls_output_buf: vec![],
+            ls_output_buf: vec![].into(),
             cursor_pos: 0, // TODO: get last value from previous run
             scroll_pos: 0,
             header_msg: "".into(),
             info_msg: "".into(), // TODO: initial help message, like 'tere vXXX, type "?" for help'
-            search_state: Default::default(),
+            search_string: "".into(),
             //search_anywhere: false,
             settings: TereSettings::parse_cli_args(cli_args),
         };
@@ -203,6 +162,77 @@ impl TereAppState {
         ret.update_ls_output_buf();
         return ret;
     }
+
+    ///////////////////////////////////////////
+    // Helpers for reading the current state //
+    ///////////////////////////////////////////
+
+    pub fn is_searching(&self) -> bool {
+        !self.search_string.is_empty()
+    }
+
+    pub fn search_string(&self) -> &String {
+        &self.search_string
+    }
+
+    /// The total number of items in the ls_output_buf.
+    pub fn num_total_items(&self) -> usize {
+        self.ls_output_buf.all_items.len()
+    }
+
+    /// The number of items that match the current search.
+    pub fn num_matching_items(&self) -> usize {
+        self.ls_output_buf.kept_indices.len()
+    }
+
+    /// Return a vector that contains the indices into the currently visible
+    /// items that contain a match
+    pub fn visible_match_indices(&self) -> Vec<usize> {
+        if self.settings.filter_search {
+            (0..self.ls_output_buf.kept_indices.len()).collect()
+        } else {
+            // it's ok to clone here, the kept_indices will be usually quite short.
+            self.ls_output_buf.kept_indices.clone()
+        }
+    }
+
+    pub fn visible_items(&self) -> Vec<&LsBufItem> {
+        if self.settings.filter_search {
+            self.ls_output_buf.kept_items()
+        } else {
+            self.ls_output_buf.all_items.iter().collect()
+        }
+    }
+
+    /// Convert a cursor position (in the range 0..window_height) to an index
+    /// into the currently visible items.
+    pub fn cursor_pos_to_visible_item_index(&self, cursor_pos: u32) -> usize {
+        (cursor_pos + self.scroll_pos) as usize
+    }
+
+    pub fn get_item_at_cursor_pos(&self, cursor_pos: u32) -> Option<&LsBufItem> {
+        let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
+        self.visible_items().get(idx).map(|x| *x)
+    }
+
+    /// Returns None if the visible items is empty, or if the state is
+    /// inconsistent and the cursor is outside the currently visible items.
+    fn get_item_under_cursor(&self) -> Option<&LsBufItem> {
+        self.get_item_at_cursor_pos(self.cursor_pos)
+    }
+
+    /// Get the index of a filename into the currently visible items. Returns
+    /// None if it's not found.
+    fn index_of_filename<S: AsRef<OsStr>>(&self, fname: S) -> Option<usize> {
+        self.visible_items().iter()
+            .position(|x| {
+                AsRef::<OsStr>::as_ref(&x.file_name_checked()) == fname.as_ref()
+            })
+    }
+
+    //////////////////////////////////////
+    // Functions for updating the state //
+    //////////////////////////////////////
 
     pub fn update_header(&mut self) {
         //TODO: add another row to header (or footer?) with info, like 'tere - type ALT+? for help', and show status message when trying to open file etc
@@ -229,25 +259,25 @@ impl TereAppState {
     pub fn update_ls_output_buf(&mut self) {
         if let Ok(entries) = std::fs::read_dir(".") {
             let pardir = std::path::Path::new(&std::path::Component::ParentDir);
-            self.ls_output_buf = vec![pardir.into()];
+            let mut new_output_buf: Vec<LsBufItem> = vec![CustomDirEntry::from(pardir).into()].into();
 
-            let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> =
+            let mut entries: Box<dyn Iterator<Item = LsBufItem>> =
                 Box::new(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 //TODO: case-insensitive sort???
                 //TODO: cache file metadata already here when reloading it
-                entries.filter_map(|e| e.ok()).map(|e| e.into())
+                entries.filter_map(|e| e.ok()).map(|e| CustomDirEntry::from(e).into())
                 );
 
             if self.settings.folders_only {
                 entries = Box::new(entries.filter(|e| e.path().is_dir()));
             }
 
-            self.ls_output_buf.extend(
+            new_output_buf.extend(
                 entries
             );
 
-            self.ls_output_buf.sort_by(|a, b| {
+            new_output_buf.sort_by(|a, b| {
                 //NOTE: partial_cmp for strings always returns Some, so unwrap is ok here
                 //a.file_name_checked().partial_cmp(&b.file_name_checked()).unwrap()
                 match (a.is_dir(), b.is_dir()) {
@@ -260,26 +290,61 @@ impl TereAppState {
                     (false, true) => std::cmp::Ordering::Greater,
                 }
             });
+
+            self.ls_output_buf = new_output_buf.into();
         }
         //TODO: show error message (add separate msg box)
     }
 
-    /// Move the cursor up (positive amount) or down (negative amount), and scroll
-    /// the view as necessary
+    pub fn change_dir(&mut self, path: &str) -> std::io::Result<()> {
+        // TODO: add option to use xdg-open (or similar) on files?
+        // check out https://crates.io/crates/open
+        // (or https://docs.rs/opener/0.4.1/opener/)
+        let final_path = if path.is_empty() {
+            //TODO: error here if result is empty?
+            self.get_item_under_cursor()
+                .map_or("".to_string(), |s| s.file_name_checked())
+        } else {
+            path.to_string()
+        };
+        let old_cwd = std::env::current_dir();
+        self.clear_search();
+        std::env::set_current_dir(&final_path)?;
+        self.update_ls_output_buf();
+        //TODO: proper history
+        self.cursor_pos = 0;
+        self.scroll_pos = 0;
+        if let Ok(old_cwd) = old_cwd {
+            if let Some(old_cwd) = old_cwd.file_name() {
+                if let Some(idx) = self.index_of_filename(old_cwd) {
+                    self.move_cursor(idx as i32, false);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /////////////////////////////////////
+    // Functions for moving the cursor //
+    /////////////////////////////////////
+
+    /// Move the cursor up (positive amount) or down (negative amount) in the
+    /// currently visible items, and update the scroll position as necessary
     pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
         //TOOD: wrap around (when starting from the last row)
 
         let old_cursor_pos = self.cursor_pos;
         let old_scroll_pos = self.scroll_pos;
-        let ls_buf_size = self.ls_output_buf.len() as u32;
+        let visible_items = self.visible_items();
+        let n_visible_items = visible_items.len() as u32;
         let max_y = self.main_win_h;
 
         let mut new_cursor_pos: i32 = old_cursor_pos as i32 + amount;
 
-        if wrap && !self.ls_output_buf.is_empty() {
+        if wrap && !visible_items.is_empty() {
             let offset = self.scroll_pos as i32;
             new_cursor_pos = (offset + new_cursor_pos)
-                .rem_euclid(self.ls_output_buf.len() as i32) - offset;
+                .rem_euclid(n_visible_items as i32) - offset;
         }
 
         if new_cursor_pos < 0 {
@@ -287,19 +352,19 @@ impl TereAppState {
             self.scroll_pos = self.scroll_pos
                 .checked_sub(new_cursor_pos.abs() as u32).unwrap_or(0);
             self.cursor_pos = 0;
-        } else if new_cursor_pos as u32 + old_scroll_pos >= ls_buf_size {
+        } else if new_cursor_pos as u32 + old_scroll_pos >= n_visible_items {
             // attempting to go below content
             //TODO: wrap, but only if cursor is starting off at the last row
             // i.e. if pressing pgdown before the end, jump only to the end,
             // but if pressing pgdown at the very end, wrap and start from top
-            self.scroll_pos = ls_buf_size.checked_sub(max_y).unwrap_or(0);
-            self.cursor_pos = ls_buf_size.checked_sub(self.scroll_pos + 1)
+            self.scroll_pos = n_visible_items.checked_sub(max_y).unwrap_or(0);
+            self.cursor_pos = n_visible_items.checked_sub(self.scroll_pos + 1)
                 .unwrap_or(0);
         } else if new_cursor_pos as u32 >= max_y {
             // Attempting to go below current view, scroll down.
             self.cursor_pos = max_y - 1;
             self.scroll_pos = std::cmp::min(
-                ls_buf_size,
+                n_visible_items,
                 old_scroll_pos + new_cursor_pos as u32
             ).checked_sub(self.cursor_pos).unwrap_or(0);
         } else {
@@ -310,7 +375,7 @@ impl TereAppState {
     }
 
     /// Move the cursor so that it is at the location `row` in the
-    /// `ls_output_buf`, and scroll the view as necessary
+    /// currently visible items, and update the scroll position as necessary
     pub fn move_cursor_to(&mut self, row: u32) {
         self.move_cursor(row as i32
                          - self.cursor_pos as i32
@@ -318,90 +383,132 @@ impl TereAppState {
                          false);
     }
 
-    pub fn change_dir(&mut self, path: &str) -> std::io::Result<()> {
-        // TODO: add option to use xdg-open (or similar) on files?
-        // check out https://crates.io/crates/open
-        // (or https://docs.rs/opener/0.4.1/opener/)
-        let final_path = if path.is_empty() {
-            let idx = self.cursor_pos + self.scroll_pos;
-            self.ls_output_buf.get(idx as usize)
-                .map_or("".to_string(), |s| s.file_name_checked())
-        } else {
-            path.to_string()
-        };
-        let old_cwd = std::env::current_dir();
-        self.search_state.clear();
-        std::env::set_current_dir(&final_path)?;
-        self.update_ls_output_buf();
-        //TODO: proper history
-        self.cursor_pos = 0;
-        self.scroll_pos = 0;
-        if let Ok(old_cwd) = old_cwd {
-            if let Some(idx) = self.ls_output_buf.iter()
-                //TODO: this comparison fails atm
-                .position(|x| x.path().file_name() == old_cwd.file_name()) {
-                    self.move_cursor(idx as i32, false);
-                }
-        }
-        Ok(())
+    /// Move cursor to the position of a given filename. If the filename was
+    /// not found, don't move the cursor and return false, otherwise return true.
+    pub fn move_cursor_to_filename<S: AsRef<OsStr>>(&mut self, fname: S) -> bool {
+        self.index_of_filename(fname)
+            .map(|idx| self.move_cursor_to(u32::try_from(idx).unwrap_or(u32::MAX)))
+            .is_some()
     }
 
-    pub fn is_searching(&self) -> bool {
-        !self.search_state.search_string.is_empty()
-    }
-
-    pub fn search_string(&self) -> &String {
-        &self.search_state.search_string
-    }
-
-    /// The current search matches
-    pub fn search_matches(&self) -> &MatchesType {
-        &self.search_state.matches
-    }
 
     /// Move the cursor to the next or previous match in the current list of
-    /// matches, and update the match list to point to the new current value.
-    /// If dir is positive, move to the next match, if it's negative, move to
-    /// the previous match, and if it's zero, move to the cursor to the current
-    /// match (without modifying the match list).
+    /// matches. If dir is positive, move to the next match, if it's negative,
+    /// move to the previous match, and if it's zero, move to the cursor to the
+    /// current match.
     pub fn move_cursor_to_adjacent_match(&mut self, dir: i32) {
-        if self.search_state.matches.len() > 0 && self.is_searching() {
-            if dir < 0 {
-                self.search_state.matches.decrement();
-            } else if dir > 0 {
-                self.search_state.matches.increment();
-            }
+        if self.num_matching_items() > 0 && self.is_searching() {
 
-            let (i, _) = self.search_state.matches.current_item().unwrap();
-            let i = i.clone() as u32;
-            self.move_cursor_to(i);
+            if self.settings.filter_search {
+                // the only visible items are the matches, so we can just move the cursor
+                self.move_cursor(dir.signum(), true);
+            } else {
+
+                let cur_idx = self.cursor_pos_to_visible_item_index(self.cursor_pos);
+                let kept_indices = &self.ls_output_buf.kept_indices;
+                let (cur_idx_in_kept, cur_idx_in_all) = kept_indices.iter()
+                    .enumerate()
+                    .skip_while(|(_, i_in_all)| **i_in_all < cur_idx)
+                    .next()
+                    // if we skipped everything, wrap around and return the first
+                    // item in the kept indices. shouldn't panic, kept_indices
+                    // shouldn't be empty based on the visible_items().len()
+                    // check above.
+                    .unwrap_or((0, &kept_indices[0]));
+
+                let i = if dir < 0 {
+                    let i = cur_idx_in_kept.checked_sub(1).unwrap_or(kept_indices.len() - 1);
+                    kept_indices[i]
+                } else if dir > 0 {
+                    let i = (cur_idx_in_kept + 1) % kept_indices.len();
+                    kept_indices[i]
+                } else {
+                    // dir == 0, just use the current index
+                    *cur_idx_in_all
+                };
+
+                self.move_cursor_to(u32::try_from(i).unwrap_or(u32::MAX));
+            }
         }
     }
 
-    /// Update the matches and the cursor position
-    fn on_search_string_changed(&mut self) {
-        self.search_state.update_matches(&self.ls_output_buf);
-        self.move_cursor_to_adjacent_match(0);
-    }
+    ///////////
+    // Seach //
+    ///////////
 
-    pub fn advance_search(&mut self, query: &str) {
-        self.search_state.search_string.push_str(query);
-        self.on_search_string_changed();
-    }
-
-    pub fn erase_search_char(&mut self) {
-        if let Some(_) = self.search_state.search_string.pop() {
-            //TODO: keep cursor position. now if we're at the second match and type backspace, the
-            //curor jumps back to the first
-            self.search_state.update_matches(&self.ls_output_buf);
-            self.on_search_string_changed();
-        };
+    fn update_search_matches(&mut self) {
+        let search_string = &self.search_string;
+        self.ls_output_buf.apply_filter(|itm| itm.file_name_checked().starts_with(search_string));
     }
 
     pub fn clear_search(&mut self) {
-        self.search_state.clear();
+        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
+        self.search_string.clear();
+        self.ls_output_buf.clear_filter();
+        previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
     }
 
+    pub fn advance_search(&mut self, query: &str) {
+        self.search_string.push_str(query);
+
+        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
+
+        self.update_search_matches();
+
+        if self.settings.filter_search {
+            if let Some(item) = previous_item_under_cursor {
+                if !self.move_cursor_to_filename(item.file_name_checked()) {
+                    self.move_cursor_to(0);
+                }
+            }
+        } else {
+            self.move_cursor_to_adjacent_match(0);
+        }
+    }
+
+    pub fn erase_search_char(&mut self) {
+        if let Some(_) = self.search_string.pop() {
+            //TODO: keep cursor position when there were no matches? should somehow push cursor position onto some stack when advancing search.
+
+            let previous_item_under_cursor = self.get_item_under_cursor().cloned();
+
+            self.update_search_matches();
+
+            if self.settings.filter_search {
+                if let Some(item) = previous_item_under_cursor {
+                    if !self.move_cursor_to_filename(item.file_name_checked()) {
+                        self.move_cursor_to(0);
+                    }
+                }
+            } else {
+                self.move_cursor_to_adjacent_match(0);
+            }
+        };
+    }
+
+}
+
+#[cfg(test)]
+mod tests_for_filtered_vec {
+    use super::FilteredVec;
+
+    #[test]
+    fn test_filter_basic() {
+        let mut v = FilteredVec::from(vec![1, 2, 3]);
+        v.apply_filter(|n| (n % 2) == 0);
+        assert_eq!(v.all_items, vec![1, 2, 3]);
+        assert_eq!(v.kept_items(), vec![&2]);
+        assert_eq!(v.kept_indices, vec![1]);
+    }
+
+    #[test]
+    fn test_clear_filter() {
+        let mut v = FilteredVec::from(vec![1, 2, 3]);
+        v.apply_filter(|_| false);
+        assert_eq!(v.kept_items(), Vec::<&usize>::new());
+        v.clear_filter();
+        assert_eq!(v.kept_items(), vec![&1, &2, &3]);
+    }
 }
 
 #[cfg(test)]
@@ -409,19 +516,33 @@ mod tests {
     use super::*;
 
     fn create_test_filenames(n: u32) -> LsBufType {
-        (1..=n).map(|i| format!("file {}", i)).collect()
+        let fnames: Vec<_> = (1..=n).map(|i| format!("file {}", i)).collect();
+        strings_to_ls_buf(fnames)
+    }
+
+    fn strings_to_ls_buf<S: AsRef<std::ffi::OsStr>>(strings: Vec<S>) -> LsBufType {
+        strings.iter()
+            .map(|s| CustomDirEntry::from(std::path::PathBuf::from(&s).as_ref()))
+            .collect::<Vec<CustomDirEntry>>()
+            .into()
     }
 
     fn create_test_state(win_h: u32, n_filenames: u32) -> TereAppState {
+        create_test_state_with_buf(win_h, create_test_filenames(n_filenames))
+    }
+
+    fn create_test_state_with_buf(win_h: u32,
+                                  buf: LsBufType) -> TereAppState {
         TereAppState {
             cursor_pos: 0,
             scroll_pos: 0,
             main_win_h: win_h,
             main_win_w: 10,
-            ls_output_buf: create_test_filenames(n_filenames),
+            ls_output_buf: buf,
             header_msg: "".into(),
             info_msg: "".into(),
-            search_state: Default::default(),
+            search_string: "".into(),
+            settings: Default::default(),
         }
     }
 
@@ -603,4 +724,462 @@ mod tests {
     fn test_scrolling_bufsize_larger_than_window_size5() {
         test_scrolling_bufsize_larger_than_window_size_helper(4, 10);
     }
+
+    #[test]
+    fn test_basic_advance_search() {
+        let mut s = create_test_state_with_buf(5, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.move_cursor_to(2);
+
+        // current state:
+        //   ..
+        //   foo
+        // > frob
+        //   bar
+        //   baz
+
+        assert_eq!(s.cursor_pos, 2);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("b");
+        assert_eq!(s.cursor_pos, 3);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 4);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 3);
+    }
+
+    #[test]
+    fn test_advance_search_wrap() {
+        let mut s = create_test_state_with_buf(3, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.move_cursor_to(4);
+
+        // current state: ('|' shows the window position)
+        //   ..
+        //   foo
+        //   frob  |
+        //   bar   |
+        // > baz   |
+
+        assert_eq!(s.cursor_pos, 2);
+        assert_eq!(s.scroll_pos, 2);
+
+        s.advance_search("f");
+
+        // state should now be
+        //   ..
+        // > foo   |
+        //   frob  |
+        //   bar   |
+        //   baz
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 1);
+
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 1);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 0);
+    }
+
+    #[test]
+    fn test_advance_and_erase_search_with_cursor_on_match() {
+        let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.move_cursor_to(3);
+
+        // current state:
+        //   ..
+        //   foo
+        //   frob
+        // > bar
+        //   baz
+
+        assert_eq!(s.cursor_pos, 3);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("b");
+
+        // state shouldn't have changed
+
+        assert_eq!(s.cursor_pos, 3);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 4);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 3);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 4);
+
+        // we're now on 'baz'
+        // erase the search char. should still stay at baz.
+        s.erase_search_char();
+        assert_eq!(s.cursor_pos, 4);
+
+    }
+
+    #[test]
+    fn test_advance_and_erase_with_filter_search() {
+        let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
+            vec![
+                "..",
+                "bar",
+                "baz",
+                "foo",
+                "frob",
+            ])
+        );
+        s.settings.filter_search = true;
+
+        // current state:
+        // > ..
+        //   bar
+        //   baz
+        //   foo
+        //   frob
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("f");
+
+        // state should now be
+        // > foo
+        //   frob
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 0);
+        assert_eq!(s.visible_items().len(), 2);
+
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.scroll_pos, 0);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.erase_search_char();
+
+        // now:
+        //   ..
+        //   bar
+        //   baz
+        // > foo
+        //   frob
+
+        assert_eq!(s.cursor_pos, 3);
+    }
+
+    #[test]
+    fn test_advance_and_clear_with_filter_search() {
+        let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
+            vec![
+                "..",
+                "bar",
+                "baz",
+                "foo",
+                "forb",
+            ])
+        );
+        s.settings.filter_search = true;
+
+        // current state:
+        // > ..
+        //   bar
+        //   baz
+        //   foo
+        //   forb
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("f");
+        s.advance_search("o");
+
+        // state should now be
+        // > foo
+        //   forb
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 0);
+        let visible: Vec<_> = s.visible_items().iter().map(|x| x.file_name_checked()).collect();
+        assert_eq!(visible, vec!["foo", "forb"]);
+
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.scroll_pos, 0);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.clear_search();
+
+        // now:
+        //   ..
+        //   bar
+        //   baz
+        // > foo
+        //   forb
+
+        assert_eq!(s.cursor_pos, 3);
+        assert_eq!(s.visible_items().len(), s.ls_output_buf.all_items.len());
+    }
+
+    #[test]
+    fn test_advance_search_with_filter_search_and_scrolling() {
+        let mut s = create_test_state_with_buf(3, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.settings.filter_search = true;
+
+        s.move_cursor_to(3);
+
+        // current state: ('|' shows the window position)
+        //   ..
+        //   foo   |
+        //   frob  |
+        // > bar   |
+        //   baz
+
+        assert_eq!(s.cursor_pos, 2);
+        assert_eq!(s.scroll_pos, 1);
+
+        s.advance_search("f");
+
+        // state should now be
+        // > foo   |
+        //   frob  |
+        //         |
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 0);
+        assert_eq!(s.visible_items().len(), 2);
+
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 1);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 0);
+    }
+
+    #[test]
+    fn test_advance_and_erase_search_with_filter_and_cursor_on_match() {
+        let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.settings.filter_search = true;
+        s.move_cursor_to(2);
+
+        // current state:
+        //   ..
+        //   foo
+        // > frob
+        //   bar
+        //   baz
+
+        assert_eq!(s.cursor_pos, 2);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("f");
+
+        // state should now be
+        //   foo
+        // > frob
+
+        let visible: Vec<_> = s.visible_items().iter().map(|x| x.file_name_checked()).collect();
+        assert_eq!(visible, vec!["foo", "frob"]);
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 0);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 1);
+
+        // we're now at frob. erase char, we should still be at frob:
+        //   ..
+        //   foo
+        // > frob
+        //   bar
+        //   baz
+
+        s.erase_search_char();
+        assert_eq!(s.cursor_pos, 2);
+
+        let visible: Vec<_> = s.visible_items().iter().map(|x| x.file_name_checked()).collect();
+        assert_eq!(visible, vec!["..", "foo", "frob", "bar", "baz"]);
+
+    }
+
+    #[test]
+    fn test_advance_and_erase_search_with_filter_and_cursor_on_match2() {
+        let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.settings.filter_search = true;
+        s.move_cursor_to(4);
+
+        // current state:
+        //   ..
+        //   foo
+        //   frob
+        //   bar
+        // > baz
+
+        assert_eq!(s.cursor_pos, 4);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("b");
+
+        // state should now be
+        //   bar
+        // > baz
+
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 0);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 1);
+
+        // we're now on 'baz'
+        // erase the search char. now the state should be
+        //   ..
+        //   foo
+        //   frob
+        //   bar
+        // > baz
+
+        s.erase_search_char();
+        assert_eq!(s.cursor_pos, 4);
+
+    }
+
+    #[test]
+    fn test_advance_and_erase_search_with_filter_and_scrolling() {
+        let mut s = create_test_state_with_buf(2, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.settings.filter_search = true;
+
+        // current state:
+        // > ..   |
+        //   foo  |
+        //   frob
+        //   bar
+        //   baz
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("b");
+
+        // state should now be
+        // > bar
+        //   baz
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 1);
+        s.move_cursor_to_adjacent_match(1);
+        assert_eq!(s.cursor_pos, 0);
+
+        // we're now on 'bar'
+        // erase the search char. now the state should be
+        //   ..
+        //   foo
+        //   frob |
+        // > bar  |
+        //   baz
+
+        s.erase_search_char();
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.scroll_pos, 2);
+
+    }
+
+    #[test]
+    fn test_advance_search_with_filter_search_and_scrolling2() {
+        let mut s = create_test_state_with_buf(3, strings_to_ls_buf(
+            vec![
+                "..",
+                "foo",
+                "frob",
+                "bar",
+                "baz",
+            ])
+        );
+        s.settings.filter_search = true;
+        s.move_cursor_to(4);
+
+        // current state:
+        //   ..
+        //   foo
+        //   frob |
+        //   bar  |
+        // > baz  |
+
+        assert_eq!(s.cursor_pos, 2);
+        assert_eq!(s.scroll_pos, 2);
+
+        s.advance_search("b");
+
+        // state should now be:
+        //   bar  |
+        // > baz  |
+        //        |
+
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.scroll_pos, 0);
+    }
+
 }
