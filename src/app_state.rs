@@ -291,8 +291,8 @@ impl TereAppState {
         }
     }
 
-    /// Move the cursor up (positive amount) or down (negative amount), and scroll
-    /// the view as necessary
+    /// Move the cursor up (positive amount) or down (negative amount) in the
+    /// currently visible items, and update the scroll position as necessary
     pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
         //TOOD: wrap around (when starting from the last row)
 
@@ -348,7 +348,7 @@ impl TereAppState {
     }
 
     /// Move the cursor so that it is at the location `row` in the
-    /// `ls_output_buf`, and scroll the view as necessary
+    /// currently visible items, and update the scroll position as necessary
     pub fn move_cursor_to(&mut self, row: u32) {
         self.move_cursor(row as i32
                          - self.cursor_pos as i32
