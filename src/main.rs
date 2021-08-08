@@ -180,7 +180,7 @@ impl<'a> TereTui<'a> {
         let row_abs = row  + HEADER_SIZE;
         let w: usize = main_window_size()?.0.into();
 
-        let (item, bold) = self.get_item_at_row(row).map_or(
+        let (item, bold) = self.app_state.get_item_at_cursor_pos(row.into()).map_or(
             ("".to_string(), false),
             |itm| (itm.file_name_checked(), itm.is_dir())
         );
@@ -204,10 +204,11 @@ impl<'a> TereTui<'a> {
 
         //TODO: don't recompute this here every time, but store the hashset (or a hashmap or something) in the matches struct...
         let match_indices: std::collections::HashSet<usize> = self.app_state
-            .search_matches().iter().map(|(i, _)| *i).collect();
+            .visible_match_indices().into_iter().collect();
 
+        let idx = self.app_state.cursor_pos_to_visible_item_index(row.into());
         if self.app_state.is_searching()
-            && match_indices.contains(&self.row_to_buf_idx(row)) {
+            && match_indices.contains(&idx) {
             // print matching part
             let n = self.app_state.search_string().len();
             let item_matching = item.get(..n).unwrap_or(&item);
@@ -346,7 +347,7 @@ impl<'a> TereTui<'a> {
 
     pub fn on_search_char(&mut self, c: char) -> CTResult<()> {
         self.app_state.advance_search(&c.to_string());
-        if self.app_state.search_matches().len() == 1 {
+        if self.app_state.num_matching_items() == 1 {
             // There's only one match, highlight it and then change dir
             self.highlight_row_exclusive(self.app_state.cursor_pos)?;
 
@@ -420,7 +421,7 @@ impl<'a> TereTui<'a> {
             let target = if home {
                 0
             } else {
-                self.app_state.ls_output_buf.len() as u32
+                self.app_state.visible_items().len() as u32
             };
             self.app_state.move_cursor_to(target);
             self.redraw_main_window()?;
