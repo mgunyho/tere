@@ -471,12 +471,6 @@ impl TereAppState {
         }
     }
 
-    /// Update the matches and the cursor position
-    fn on_search_string_changed(&mut self) {
-        self.search_state.update_matches(&self.ls_output_buf);
-        self.move_cursor_to_adjacent_match(0);
-    }
-
     pub fn advance_search(&mut self, query: &str) {
         self.search_string.push_str(query);
 
