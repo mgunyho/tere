@@ -314,6 +314,7 @@ impl<'a> TereTui<'a> {
     }
 
     pub fn change_dir(&mut self, path: &str) -> CTResult<()> {
+        //TODO: if there are no visible items, don't do anything?
         match self.app_state.change_dir(path) {
             Err(e) => {
                 if cfg!(debug_assertions) {
