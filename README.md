@@ -90,6 +90,7 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 - `--help` or `-h`: Print a short help and all CLI options
 - `--version` or `-V`: Print the version of `tere`
 - `--folders-only`: Don't show files, only folders (and symlinks pointing to folders) in the listing
+- `--filter-search`: If this option is set, hide items in the output listing that don't match the current search query
 
 ## Prior art
 
