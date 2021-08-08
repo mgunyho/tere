@@ -291,6 +291,23 @@ impl TereAppState {
         }
     }
 
+    /// Convert a cursor position (in the range 0..window_height) to an index
+    /// into the currently visible items.
+    pub fn cursor_pos_to_visible_item_index(&self, cursor_pos: u32) -> usize {
+        (cursor_pos + self.scroll_pos) as usize
+    }
+
+    pub fn get_item_at_cursor_pos(&self, cursor_pos: u32) -> Option<&LsBufItem> {
+        let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
+        self.visible_items().get(idx).map(|x| *x)
+    }
+
+    /// Returns None if the visible items is empty, or if the state is
+    /// inconsistent and the cursor is outside the currently visible items.
+    fn get_item_under_cursor(&self) -> Option<&LsBufItem> {
+        self.get_item_at_cursor_pos(self.cursor_pos)
+    }
+
     /// Move the cursor up (positive amount) or down (negative amount) in the
     /// currently visible items, and update the scroll position as necessary
     pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
@@ -354,6 +371,14 @@ impl TereAppState {
                          - self.cursor_pos as i32
                          - self.scroll_pos as i32,
                          false);
+    }
+
+    /// Move cursor to the position of a given filename. If the filename was
+    /// not found, don't move the cursor and return false, otherwise return true.
+    pub fn move_cursor_to_filename<S: AsRef<OsStr>>(&mut self, fname: S) -> bool {
+        self.index_of_filename(fname)
+            .map(|idx| self.move_cursor_to(u32::try_from(idx).unwrap_or(u32::MAX)))
+            .is_some()
     }
 
     pub fn change_dir(&mut self, path: &str) -> std::io::Result<()> {
