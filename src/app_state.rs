@@ -894,7 +894,7 @@ mod tests {
     }
 
     #[test]
-    fn test_advance_and_cleat_with_filter_search() {
+    fn test_advance_and_clear_with_filter_search() {
         let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
             vec![
                 "..",
