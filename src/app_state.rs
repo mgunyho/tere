@@ -392,9 +392,22 @@ impl TereAppState {
         &self.search_string
     }
 
-    /// The current search matches
-    pub fn search_matches(&self) -> &MatchesType {
-        &self.search_state.matches
+    /// A vector containing items that match the current search
+    pub fn matching_items(&self) -> Vec<&LsBufItem> {
+        //TODO: matching_items() is only used for the len(), so should add method for that instead.
+        //now we have to recalculate the kept_items from the indices every time.
+        self.ls_output_buf.kept_items()
+    }
+
+    /// Return a vector that contains the indices into the currently visible
+    /// items that contain a match
+    pub fn visible_match_indices(&self) -> Vec<usize> {
+        if self.settings.filter_search {
+            (0..self.ls_output_buf.kept_indices.len()).collect()
+        } else {
+            // it's ok to clone here, the kept_indices will be usually quite short.
+            self.ls_output_buf.kept_indices.clone()
+        }
     }
 
     /// Move the cursor to the next or previous match in the current list of
