@@ -59,66 +59,6 @@ impl<T> From<Vec<T>> for FilteredVec<T> {
 }
 
 
-/// A vector containing a list of items, which also keeps track of which element
-/// we're pointing at currently
-pub struct MatchesVec<T> {
-    vec: Vec<T>,
-    idx: usize,
-}
-
-impl<T> MatchesVec<T> {
-    pub fn increment(&mut self) {
-        self.idx = (self.idx + 1) % self.vec.len();
-    }
-
-    pub fn decrement(&mut self) {
-        self.idx = self.idx.checked_sub(1).unwrap_or(self.vec.len()-1);
-    }
-
-    /// The match we're currently pointing at. Returns None if the list of matches
-    /// is empty.
-    pub fn current_item(&self) -> Option<&T> {
-        self.vec.get(self.idx)
-    }
-
-    /// The index of the match we're currently pointing at. Returs None if the
-    /// list of matches is empty.
-    pub fn current_pos(&self) -> Option<usize> {
-        if self.vec.is_empty() {
-            None
-        } else {
-            Some(self.idx)
-        }
-    }
-
-    pub fn clear(&mut self) {
-        self.vec.clear();
-        self.idx = 0;
-    }
-
-    pub fn len(&self) -> usize {
-        self.vec.len()
-    }
-
-    pub fn iter(&self) -> std::slice::Iter<'_, T> {
-        self.vec.iter()
-    }
-}
-
-impl<T> Default for MatchesVec<T> {
-    fn default() -> Self { Self { vec: vec![], idx: 0, } }
-}
-
-impl<T> std::iter::FromIterator<T> for MatchesVec<T> {
-    // so that MatchesVec can be `collect()`ed from an iterator.
-    fn from_iter<I: std::iter::IntoIterator<Item=T>>(iter: I) -> Self {
-        Self {
-            vec: iter.into_iter().collect(),
-            idx: 0,
-        }
-    }
-}
-
 /// A stripped-down version of ``std::fs::DirEntry``.
 #[derive(Clone)]
 pub struct CustomDirEntry {
