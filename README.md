@@ -35,8 +35,8 @@ functionality found in many GUI file managers.
 
     ```py
     def _tere(args):
-		result = $(/path/to/tere/target/release/tere-rs @(args)).strip()
-		if result:
+        result = $(/path/to/tere/target/release/tere-rs @(args)).strip()
+        if result:
             @(["cd", result])
 
     aliases["tere"] = _tere
