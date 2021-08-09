@@ -8,7 +8,7 @@ use std::ffi::OsStr;
 
 #[path = "settings.rs"]
 mod settings;
-use settings::TereSettings;
+use settings::{TereSettings, CaseSensitiveMode};
 
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
 /// both the vector of filtered items and the whole unfiltered vector.
@@ -437,17 +437,15 @@ impl TereAppState {
     ///////////
 
     fn update_search_matches(&mut self) {
-        let case_sensitive = self.settings.case_sensitive;
-        let search_string = if case_sensitive {
-            self.search_string.clone()
-        } else {
-            self.search_string.to_lowercase() //.clone()
+        let case_sensitive = &self.settings.case_sensitive;
+        let search_string = match case_sensitive {
+            CaseSensitiveMode::CaseSensitive => self.search_string.clone(),
+            _ => self.search_string.to_lowercase()
         };
         self.ls_output_buf.apply_filter(|itm| {
-            let target = if case_sensitive {
-                itm.file_name_checked()
-            } else {
-                itm.file_name_checked().to_lowercase()
+            let target = match case_sensitive {
+                CaseSensitiveMode::CaseSensitive => itm.file_name_checked(),
+                _ => itm.file_name_checked().to_lowercase()
             };
             target.starts_with(&search_string)
         });
