@@ -12,24 +12,6 @@ pub enum CaseSensitiveMode {
     SmartCase,
 }
 
-impl CaseSensitiveMode {
-    /// Convert a string to a 'comparison string', so that two strings can be
-    /// compared in case sensitive, ignore case, or smart case mode.
-    pub fn comparison_str(&self, string: &str) -> String {
-        match self {
-            CaseSensitiveMode::CaseSensitive => string.to_string(),
-            CaseSensitiveMode::IgnoreCase => string.to_lowercase(),
-            CaseSensitiveMode::SmartCase => {
-                if string.chars().any(|c| c.is_uppercase()) {
-                    string.to_string()
-                } else {
-                    string.to_lowercase()
-                }
-            }
-        }
-    }
-}
-
 impl Default for CaseSensitiveMode {
     fn default() -> Self { Self::IgnoreCase }
 }
