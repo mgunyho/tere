@@ -6,6 +6,7 @@ use clap::ArgMatches;
 
 //TODO: separate struct for "UI settings" which is accessible by the TereTui struct
 
+#[derive(Debug)]
 pub enum CaseSensitiveMode {
     IgnoreCase,
     CaseSensitive,

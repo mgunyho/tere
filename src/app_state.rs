@@ -7,7 +7,7 @@ use std::convert::TryFrom;
 use std::ffi::OsStr;
 
 #[path = "settings.rs"]
-mod settings;
+pub mod settings;
 use settings::{TereSettings, CaseSensitiveMode};
 
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
