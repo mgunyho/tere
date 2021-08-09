@@ -110,7 +110,7 @@ These programs are designed for basically the same task as `tere`: navigate to a
 folder in the terminal and then `cd` to it.
 
 - [Broot](https://dystroy.org/broot/) - Broot is more focused on browsing large directories, and has a more complex UI than `tere`.
-- [xplr](https://github.com/sayanarijit/xplr) - Lots of features, fully customizable. Not entirely focused on navigation, has file management features. Navigation by searching requires jumping between typing and pressing arrow keys. 
+- [xplr](https://github.com/sayanarijit/xplr) - Lots of features, fully customizable. Not entirely focused on navigation, has file management features. Navigation by searching requires jumping between typing and pressing arrow keys.
 - [deer](https://github.com/Vifon/deer) - zsh only, searching requires extra keystrokes.
 - [cdir](https://github.com/EskelinenAntti/cdir) - No Vim-like keyboard navigation. Not a standalone binary.
 
