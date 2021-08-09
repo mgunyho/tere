@@ -533,6 +533,20 @@ fn main() -> crossterm::Result<()> {
              .long("case-sensitive")
              //.short("c")  // TODO: check conflicts
              .help("make searching case sensitive")  //TODO: better description?
+             .overrides_with("ignore-case")
+             .overrides_with("smart-case")
+             .multiple(true)
+            )
+        .arg(Arg::with_name("ignore-case")
+             .long("ignore-case")
+             .help("Ignore case when searching")
+             .overrides_with("smart-case")
+             .multiple(true)
+            )
+        .arg(Arg::with_name("smart-case")
+             .long("smart-case")
+             .help("Smart case search") //TODO: better description
+             .multiple(true)
             )
         .get_matches_safe()
         .unwrap_or_else(|err| {
