@@ -496,6 +496,8 @@ impl<'a> TereTui<'a> {
                             self.on_home_end(false)?;
                         }
 
+                        //TODO: keyboard shortcut to cycle case (in)sensitive / smart-case mode
+
                         KeyCode::Char(c) => self.on_search_char(c)?,
 
                         KeyCode::Backspace => self.erase_search_char()?,
