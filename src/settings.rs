@@ -43,6 +43,10 @@ impl TereSettings {
 
         if args.is_present("case-sensitive") {
             ret.case_sensitive = CaseSensitiveMode::CaseSensitive;
+        } else if args.is_present("ignore-case") {
+            ret.case_sensitive = CaseSensitiveMode::IgnoreCase;
+        } else if args.is_present("smart-case") {
+            ret.case_sensitive = CaseSensitiveMode::SmartCase;
         }
 
         ret
