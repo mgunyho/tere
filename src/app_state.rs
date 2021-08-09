@@ -437,11 +437,24 @@ impl TereAppState {
     ///////////
 
     fn update_search_matches(&mut self) {
-        let case_sensitive = &self.settings.case_sensitive;
-        let search_string = case_sensitive.comparison_str(&self.search_string);
+        let is_case_sensitive = match self.settings.case_sensitive {
+            CaseSensitiveMode::IgnoreCase => false,
+            CaseSensitiveMode::CaseSensitive => true,
+            CaseSensitiveMode::SmartCase => {
+                self.search_string.chars().any(|c| c.is_uppercase())
+            }
+        };
+        let search_string = if is_case_sensitive {
+            self.search_string.clone()
+        } else {
+            self.search_string.to_lowercase()
+        };
         self.ls_output_buf.apply_filter(|itm| {
-            //TODO: comparison_str() is wrong here...
-            let target = case_sensitive.comparison_str(&itm.file_name_checked());
+            let target = if is_case_sensitive {
+                itm.file_name_checked()
+            } else {
+                itm.file_name_checked().to_lowercase()
+            };
             target.starts_with(&search_string)
         });
     }
