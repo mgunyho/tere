@@ -6,6 +6,16 @@ use clap::ArgMatches;
 
 //TODO: separate struct for "UI settings" which is accessible by the TereTui struct
 
+pub enum CaseSensitiveMode {
+    IgnoreCase,
+    CaseSensitive,
+    SmartCase,
+}
+
+impl Default for CaseSensitiveMode {
+    fn default() -> Self { Self::IgnoreCase }
+}
+
 #[derive(Default)]
 pub struct TereSettings {
     //TODO: options to show non-folders faintly, and skip over them with cursor (in ui settings) -- does this make sense?
@@ -16,7 +26,7 @@ pub struct TereSettings {
     /// If true, show only items matching the search in listing
     pub filter_search: bool,
 
-    pub case_sensitive: bool,
+    pub case_sensitive: CaseSensitiveMode,
 }
 
 impl TereSettings {
@@ -32,7 +42,7 @@ impl TereSettings {
         }
 
         if args.is_present("case-sensitive") {
-            ret.case_sensitive = true;
+            ret.case_sensitive = CaseSensitiveMode::CaseSensitive;
         }
 
         ret
