@@ -529,6 +529,11 @@ fn main() -> crossterm::Result<()> {
              .long("filter-search")
              .help("Show only items matching the search in listing")
             )
+        .arg(Arg::with_name("case-sensitive")
+             .long("case-sensitive")
+             //.short("c")  // TODO: check conflicts
+             .help("make searching case sensitive")  //TODO: better description?
+            )
         .get_matches_safe()
         .unwrap_or_else(|err| {
             // custom error handling: print also '--help' or '--version' to stderr
