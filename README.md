@@ -16,7 +16,7 @@ functionality found in many GUI file managers.
 
 1. Clone the repo
 1. [Install the Rust toolchain](https://www.rust-lang.org/tools/install)
-1. Compile the binary by running `cargo build --release` in the main folder of the repo. This creates the binary in the folder `target/release/tere-rs`.
+1. Compile the binary by running `cargo build --release` in the main folder of the repo. This creates the binary in the folder `target/release/tere`.
 1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function instead of an alias, since the latter only changes the working directory of the subshell.
 
     Note that to make the `--help` option to work, `tere` prints the help message
@@ -26,7 +26,7 @@ functionality found in many GUI file managers.
 
     ```sh
     tere() {
-        local result=$(/path/to/tere/target/release/tere-rs "$@")
+        local result=$(/path/to/tere/target/release/tere "$@")
         [ -n "$result" ] && cd -- "$result"
     }
     ```
@@ -35,7 +35,7 @@ functionality found in many GUI file managers.
 
     ```py
     def _tere(args):
-        result = $(/path/to/tere/target/release/tere-rs @(args)).strip()
+        result = $(/path/to/tere/target/release/tere @(args)).strip()
         if result:
             @(["cd", result])
 
