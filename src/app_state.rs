@@ -437,8 +437,20 @@ impl TereAppState {
     ///////////
 
     fn update_search_matches(&mut self) {
-        let search_string = &self.search_string;
-        self.ls_output_buf.apply_filter(|itm| itm.file_name_checked().starts_with(search_string));
+        let case_sensitive = self.settings.case_sensitive;
+        let search_string = if case_sensitive {
+            self.search_string.clone()
+        } else {
+            self.search_string.to_lowercase() //.clone()
+        };
+        self.ls_output_buf.apply_filter(|itm| {
+            let target = if case_sensitive {
+                itm.file_name_checked()
+            } else {
+                itm.file_name_checked().to_lowercase()
+            };
+            target.starts_with(&search_string)
+        });
     }
 
     pub fn clear_search(&mut self) {
