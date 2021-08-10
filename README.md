@@ -96,8 +96,8 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 
 - `--help` or `-h`: Print a short help and all CLI options to stderr
 - `--version` or `-V`: Print the version of `tere`
-- `--folders-only` / `--no-folders-only`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
 - `--filter-search` / `--no-filter-search`: If this option is set, hide items in the output listing that don't match the current search query.
+- `--folders-only` / `--no-folders-only`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
 - `--smart-case` / `--ignore-case` / `--case-sensitive`: Set the case sensitivity mode. The default mode is smart case.
 
 Some options have two or more versions that override each other (for example
