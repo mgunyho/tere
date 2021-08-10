@@ -577,7 +577,7 @@ fn main() -> crossterm::Result<()> {
              //.visible_alias("nfo") //TODO: consider
              //.short("f")  // TODO: check conflicts
              .help("Show files and folders in the listing (default)")
-             .long_help("Show both files and folders in the listing. This is the default view mode. This overrides the --folders-only option")
+             .long_help("Show both files and folders in the listing. This is the default view mode. This overrides the --folders-only option.")
              .multiple(true)
              .overrides_with("folders-only")
              .display_order(11)
