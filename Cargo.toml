@@ -3,6 +3,7 @@ name = "tere"
 version = "0.1.0"
 authors = ["mgunyho <marci.gunyho@gmail.com>"]
 edition = "2018"
+description = "A fast way to navigate folders in the terminal"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
