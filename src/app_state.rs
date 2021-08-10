@@ -8,6 +8,8 @@ use std::ffi::OsStr;
 use std::io::{Result as IOResult, Error as IOError, ErrorKind};
 use std::path::{Path, PathBuf, Component};
 
+use regex::Regex;
+
 #[path = "settings.rs"]
 mod settings;
 use settings::TereSettings;
@@ -556,13 +558,24 @@ impl TereAppState {
         } else {
             self.search_string.to_lowercase()
         };
+
+        // TODO: make "^" here configurable
+        // TODO: make "omni-search" configurable
+        let mut regex_str = r"^".to_string();
+        regex_str.push_str(&search_string.chars()
+                           .map(|c| c.to_string())
+                           .collect::<Vec<String>>()
+                           // TODO: escape '.' etc in search query...
+                           .join(".*"));
+
+        let search_ptn = Regex::new(&regex_str).unwrap(); //TODO: error handling...
         self.ls_output_buf.apply_filter(|itm| {
             let target = if is_case_sensitive {
                 itm.file_name_checked()
             } else {
                 itm.file_name_checked().to_lowercase()
             };
-            target.starts_with(&search_string)
+            search_ptn.is_match(&target)
         });
     }
 
