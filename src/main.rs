@@ -544,6 +544,7 @@ fn main() -> crossterm::Result<()> {
 
     let cli_args = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
+        .about(env!("CARGO_PKG_DESCRIPTION"))
         //.author(env!("CARGO_PKG_AUTHORS")) // TODO: rest of these https://stackoverflow.com/a/27841363
         .arg(Arg::with_name("folders-only")
              .long("folders-only")
