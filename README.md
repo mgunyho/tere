@@ -64,17 +64,17 @@ The main way to navigate folders in `tere` is by using the keyboard to move the 
 |Move cursor down by one screen| <kbd>Page Down</kbd> or <kbd>Ctrl</kbd>+<kbd>d</kbd> |
 |Move cursor to the top   | <kbd>Home</kbd> or <kbd>Alt</kbd>+<kbd>g</kbd> |
 |Move cursor to the bottom| <kbd>End</kbd>  or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>g</kbd> |
+|Change case sensitivity mode| <kbd>Alt</kbd>+<kbd>c</kbd> |
 
 The shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
 
 ### Searching
 
 To search for an item in the current folder, just type some letters. `tere` will
-highlight all folders and files that match the search string. Currently the
-search is case-sensitive.
+highlight all folders and files that match the search query.
 
 While searching, moving the cursor up / down jumps between only the items that
-match the search. The search string, as well as the number of matching items is
+match the search. The search query, as well as the number of matching items is
 shown at the bottom of the screen.
 
 If only one folder matches your current search, `tere` will highlight it, and
@@ -84,6 +84,12 @@ very quickly.
 To stop searching, press <kbd>Esc</kbd> or erase all search characters by
 pressing <kbd>Backspace</kbd>.
 
+By default, the searching uses "smart case", meaning that if the query contains
+only lowercase letters, case is ignored, but if there are uppercase letters, the
+search is case sensitive. This can be changed with the `--ignore-case` and
+`--case-sensitive` options, or with the keyboard shortcut
+<kbd>Alt</kbd>+<kbd>c</kbd>.
+
 ### CLI options
 
 You can adjust the behavior of `tere` by passing the following CLI options to it:
@@ -92,6 +98,7 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 - `--version` or `-V`: Print the version of `tere`
 - `--folders-only`: Don't show files, only folders (and symlinks pointing to folders) in the listing
 - `--filter-search`: If this option is set, hide items in the output listing that don't match the current search query
+- `--smart-case` / `--ignore-case` / `--case-sensitive`: Set the case sensitivity mode. The default mode is smart case.
 
 ## Prior art
 

@@ -25,7 +25,7 @@ const FOOTER_SIZE: u16 = 1;
 //TODO: clippy
 
 mod app_state;
-use app_state::TereAppState;
+use app_state::{TereAppState, CaseSensitiveMode};
 
 /// This struct groups together ncurses windows for the main content, header and
 /// footer, and an application state object
@@ -126,6 +126,8 @@ impl<'a> TereTui<'a> {
 
         let mut win = self.window;
         let mut extra_msg = String::new();
+
+        extra_msg.push_str(&format!("{} ", self.app_state.settings.case_sensitive));
 
         let cursor_idx = self.app_state.cursor_pos_to_visible_item_index(self.app_state.cursor_pos);
         if self.app_state.is_searching() {
@@ -417,6 +419,18 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    fn cycle_case_sensitive_mode(&mut self) -> CTResult<()> {
+        self.app_state.settings.case_sensitive = match self.app_state.settings.case_sensitive {
+            CaseSensitiveMode::IgnoreCase => CaseSensitiveMode::CaseSensitive,
+            CaseSensitiveMode::CaseSensitive => CaseSensitiveMode::SmartCase,
+            CaseSensitiveMode::SmartCase => CaseSensitiveMode::IgnoreCase,
+        };
+        self.app_state.advance_search("");
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
+    }
+
     pub fn main_event_loop(&mut self) -> CTResult<()> {
         #[allow(non_snake_case)]
         let ALT = KeyModifiers::ALT;
@@ -496,6 +510,10 @@ impl<'a> TereTui<'a> {
                             self.on_home_end(false)?;
                         }
 
+                        KeyCode::Char('c') if k.modifiers == ALT => {
+                            self.cycle_case_sensitive_mode()?;
+                        }
+
                         KeyCode::Char(c) => self.on_search_char(c)?,
 
                         KeyCode::Backspace => self.erase_search_char()?,
@@ -515,6 +533,13 @@ impl<'a> TereTui<'a> {
     }
 }
 
+macro_rules! case_sensitive_template {
+    // NOTE: long lines don't wrap in long_help message with clap 2.33 (see https://github.com/clap-rs/clap/issues/2445). should update clap to v3.
+    ($x:tt, $y:tt) => {
+        format!("This overrides the --{} and --{} options. You can also change the case sensitivity mode while the program is running with the keyboard shortcut ALT+C.", $x, $y)
+    }
+}
+
 fn main() -> crossterm::Result<()> {
 
     let cli_args = App::new(env!("CARGO_PKG_NAME"))
@@ -528,6 +553,30 @@ fn main() -> crossterm::Result<()> {
         .arg(Arg::with_name("filter-search")
              .long("filter-search")
              .help("Show only items matching the search in listing")
+            )
+        .arg(Arg::with_name("case-sensitive")
+             .long("case-sensitive")
+             //.short("c")  // TODO: check conflicts
+             .help("Case sensitive search")
+             .long_help(&format!("Enable case-sensitive search.\n\n{}",
+                        case_sensitive_template!("ignore-case", "smart-case")))
+             .overrides_with_all(&["ignore-case", "smart-case"])
+             .multiple(true)
+            )
+        .arg(Arg::with_name("ignore-case")
+             .long("ignore-case")
+             .help("Ignore case when searching")
+             .long_help(&format!("Enable case-insensitive search.\n\n{}",
+                        case_sensitive_template!("case-sensitive", "smart-case")))
+             .overrides_with("smart-case")
+             .multiple(true)
+            )
+        .arg(Arg::with_name("smart-case")
+             .long("smart-case")
+             .help("Smart case search (default)")
+             .long_help(&format!("Enable smart-case search. If the search query contains only lowercase letters, search case insensitively. Otherwise search case sensitively. This is the default search mode.\n\n{}",
+                        case_sensitive_template!("case-sensitive", "ignore-case")))
+             .multiple(true)
             )
         .get_matches_safe()
         .unwrap_or_else(|err| {
