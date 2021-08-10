@@ -56,7 +56,7 @@ The main way to navigate folders in `tere` is by using the keyboard to move the 
 |Move cursor up  | <kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>k</kbd> |
 |Move cursor down| <kbd>↓</kbd> or <kbd>Alt</kbd>+<kbd>j</kbd> |
 |Enter directory | <kbd>→</kbd> or <kbd>Alt</kbd>+<kbd>l</kbd> |
-| Go to parent directory | <kbd>←</kbd> or <kbd>Alt</kbd> + <kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>h</kbd> |
+|Go to parent directory| <kbd>←</kbd> or <kbd>Alt</kbd> + <kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>h</kbd> |
 |Exit `tere`| <kbd>Esc</kbd> or <kbd>Alt</kbd>+<kbd>q</kbd> |
 |Go to home directory| <kbd>Ctrl</kbd>+<kbd>Home</kbd> or <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>h</kbd>|
 |Go to root directory| <kbd>Ctrl</kbd>+<kbd>r</kbd>|
@@ -66,7 +66,7 @@ The main way to navigate folders in `tere` is by using the keyboard to move the 
 |Move cursor to the bottom| <kbd>End</kbd>  or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>g</kbd> |
 |Change case sensitivity mode| <kbd>Alt</kbd>+<kbd>c</kbd> |
 
-The shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
+Shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
 
 ### Searching
 
@@ -109,7 +109,7 @@ by showing how it is different from all these applications in subtle but
 important ways.
 
 If there is a program that should be mentioned here, feel free to open an issue
-or pull request!
+or pull request about it!
 
 ### Terminal file browsers
 
