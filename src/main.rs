@@ -25,7 +25,7 @@ const FOOTER_SIZE: u16 = 1;
 //TODO: clippy
 
 mod app_state;
-use app_state::{TereAppState, settings::CaseSensitiveMode};
+use app_state::{TereAppState, CaseSensitiveMode};
 
 /// This struct groups together ncurses windows for the main content, header and
 /// footer, and an application state object
