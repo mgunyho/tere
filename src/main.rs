@@ -510,8 +510,7 @@ impl<'a> TereTui<'a> {
                             self.on_home_end(false)?;
                         }
 
-                        //TODO: keyboard shortcut to cycle case (in)sensitive / smart-case mode
-                        KeyCode::Char('c') if k.modifiers == CONTROL => {
+                        KeyCode::Char('c') if k.modifiers == ALT => {
                             self.cycle_case_sensitive_mode()?;
                         }
 
