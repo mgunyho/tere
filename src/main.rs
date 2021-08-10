@@ -533,6 +533,13 @@ impl<'a> TereTui<'a> {
     }
 }
 
+macro_rules! case_sensitive_template {
+    // NOTE: long lines don't wrap in long_help message with clap 2.33 (see https://github.com/clap-rs/clap/issues/2445). should update clap to v3.
+    ($x:tt, $y:tt) => {
+        format!("This overrides the --{} and --{} options. You can also change the case sensitivity mode while the program is running with the keyboard shortcut ALT+C.", $x, $y)
+    }
+}
+
 fn main() -> crossterm::Result<()> {
 
     let cli_args = App::new(env!("CARGO_PKG_NAME"))
@@ -550,19 +557,25 @@ fn main() -> crossterm::Result<()> {
         .arg(Arg::with_name("case-sensitive")
              .long("case-sensitive")
              //.short("c")  // TODO: check conflicts
-             .help("make searching case sensitive")  //TODO: better description?
+             .help("Case sensitive search")
+             .long_help(&format!("Enable case-sensitive search.\n\n{}",
+                        case_sensitive_template!("ignore-case", "smart-case")))
              .overrides_with_all(&["ignore-case", "smart-case"])
              .multiple(true)
             )
         .arg(Arg::with_name("ignore-case")
              .long("ignore-case")
              .help("Ignore case when searching")
+             .long_help(&format!("Enable case-insensitive search.\n\n{}",
+                        case_sensitive_template!("case-sensitive", "smart-case")))
              .overrides_with("smart-case")
              .multiple(true)
             )
         .arg(Arg::with_name("smart-case")
              .long("smart-case")
-             .help("Smart case search") //TODO: better description
+             .help("Smart case search (default)")
+             .long_help(&format!("Enable smart-case search. If the search query contains only lowercase letters, search case insensitively. Otherwise search case sensitively. This is the default search mode.\n\n{}",
+                        case_sensitive_template!("case-sensitive", "ignore-case")))
              .multiple(true)
             )
         .get_matches_safe()
