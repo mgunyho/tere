@@ -127,6 +127,8 @@ impl<'a> TereTui<'a> {
         let mut win = self.window;
         let mut extra_msg = String::new();
 
+        extra_msg.push_str(&format!("{} ", self.app_state.settings.case_sensitive));
+
         let cursor_idx = self.app_state.cursor_pos_to_visible_item_index(self.app_state.cursor_pos);
         if self.app_state.is_searching() {
             //self.footer_win.mvaddstr(0, 0, &self.app_state.search_string());
