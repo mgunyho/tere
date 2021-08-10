@@ -12,6 +12,7 @@ description = "A fast way to navigate folders in the terminal"
 [dependencies]
 crossterm = "0.20.0"
 home = "0.5.3"
+regex = "1.5.4"
 
 [dependencies.clap]
 version = "2"
