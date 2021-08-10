@@ -14,7 +14,7 @@ pub enum CaseSensitiveMode {
 }
 
 impl Default for CaseSensitiveMode {
-    fn default() -> Self { Self::IgnoreCase }
+    fn default() -> Self { Self::SmartCase }
 }
 
 impl fmt::Display for CaseSensitiveMode {
