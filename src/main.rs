@@ -552,8 +552,7 @@ fn main() -> crossterm::Result<()> {
              .long("case-sensitive")
              //.short("c")  // TODO: check conflicts
              .help("make searching case sensitive")  //TODO: better description?
-             .overrides_with("ignore-case")
-             .overrides_with("smart-case")
+             .overrides_with_all(&["ignore-case", "smart-case"])
              .multiple(true)
             )
         .arg(Arg::with_name("ignore-case")
