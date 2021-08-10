@@ -546,15 +546,42 @@ fn main() -> crossterm::Result<()> {
         .version(env!("CARGO_PKG_VERSION"))
         .about(env!("CARGO_PKG_DESCRIPTION"))
         //.author(env!("CARGO_PKG_AUTHORS")) // TODO: rest of these https://stackoverflow.com/a/27841363
-        .arg(Arg::with_name("folders-only")
-             .long("folders-only")
-             //.short("f")  // TODO: check conflicts
-             .help("only show folders in listing")
-             )
         .arg(Arg::with_name("filter-search")
              .long("filter-search")
+             //.visible_alias("fs") //TODO: consider
              .help("Show only items matching the search in listing")
+             .long_help("Show only items matching the search in listing. This overrides the --no-filter-search option.")
+             .multiple(true)
+             .display_order(1)
             )
+        .arg(Arg::with_name("no-filter-search")
+             .long("no-filter-search")
+             //.visible_alias("nfs") //TODO: consider
+             .help("Show all items in the listing even when searching (default)")
+             .long_help("Show all items in the listing even when searching (default). This overrides the --filter-search option.")
+             .overrides_with("filter-search")
+             .multiple(true)
+             .display_order(2)
+            )
+        .arg(Arg::with_name("folders-only")
+             .long("folders-only")
+             //.visible_alias("fo") //TODO: consider
+             //.short("f")  // TODO: check conflicts
+             .help("Show only folders in the listing")
+             .long_help("Show only folders (and symlinks pointing to folders) in the listing. This overrides the --no-folders-only option.")
+             .multiple(true)
+             .display_order(11)
+             )
+        .arg(Arg::with_name("no-folders-only")
+             .long("no-folders-only")
+             //.visible_alias("nfo") //TODO: consider
+             //.short("f")  // TODO: check conflicts
+             .help("Show files and folders in the listing (default)")
+             .long_help("Show both files and folders in the listing. This is the default view mode. This overrides the --folders-only option")
+             .multiple(true)
+             .overrides_with("folders-only")
+             .display_order(11)
+             )
         .arg(Arg::with_name("case-sensitive")
              .long("case-sensitive")
              //.short("c")  // TODO: check conflicts
@@ -563,6 +590,7 @@ fn main() -> crossterm::Result<()> {
                         case_sensitive_template!("ignore-case", "smart-case")))
              .overrides_with_all(&["ignore-case", "smart-case"])
              .multiple(true)
+             .display_order(21)
             )
         .arg(Arg::with_name("ignore-case")
              .long("ignore-case")
@@ -571,6 +599,7 @@ fn main() -> crossterm::Result<()> {
                         case_sensitive_template!("case-sensitive", "smart-case")))
              .overrides_with("smart-case")
              .multiple(true)
+             .display_order(22)
             )
         .arg(Arg::with_name("smart-case")
              .long("smart-case")
@@ -578,6 +607,7 @@ fn main() -> crossterm::Result<()> {
              .long_help(&format!("Enable smart-case search. If the search query contains only lowercase letters, search case insensitively. Otherwise search case sensitively. This is the default search mode.\n\n{}",
                         case_sensitive_template!("case-sensitive", "ignore-case")))
              .multiple(true)
+             .display_order(23)
             )
         .get_matches_safe()
         .unwrap_or_else(|err| {
