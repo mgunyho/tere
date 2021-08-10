@@ -20,9 +20,9 @@ impl Default for CaseSensitiveMode {
 impl fmt::Display for CaseSensitiveMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>)  -> fmt::Result {
         let text = match self {
-            CaseSensitiveMode::IgnoreCase    => "ignore-case",
-            CaseSensitiveMode::CaseSensitive => "case-sensitive",
-            CaseSensitiveMode::SmartCase     => "smart-case",
+            CaseSensitiveMode::IgnoreCase    => "ignore case",
+            CaseSensitiveMode::CaseSensitive => "case sensitive",
+            CaseSensitiveMode::SmartCase     => "smart case",
         };
         write!(f, "{}", text)
     }
