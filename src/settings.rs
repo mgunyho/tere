@@ -1,5 +1,6 @@
 /// Module for managing the settings (command line arguments) of the app
 
+use std::fmt;
 use clap::ArgMatches;
 
 //TODO: config file
@@ -16,6 +17,18 @@ pub enum CaseSensitiveMode {
 impl Default for CaseSensitiveMode {
     fn default() -> Self { Self::IgnoreCase }
 }
+
+impl fmt::Display for CaseSensitiveMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>)  -> fmt::Result {
+        let text = match self {
+            CaseSensitiveMode::IgnoreCase    => "ignore-case",
+            CaseSensitiveMode::CaseSensitive => "case-sensitive",
+            CaseSensitiveMode::SmartCase     => "smart-case",
+        };
+        write!(f, "{}", text)
+    }
+}
+
 
 #[derive(Default)]
 pub struct TereSettings {
