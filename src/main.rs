@@ -419,6 +419,18 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    fn cycle_case_sensitive_mode(&mut self) -> CTResult<()> {
+        self.app_state.settings.case_sensitive = match self.app_state.settings.case_sensitive {
+            CaseSensitiveMode::IgnoreCase => CaseSensitiveMode::CaseSensitive,
+            CaseSensitiveMode::CaseSensitive => CaseSensitiveMode::SmartCase,
+            CaseSensitiveMode::SmartCase => CaseSensitiveMode::IgnoreCase,
+        };
+        self.app_state.advance_search("");
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
+    }
+
     pub fn main_event_loop(&mut self) -> CTResult<()> {
         #[allow(non_snake_case)]
         let ALT = KeyModifiers::ALT;
@@ -500,15 +512,7 @@ impl<'a> TereTui<'a> {
 
                         //TODO: keyboard shortcut to cycle case (in)sensitive / smart-case mode
                         KeyCode::Char('c') if k.modifiers == CONTROL => {
-                            self.app_state.settings.case_sensitive = match self.app_state.settings.case_sensitive {
-                                CaseSensitiveMode::IgnoreCase => CaseSensitiveMode::CaseSensitive,
-                                CaseSensitiveMode::CaseSensitive => CaseSensitiveMode::SmartCase,
-                                CaseSensitiveMode::SmartCase => CaseSensitiveMode::IgnoreCase,
-                            };
-                            //TODO: use self.advance_search here (?) - should use &str then...
-                            self.app_state.advance_search("");
-                            self.redraw_main_window();
-                            self.info_message(&format!("{:?}", self.app_state.settings.case_sensitive))?;
+                            self.cycle_case_sensitive_mode()?;
                         }
 
                         KeyCode::Char(c) => self.on_search_char(c)?,
