@@ -12,6 +12,7 @@ description = "A fast way to navigate folders in the terminal"
 [dependencies]
 crossterm = "0.20.0"
 dirs = "4.0.0"
+regex = "1.5.4"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["rc"] }
 textwrap = "0.14"
