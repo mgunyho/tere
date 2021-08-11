@@ -13,7 +13,7 @@ use regex::Regex;
 #[path = "settings.rs"]
 mod settings;
 use settings::TereSettings;
-pub use settings::CaseSensitiveMode;
+pub use settings::{CaseSensitiveMode, GapSearchMode};
 
 #[path = "history.rs"]
 mod history;
@@ -561,12 +561,19 @@ impl TereAppState {
 
         // TODO: make "^" here configurable
         // TODO: make "omni-search" configurable
-        let mut regex_str = r"^".to_string();
-        regex_str.push_str(&search_string.chars()
-                           .map(|c| c.to_string())
-                           .collect::<Vec<String>>()
-                           // TODO: escape '.' etc in search query...
-                           .join(".*?"));
+        let mut regex_str = "".to_string();
+        if self.settings.gap_search_mode == GapSearchMode::NoGapSearch {
+            regex_str.push_str(&format!("^({})", regex::escape(&search_string)));
+        } else {
+            if self.settings.gap_search_mode == GapSearchMode::GapSearchFromStart {
+                regex_str.push_str("^");
+            }
+            regex_str.push_str(&search_string.chars()
+                               .map(|c| regex::escape(&c.to_string()))
+                               .collect::<Vec<String>>()
+                               // TODO: escape '.' etc in search query...
+                               .join(".*?"));
+        }
 
         let search_ptn = Regex::new(&regex_str).unwrap(); //TODO: error handling...
         self.ls_output_buf.apply_filter(|itm| {
