@@ -25,7 +25,7 @@ const FOOTER_SIZE: u16 = 1;
 //TODO: clippy
 
 mod app_state;
-use app_state::{TereAppState, CaseSensitiveMode};
+use app_state::{TereAppState, CaseSensitiveMode, GapSearchMode};
 
 mod ui;
 use ui::help_window::get_formatted_help_text;
@@ -466,6 +466,19 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    fn cycle_gap_search_mode(&mut self) -> CTResult<()> {
+        self.app_state.settings.gap_search_mode = match self.app_state.settings.gap_search_mode {
+            GapSearchMode::GapSearchFromStart => GapSearchMode::NoGapSearch,
+            GapSearchMode::NoGapSearch => GapSearchMode::GapSearchAnywere,
+            GapSearchMode::GapSearchAnywere => GapSearchMode::GapSearchFromStart,
+        };
+        //TODO: do the other stuff that self.on_search_char_does, notably, change dir if only one match. or should it?
+        self.app_state.advance_search("");
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
+    }
+
     pub fn main_event_loop(&mut self) -> CTResult<()> {
         #[allow(non_snake_case)]
         let ALT = KeyModifiers::ALT;
@@ -551,6 +564,10 @@ impl<'a> TereTui<'a> {
 
                         KeyCode::Char('c') if k.modifiers == ALT => {
                             self.cycle_case_sensitive_mode()?;
+                        }
+
+                        KeyCode::Char('f') if k.modifiers == CONTROL => {
+                            self.cycle_gap_search_mode()?;
                         }
 
                         KeyCode::Char(c) => self.on_search_char(c)?,
