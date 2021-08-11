@@ -28,6 +28,17 @@ impl fmt::Display for CaseSensitiveMode {
     }
 }
 
+#[derive(PartialEq)]
+pub enum OmniSearchMode {
+    OmniSearchFromBeginning,
+    NoOmniSearch,
+    OmniSearchAnywere,
+}
+
+impl Default for OmniSearchMode {
+    fn default() -> Self { Self::OmniSearchFromBeginning }
+}
+
 
 #[derive(Default)]
 pub struct TereSettings {
@@ -40,6 +51,7 @@ pub struct TereSettings {
     pub filter_search: bool,
 
     pub case_sensitive: CaseSensitiveMode,
+    pub omni_search_mode: OmniSearchMode,
 }
 
 impl TereSettings {
