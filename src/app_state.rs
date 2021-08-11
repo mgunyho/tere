@@ -453,19 +453,18 @@ impl TereAppState {
             self.search_string.to_lowercase()
         };
 
-        // TODO: make "^" here configurable
-        // TODO: make "omni-search" configurable
+        // TODO: make "omni-search" configurable using CLI args
         let mut regex_str = "".to_string();
         if self.settings.omni_search_mode == OmniSearchMode::NoOmniSearch {
             regex_str.push_str(&regex::escape(&search_string))
         } else {
+            // enable omni search. Add '^' to the regex to match only from the start if applicable.
             if self.settings.omni_search_mode == OmniSearchMode::OmniSearchFromBeginning {
                 regex_str.push_str("^");
             }
             regex_str.push_str(&search_string.chars()
                                .map(|c| regex::escape(&c.to_string()))
                                .collect::<Vec<String>>()
-                               // TODO: escape '.' etc in search query...
                                .join(".*"));
         }
 
