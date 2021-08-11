@@ -25,7 +25,7 @@ const FOOTER_SIZE: u16 = 1;
 //TODO: clippy
 
 mod app_state;
-use app_state::{TereAppState, CaseSensitiveMode};
+use app_state::{TereAppState, CaseSensitiveMode, OmniSearchMode};
 
 /// This struct groups together ncurses windows for the main content, header and
 /// footer, and an application state object
@@ -431,6 +431,19 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    fn cycle_omni_search_mode(&mut self) -> CTResult<()> {
+        self.app_state.settings.omni_search_mode = match self.app_state.settings.omni_search_mode {
+            OmniSearchMode::OmniSearchFromBeginning => OmniSearchMode::NoOmniSearch,
+            OmniSearchMode::NoOmniSearch => OmniSearchMode::OmniSearchAnywere,
+            OmniSearchMode::OmniSearchAnywere => OmniSearchMode::OmniSearchFromBeginning,
+        };
+        //TODO: do the other stuff that self.on_search_char_does, notably, change dir if only one match. or should it?
+        self.app_state.advance_search("");
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
+    }
+
     pub fn main_event_loop(&mut self) -> CTResult<()> {
         #[allow(non_snake_case)]
         let ALT = KeyModifiers::ALT;
@@ -512,6 +525,10 @@ impl<'a> TereTui<'a> {
 
                         KeyCode::Char('c') if k.modifiers == ALT => {
                             self.cycle_case_sensitive_mode()?;
+                        }
+
+                        KeyCode::Char('f') if k.modifiers == CONTROL => {
+                            self.cycle_omni_search_mode()?;
                         }
 
                         KeyCode::Char(c) => self.on_search_char(c)?,
