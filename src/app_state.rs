@@ -559,19 +559,18 @@ impl TereAppState {
             self.search_string.to_lowercase()
         };
 
-        // TODO: make "^" here configurable
-        // TODO: make "omni-search" configurable
+        // TODO: make "omni-search" configurable using CLI args
         let mut regex_str = "".to_string();
         if self.settings.gap_search_mode == GapSearchMode::NoGapSearch {
             regex_str.push_str(&format!("^({})", regex::escape(&search_string)));
         } else {
+            // enable gap search. Add '^' to the regex to match only from the start if applicable.
             if self.settings.gap_search_mode == GapSearchMode::GapSearchFromStart {
                 regex_str.push_str("^");
             }
             regex_str.push_str(&search_string.chars()
                                .map(|c| regex::escape(&c.to_string()))
                                .collect::<Vec<String>>()
-                               // TODO: escape '.' etc in search query...
                                .join(".*?"));
         }
 
