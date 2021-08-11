@@ -30,6 +30,17 @@ impl fmt::Display for CaseSensitiveMode {
     }
 }
 
+#[derive(PartialEq)]
+pub enum GapSearchMode {
+    GapSearchFromStart,
+    NoGapSearch,
+    GapSearchAnywere,
+}
+
+impl Default for GapSearchMode {
+    fn default() -> Self { Self::GapSearchFromStart }
+}
+
 
 #[derive(Default)]
 pub struct TereSettings {
@@ -46,6 +57,8 @@ pub struct TereSettings {
     pub autocd_timeout: Option<u64>,
 
     pub history_file: Option<PathBuf>,
+
+    pub gap_search_mode: GapSearchMode,
 }
 
 impl TereSettings {
