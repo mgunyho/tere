@@ -11,7 +11,7 @@ use regex::Regex;
 #[path = "settings.rs"]
 mod settings;
 use settings::TereSettings;
-pub use settings::CaseSensitiveMode;
+pub use settings::{CaseSensitiveMode, OmniSearchMode};
 
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
 /// both the vector of filtered items and the whole unfiltered vector.
@@ -455,12 +455,19 @@ impl TereAppState {
 
         // TODO: make "^" here configurable
         // TODO: make "omni-search" configurable
-        let mut regex_str = r"^".to_string();
-        regex_str.push_str(&search_string.chars()
-                           .map(|c| c.to_string())
-                           .collect::<Vec<String>>()
-                           // TODO: escape '.' etc in search query...
-                           .join(".*"));
+        let mut regex_str = "".to_string();
+        if self.settings.omni_search_mode == OmniSearchMode::NoOmniSearch {
+            regex_str.push_str(&regex::escape(&search_string))
+        } else {
+            if self.settings.omni_search_mode == OmniSearchMode::OmniSearchFromBeginning {
+                regex_str.push_str("^");
+            }
+            regex_str.push_str(&search_string.chars()
+                               .map(|c| regex::escape(&c.to_string()))
+                               .collect::<Vec<String>>()
+                               // TODO: escape '.' etc in search query...
+                               .join(".*"));
+        }
 
         let search_ptn = Regex::new(&regex_str).unwrap(); //TODO: error handling...
         self.ls_output_buf.apply_filter(|itm| {
