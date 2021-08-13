@@ -39,6 +39,17 @@ impl Default for OmniSearchMode {
     fn default() -> Self { Self::OmniSearchFromBeginning }
 }
 
+impl fmt::Display for OmniSearchMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>)  -> fmt::Result {
+        let text = match self {
+            OmniSearchMode::OmniSearchFromBeginning => "omni search b", //TODO: better name?
+            OmniSearchMode::NoOmniSearch            => "normal search",
+            OmniSearchMode::OmniSearchAnywere       => "omni search",
+        };
+        write!(f, "{}", text)
+    }
+}
+
 
 #[derive(Default)]
 pub struct TereSettings {
