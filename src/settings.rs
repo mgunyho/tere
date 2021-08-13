@@ -41,6 +41,17 @@ impl Default for GapSearchMode {
     fn default() -> Self { Self::GapSearchFromStart }
 }
 
+impl fmt::Display for GapSearchMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>)  -> fmt::Result {
+        let text = match self {
+            GapSearchMode::GapSearchFromStart => "gap search from start",
+            GapSearchMode::NoGapSearch        => "normal search",
+            GapSearchMode::GapSearchAnywere   => "gap search anywhere",
+        };
+        write!(f, "{}", text)
+    }
+}
+
 
 #[derive(Default)]
 pub struct TereSettings {
