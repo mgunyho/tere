@@ -25,13 +25,13 @@ pub const NO_MATCHES_MSG: &str = "No matches";
 
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
 /// both the vector of filtered items and the whole unfiltered vector.
-struct FilteredVec<T> {
+struct MatchesVec<T> {
     all_items: Vec<T>,
     // This vec contains the indices of the items that have not been filtered out
     kept_indices: Vec<usize>,
 }
 
-impl<T> FilteredVec<T> {
+impl<T> MatchesVec<T> {
 
     /// Return a vector of all items that have been kept
     pub fn kept_items(&self) -> Vec<&T> {
@@ -60,7 +60,7 @@ impl<T> FilteredVec<T> {
     }
 }
 
-impl<T> From<Vec<T>> for FilteredVec<T> {
+impl<T> From<Vec<T>> for MatchesVec<T> {
     fn from(vec: Vec<T>) -> Self {
         let mut ret = Self {
             all_items: vec,
@@ -127,7 +127,7 @@ impl From<&std::path::Path> for CustomDirEntry
 
 type LsBufItem = CustomDirEntry;
 /// The type of the `ls_output_buf` buffer of the app state
-type LsBufType = FilteredVec<LsBufItem>;
+type LsBufType = MatchesVec<LsBufItem>;
 
 
 /// This struct represents the state of the application. Note that it has no
@@ -634,11 +634,11 @@ impl TereAppState {
 
 #[cfg(test)]
 mod tests_for_filtered_vec {
-    use super::FilteredVec;
+    use super::MatchesVec;
 
     #[test]
     fn test_filter_basic() {
-        let mut v = FilteredVec::from(vec![1, 2, 3]);
+        let mut v = MatchesVec::from(vec![1, 2, 3]);
         v.apply_filter(|n| (n % 2) == 0);
         assert_eq!(v.all_items, vec![1, 2, 3]);
         assert_eq!(v.kept_items(), vec![&2]);
@@ -647,7 +647,7 @@ mod tests_for_filtered_vec {
 
     #[test]
     fn test_clear_filter() {
-        let mut v = FilteredVec::from(vec![1, 2, 3]);
+        let mut v = MatchesVec::from(vec![1, 2, 3]);
         v.apply_filter(|_| false);
         assert_eq!(v.kept_items(), Vec::<&usize>::new());
         v.clear_filter();
