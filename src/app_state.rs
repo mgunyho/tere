@@ -32,7 +32,7 @@ impl<T> MatchesVec<T> {
 
     /// Return a vector of all items that have been kept
     pub fn kept_items(&self) -> Vec<&T> {
-        self.kept_indices.iter().filter_map(|idx| self.all_items.get(*idx))
+        self.kept_indices().iter().filter_map(|idx| self.all_items.get(*idx))
             .collect()
     }
 
@@ -42,18 +42,20 @@ impl<T> MatchesVec<T> {
     where
         F: Fn(&T) -> bool
     {
-        self.kept_indices.clear();
-        self.kept_indices = self.all_items.iter()
+        self.matches.clear();
+        self.matches = self.all_items.iter()
             .enumerate()
             .filter(|(_, x)| filter(&x))
-            .map(|(i, _)| i)
+            .map(|(i, _)| (i, ())) //TODO: CaptureLocations
             .collect();
     }
 
     /// Clear the filtered results, so that the kept items contain all items
     pub fn clear_filter(&mut self) {
-        self.kept_indices.clear();
-        self.kept_indices = (0..self.all_items.len()).collect();
+        self.matches.clear();
+        self.matches = (0..self.all_items.len())
+            .map(|i| (i, ())) //TODO: CaptureLocations
+            .collect();
     }
 }
 
@@ -61,7 +63,7 @@ impl<T> From<Vec<T>> for MatchesVec<T> {
     fn from(vec: Vec<T>) -> Self {
         let mut ret = Self {
             all_items: vec,
-            kept_indices: vec![],
+            matches: vec![],
         };
         ret.clear_filter();
         ret
