@@ -41,6 +41,11 @@ struct MatchesVec {
 
 impl MatchesVec {
 
+    /// Return a vector of the indices of the matches
+    fn kept_indices(&self) -> Vec<usize> {
+        self.matches.keys().map(|k| k.clone()).collect()
+    }
+
     /// Return a vector of all items that have been kept
     pub fn kept_items(&self) -> Vec<&LsBufItem> {
         self.kept_indices.iter().filter_map(|idx| self.all_items.get(*idx))
