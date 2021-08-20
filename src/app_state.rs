@@ -25,6 +25,11 @@ struct MatchesVec<T> {
 
 impl<T> MatchesVec<T> {
 
+    /// Return a vector of the indices of the matches
+    fn kept_indices(&self) -> Vec<usize> {
+        self.matches.iter().map(|(i, _)| *i).collect()
+    }
+
     /// Return a vector of all items that have been kept
     pub fn kept_items(&self) -> Vec<&T> {
         self.kept_indices.iter().filter_map(|idx| self.all_items.get(*idx))
