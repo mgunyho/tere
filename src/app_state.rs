@@ -17,8 +17,10 @@ pub use settings::{CaseSensitiveMode, OmniSearchMode};
 /// both the vector of filtered items and the whole unfiltered vector.
 struct MatchesVec<T> {
     all_items: Vec<T>,
-    // This vec contains the indices of the items that have not been filtered out
-    kept_indices: Vec<usize>,
+    // This vec contains the indices of the items that match the search, as well
+    // as the corresponding regex match locations
+    //matches: Vec<(usize, CaptureLocations)>, //TODO
+    matches: Vec<(usize, ())>,
 }
 
 impl<T> MatchesVec<T> {
