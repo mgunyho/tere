@@ -52,17 +52,24 @@ impl MatchesVec {
             .collect()
     }
 
-    /// Recreate the collection of filtered items by through all items in the unfiltered collection
-    /// and applying a filter function
-    pub fn apply_filter<F>(&mut self, filter: F)
-    where
-        F: Fn(&LsBufItem) -> bool
-    {
+    /// Update the collection of matching items by through all items in the full collection
+    /// and testing a regex pattern against the filenames
+    pub fn update_matches(&mut self, search_ptn: &Regex, case_sensitive: bool) {
         self.matches.clear();
         self.matches = self.all_items.iter()
             .enumerate()
-            .filter(|(_, x)| filter(&x))
-            .map(|(i, _)| (i, ())) //TODO: CaptureLocations
+            .filter_map(|(i, item)| {
+                let target = if case_sensitive {
+                    item.file_name_checked()
+                } else {
+                    item.file_name_checked().to_lowercase()
+                };
+                if search_ptn.is_match(&target) {
+                    Some((i, ())) //TODO: CaptureLocations
+                } else {
+                    None
+                }
+            })
             .collect();
     }
 
@@ -591,14 +598,7 @@ impl TereAppState {
         }
 
         let search_ptn = Regex::new(&regex_str).unwrap(); //TODO: error handling...
-        self.ls_output_buf.apply_filter(|itm| {
-            let target = if is_case_sensitive {
-                itm.file_name_checked()
-            } else {
-                itm.file_name_checked().to_lowercase()
-            };
-            search_ptn.is_match(&target)
-        });
+        self.ls_output_buf.update_matches(&search_ptn, is_case_sensitive);
     }
 
     pub fn clear_search(&mut self) {
