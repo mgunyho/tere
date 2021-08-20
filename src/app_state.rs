@@ -7,6 +7,7 @@ use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::io::{Result as IOResult, Error as IOError, ErrorKind};
 use std::path::{Path, PathBuf, Component};
+use std::collections::BTreeMap;
 
 use regex::Regex;
 
@@ -23,12 +24,19 @@ use crate::error::TereError;
 
 pub const NO_MATCHES_MSG: &str = "No matches";
 
+//TODO: docstring
+type MatchesLocType = Vec<(usize, usize)>;
+
+
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
 /// both the vector of filtered items and the whole unfiltered vector.
 struct MatchesVec {
     all_items: Vec<LsBufItem>,
-    // This vec contains the indices of the items that have not been filtered out
-    kept_indices: Vec<usize>,
+    // Each key-value pair in this map corresponds to an item in `all_items` that matches the
+    // current search. The key is the item's index in `all_items`, while the value contains the
+    // regex match locations. We use a BTreeMap to always keep the matches sorted, so that they are
+    // in the same order relative to each other as they are in `all_items`.
+    matches: BTreeMap<usize, MatchesLocType>,
 }
 
 impl MatchesVec {
@@ -64,7 +72,7 @@ impl From<Vec<LsBufItem>> for MatchesVec {
     fn from(vec: Vec<LsBufItem>) -> Self {
         let mut ret = Self {
             all_items: vec,
-            kept_indices: vec![],
+            matches: BTreeMap::new(),
         };
         ret.clear_filter();
         ret
