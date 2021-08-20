@@ -48,7 +48,7 @@ impl MatchesVec {
 
     /// Return a vector of all items that have been kept
     pub fn kept_items(&self) -> Vec<&LsBufItem> {
-        self.kept_indices.iter().filter_map(|idx| self.all_items.get(*idx))
+        self.kept_indices().iter().filter_map(|idx| self.all_items.get(*idx))
             .collect()
     }
 
@@ -58,18 +58,20 @@ impl MatchesVec {
     where
         F: Fn(&LsBufItem) -> bool
     {
-        self.kept_indices.clear();
-        self.kept_indices = self.all_items.iter()
+        self.matches.clear();
+        self.matches = self.all_items.iter()
             .enumerate()
             .filter(|(_, x)| filter(&x))
-            .map(|(i, _)| i)
+            .map(|(i, _)| (i, ())) //TODO: CaptureLocations
             .collect();
     }
 
     /// Clear the filtered results, so that the kept items contain all items
     pub fn clear_filter(&mut self) {
-        self.kept_indices.clear();
-        self.kept_indices = (0..self.all_items.len()).collect();
+        self.matches.clear();
+        self.matches = (0..self.all_items.len())
+            .map(|i| (i, ())) //TODO: CaptureLocations
+            .collect();
     }
 }
 
