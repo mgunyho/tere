@@ -261,17 +261,17 @@ impl TereAppState {
 
     /// The number of items that match the current search.
     pub fn num_matching_items(&self) -> usize {
-        self.ls_output_buf.kept_indices.len()
+        self.ls_output_buf.matches.len()
     }
 
     /// Return a vector that contains the indices into the currently visible
     /// items that contain a match
     pub fn visible_match_indices(&self) -> Vec<usize> {
         if self.settings.filter_search {
-            (0..self.ls_output_buf.kept_indices.len()).collect()
+            (0..self.ls_output_buf.matches.len()).collect()
         } else {
             // it's ok to clone here, the kept_indices will be usually quite short.
-            self.ls_output_buf.kept_indices.clone()
+            self.ls_output_buf.kept_indices()
         }
     }
 
@@ -530,7 +530,7 @@ impl TereAppState {
             } else {
 
                 let cur_idx = self.cursor_pos_to_visible_item_index(self.cursor_pos);
-                let kept_indices = &self.ls_output_buf.kept_indices;
+                let kept_indices = &self.ls_output_buf.kept_indices();
                 let (cur_idx_in_kept, cur_idx_in_all) = kept_indices.iter()
                     .enumerate()
                     .skip_while(|(_, i_in_all)| **i_in_all < cur_idx)
