@@ -13,14 +13,17 @@ mod settings;
 use settings::TereSettings;
 pub use settings::{CaseSensitiveMode, OmniSearchMode};
 
+//TODO: docstring
+type MatchesLocType = Vec<(usize, usize)>;
+
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
 /// both the vector of filtered items and the whole unfiltered vector.
 struct MatchesVec {
     all_items: Vec<LsBufItem>,
     // This vec contains the indices of the items that match the search, as well
     // as the corresponding regex match locations
-    //matches: Vec<(usize, CaptureLocations)>, //TODO
-    matches: Vec<(usize, ())>,
+    //TODO: consider HashMap or BTreeMap?
+    matches: Vec<(usize, MatchesLocType)>,
 }
 
 impl MatchesVec {
@@ -48,8 +51,12 @@ impl MatchesVec {
                 } else {
                     item.file_name_checked().to_lowercase()
                 };
-                if search_ptn.is_match(&target) {
-                    Some((i, ())) //TODO: CaptureLocations
+                let mut capture_locations = search_ptn.capture_locations();
+                if let Some(_) = search_ptn.captures_read(&mut capture_locations, &target) {
+                    let locs = (1..capture_locations.len())
+                        .filter_map(|i| capture_locations.get(i))
+                        .collect();
+                    Some((i, locs))
                 } else {
                     None
                 }
