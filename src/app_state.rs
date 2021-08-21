@@ -470,6 +470,8 @@ impl TereAppState {
         };
 
         // TODO: make "omni-search" configurable using CLI args
+        // TODO: construct regex pattern inside MatchesVec instead? - it relies now on capture
+        // groups which are defined by the format!() parens here...
         let mut regex_str = "".to_string();
         if self.settings.omni_search_mode == OmniSearchMode::NoOmniSearch {
             regex_str.push_str(&regex::escape(&search_string))
@@ -479,7 +481,7 @@ impl TereAppState {
                 regex_str.push_str("^");
             }
             regex_str.push_str(&search_string.chars()
-                               .map(|c| regex::escape(&c.to_string()))
+                               .map(|c| format!("({})", regex::escape(&c.to_string())))
                                .collect::<Vec<String>>()
                                .join(".*?"));
         }
