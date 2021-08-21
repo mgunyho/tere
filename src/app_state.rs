@@ -480,7 +480,7 @@ impl TereAppState {
             regex_str.push_str(&search_string.chars()
                                .map(|c| regex::escape(&c.to_string()))
                                .collect::<Vec<String>>()
-                               .join(".*"));
+                               .join(".*?"));
         }
 
         let search_ptn = Regex::new(&regex_str).unwrap(); //TODO: error handling...
