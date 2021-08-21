@@ -566,7 +566,7 @@ impl TereAppState {
                            .map(|c| c.to_string())
                            .collect::<Vec<String>>()
                            // TODO: escape '.' etc in search query...
-                           .join(".*"));
+                           .join(".*?"));
 
         let search_ptn = Regex::new(&regex_str).unwrap(); //TODO: error handling...
         self.ls_output_buf.apply_filter(|itm| {
