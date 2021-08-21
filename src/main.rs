@@ -189,6 +189,7 @@ impl<'a> TereTui<'a> {
             ("".to_string(), false, false),
             |itm| (itm.file_name_checked(), itm.is_dir(), itm.is_symlink)
         );
+        //TODO: count grapheme clusters instead
         let item_size = item.len();
 
         let attr = if bold {
