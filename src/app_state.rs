@@ -78,23 +78,14 @@ impl MatchesVec {
             .collect();
     }
 
-    /// Clear the filtered results, so that the kept items contain all items
-    pub fn clear_filter(&mut self) {
-        self.matches.clear();
-        self.matches = (0..self.all_items.len())
-            .map(|i| (i, ())) //TODO: CaptureLocations
-            .collect();
-    }
 }
 
 impl From<Vec<LsBufItem>> for MatchesVec {
     fn from(vec: Vec<LsBufItem>) -> Self {
-        let mut ret = Self {
+        Self {
             all_items: vec,
             matches: BTreeMap::new(),
-        };
-        ret.clear_filter();
-        ret
+        }
     }
 }
 
@@ -609,7 +600,6 @@ impl TereAppState {
     pub fn clear_search(&mut self) {
         let previous_item_under_cursor = self.get_item_under_cursor().cloned();
         self.search_string.clear();
-        self.ls_output_buf.clear_filter();
         previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
     }
 
