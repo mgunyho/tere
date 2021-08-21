@@ -53,6 +53,7 @@ impl MatchesVec {
                 };
                 let mut capture_locations = search_ptn.capture_locations();
                 if let Some(_) = search_ptn.captures_read(&mut capture_locations, &target) {
+                    // have to do it this way using range because capture_locations has no iter() method
                     let locs = (1..capture_locations.len())
                         .filter_map(|i| capture_locations.get(i))
                         .collect();
