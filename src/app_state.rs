@@ -527,6 +527,7 @@ impl TereAppState {
 
 }
 
+/*
 #[cfg(test)]
 mod tests_for_filtered_vec {
     use super::MatchesVec;
@@ -549,6 +550,7 @@ mod tests_for_filtered_vec {
         assert_eq!(v.kept_items(), vec![&1, &2, &3]);
     }
 }
+*/
 
 #[cfg(test)]
 mod tests {
