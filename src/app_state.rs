@@ -270,7 +270,7 @@ impl TereAppState {
     /// Return a vector that contains the indices into the currently visible
     /// items that contain a match
     pub fn visible_match_indices(&self) -> Vec<usize> {
-        if self.settings.filter_search {
+        if self.is_searching() && self.settings.filter_search {
             (0..self.ls_output_buf.matches.len()).collect()
         } else {
             // it's ok to clone here, the kept_indices will be usually quite short.
