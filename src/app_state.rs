@@ -279,7 +279,7 @@ impl TereAppState {
     }
 
     pub fn visible_items(&self) -> Vec<&LsBufItem> {
-        if self.settings.filter_search {
+        if self.is_searching() && self.settings.filter_search {
             self.ls_output_buf.kept_items()
         } else {
             self.ls_output_buf.all_items.iter().collect()
