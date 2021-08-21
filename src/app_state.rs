@@ -223,6 +223,11 @@ impl TereAppState {
         }
     }
 
+    pub fn capture_locations(&self) -> Vec<&MatchesLocType> {
+        //TODO: improve the interface here, take grapheme clusters into account etc...
+        self.ls_output_buf.matches.iter().map(|(_, l)| l).collect()
+    }
+
     /// Convert a cursor position (in the range 0..window_height) to an index
     /// into the currently visible items.
     pub fn cursor_pos_to_visible_item_index(&self, cursor_pos: u32) -> usize {

@@ -281,6 +281,9 @@ impl<'a> TereTui<'a> {
         // draw entries
         for row in 0..max_y {
             self.draw_main_window_row(row, self.app_state.cursor_pos == row.into())?;
+            if self.app_state.is_searching() && self.app_state.cursor_pos == row.into() && self.app_state.capture_locations().len() > 0 {
+                self.info_message(&format!("captures: {:?} (search string length {})", self.app_state.capture_locations()[row as usize], self.app_state.search_string().len()));
+            }
         }
 
         win.flush()
