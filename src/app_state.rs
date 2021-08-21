@@ -497,9 +497,10 @@ impl TereAppState {
     }
 
     pub fn advance_search(&mut self, query: &str) {
-        self.search_string.push_str(query);
 
         let previous_item_under_cursor = self.get_item_under_cursor().cloned();
+
+        self.search_string.push_str(query);
 
         self.update_search_matches();
 
@@ -515,10 +516,10 @@ impl TereAppState {
     }
 
     pub fn erase_search_char(&mut self) {
+        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
+
         if let Some(_) = self.search_string.pop() {
             //TODO: keep cursor position when there were no matches? should somehow push cursor position onto some stack when advancing search.
-
-            let previous_item_under_cursor = self.get_item_under_cursor().cloned();
 
             self.update_search_matches();
 
