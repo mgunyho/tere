@@ -479,7 +479,7 @@ impl TereAppState {
         // groups which are defined by the format!() parens here...
         let mut regex_str = "".to_string();
         if self.settings.omni_search_mode == OmniSearchMode::NoOmniSearch {
-            regex_str.push_str(&regex::escape(&search_string))
+            regex_str.push_str(&format!("^({})", regex::escape(&search_string)));
         } else {
             // enable omni search. Add '^' to the regex to match only from the start if applicable.
             if self.settings.omni_search_mode == OmniSearchMode::OmniSearchFromBeginning {
