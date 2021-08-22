@@ -223,7 +223,7 @@ impl TereAppState {
         }
     }
 
-    pub fn capture_locations(&self) -> Vec<&MatchesLocType> {
+    pub fn match_locations(&self) -> Vec<&MatchesLocType> {
         //TODO: improve the interface here, take grapheme clusters into account etc...
         self.ls_output_buf.matches.iter().map(|(_, l)| l).collect()
     }

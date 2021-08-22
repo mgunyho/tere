@@ -197,7 +197,7 @@ impl<'a> TereTui<'a> {
         let idx = self.app_state.cursor_pos_to_visible_item_index(row.into());
         if self.app_state.is_searching()
             && self.app_state.visible_match_indices().contains(&idx) {
-            let underline_locs: Vec<usize> = self.app_state.capture_locations()
+            let underline_locs: Vec<usize> = self.app_state.match_locations()
                 .get(row as usize).unwrap_or(&&vec![])
                 .iter()
                 .map(|(start, end)| (*start..*end).collect::<Vec<usize>>())
@@ -314,8 +314,8 @@ impl<'a> TereTui<'a> {
         // draw entries
         for row in 0..max_y {
             self.draw_main_window_row(row, self.app_state.cursor_pos == row.into())?;
-            if self.app_state.is_searching() && self.app_state.cursor_pos == row.into() && self.app_state.capture_locations().len() > 0 {
-                self.info_message(&format!("captures: {:?} (search string length {})", self.app_state.capture_locations()[row as usize], self.app_state.search_string().len()));
+            if self.app_state.is_searching() && self.app_state.cursor_pos == row.into() && self.app_state.match_locations().len() > 0 {
+                self.info_message(&format!("captures: {:?} (search string length {})", self.app_state.match_locations()[row as usize], self.app_state.search_string().len()));
             }
         }
 
