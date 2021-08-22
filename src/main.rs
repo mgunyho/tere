@@ -213,29 +213,62 @@ impl<'a> TereTui<'a> {
         let idx = self.app_state.cursor_pos_to_visible_item_index(row.into());
         if self.app_state.is_searching()
             && self.app_state.visible_match_indices().contains(&idx) {
-            // print matching part
-            let n = self.app_state.search_string().len();
-            let item_matching = item.get(..n).unwrap_or(&item);
-            let item_not_matching = item.get(n..).unwrap_or("");
-            queue!(
-                self.window,
-                style::SetAttribute(Attribute::Underlined),
-                style::SetBackgroundColor(style::Color::DarkGrey),
-                style::Print(item_matching.get(..w).unwrap_or(&item_matching)),
-                style::SetAttribute(Attribute::NoUnderline),
-                style::SetBackgroundColor(style::Color::Reset),
-            )?;
+            let underline_locs: Vec<usize> = self.app_state
+                .get_match_locations_at_cursor_pos(row as u32)
+                .unwrap_or(&vec![])
+                .iter()
+                .map(|(start, end)| (*start..*end).collect::<Vec<usize>>())
+                .flatten()
+                .collect();
+
+            let letters_underlining: Vec<(char, bool)> = item
+                .chars() //TODO: iterate over grapheme clusters
+                .enumerate()
+                .map(|(i, c)| (c, underline_locs.contains(&i)))
+                .collect();
+
+            for (c, underline) in letters_underlining {
+
+                let (underline, fg, bg)  = match (underline, highlight) {
+                    (true,      _) => (
+                        Attribute::Underlined,
+                        style::Color::Reset,
+                        style::Color::DarkGrey,
+                        ),
+                    (false,  true) => (
+                        Attribute::NoUnderline,
+                        style::Color::Black,
+                        style::Color::Grey,
+                        ),
+                    (false, false) => (
+                        Attribute::NoUnderline,
+                        style::Color::Reset,
+                        style::Color::Reset,
+                        ),
+                };
+
+                queue!(
+                    self.window,
+                    style::SetAttribute(underline),
+                    style::SetBackgroundColor(bg),
+                    style::SetForegroundColor(fg),
+                    style::Print(c.to_string()),
+                )?;
+
+            }
+
+            // color the rest of the line if applicable
             if highlight {
                 queue!(
                     self.window,
                     style::SetBackgroundColor(style::Color::Grey),
-                    style::SetForegroundColor(style::Color::Black),
+                    terminal::Clear(terminal::ClearType::UntilNewLine),
                 )?;
             }
+
             queue!(
                 self.window,
-                style::Print(item_not_matching.get(..w.checked_sub(n).unwrap_or(0)).unwrap_or(&item_not_matching)),
-                style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
+                style::SetBackgroundColor(style::Color::Reset),
             )?;
 
         } else {
