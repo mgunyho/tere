@@ -337,8 +337,7 @@ impl<'a> TereTui<'a> {
             // There's only one match, highlight it and then change dir
             self.highlight_row_exclusive(self.app_state.cursor_pos)?;
 
-            //TODO: make duration configurable
-            std::thread::sleep(std::time::Duration::from_millis(200));
+            std::thread::sleep(std::time::Duration::from_millis(self.app_state.settings.autocd_timeout));
 
             // ignore keys that were pressed during sleep
             while crossterm::event::poll(std::time::Duration::from_secs(0))
