@@ -40,6 +40,8 @@ pub struct TereSettings {
     pub filter_search: bool,
 
     pub case_sensitive: CaseSensitiveMode,
+
+    pub autocd_timeout: u64,
 }
 
 impl TereSettings {
@@ -61,6 +63,11 @@ impl TereSettings {
         } else if args.is_present("smart-case") {
             ret.case_sensitive = CaseSensitiveMode::SmartCase;
         }
+
+        ret.autocd_timeout = clap::value_t!(args.value_of("autocd-timeout"), u64)
+            // TODO: proper error message (the current one doesn't mention the arg name, it's just "'x' isn't a valid value"
+            //?; // TODO: return error instead of exiting immediately
+            .unwrap_or_else(|e| e.exit());
 
         ret
     }
