@@ -612,11 +612,10 @@ fn main() -> crossterm::Result<()> {
             )
         .arg(Arg::with_name("autocd-timeout")
              .long("autocd-timeout")
-             .help("Timeout for auto-cd when there's only one match, in ms")
-             .long_help("If the current search matches only one folder, automatically change to it after this many milliseconds. Setting this timeout to zero is not recommended, because it makes navigation confusing.")
-             //TODO: make this optional, so that it's possible to disable: "you can also set --autocd-timeout 'off' to disable auto-cd"
+             .help("Timeout for auto-cd when there's only one match, in ms. Use 'off' to disable auto-cd.")
+             .long_help("If the current search matches only one folder, automatically change to it after this many milliseconds. If the value is 'off', automatic cding is disabled, and you have to manually enter the folder. Setting the timeout to zero is not recommended, because it makes navigation confusing.")
              .default_value("200")
-             .value_name("TIMEOUT")
+             .value_name("TIMEOUT or 'off'")
             )
         .get_matches_safe()
         .unwrap_or_else(|err| {
