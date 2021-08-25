@@ -65,9 +65,9 @@ impl TereSettings {
             ret.case_sensitive = CaseSensitiveMode::SmartCase;
         }
 
-        ret.autocd_timeout = match args.value_of("autocd-timeout")
+        ret.autocd_timeout = match args.values_of("autocd-timeout")
             // ok to unwrap because autocd-timeout has a default value
-            .unwrap()
+            .unwrap().last().unwrap()
         {
             "off" => None,
             x => Some(
