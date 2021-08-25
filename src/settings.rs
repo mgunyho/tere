@@ -1,6 +1,7 @@
 /// Module for managing the settings (command line arguments) of the app
 
 use std::fmt;
+use std::str::FromStr;
 use clap::ArgMatches;
 
 //TODO: config file
@@ -41,7 +42,7 @@ pub struct TereSettings {
 
     pub case_sensitive: CaseSensitiveMode,
 
-    pub autocd_timeout: u64,
+    pub autocd_timeout: Option<u64>,
 }
 
 impl TereSettings {
@@ -64,10 +65,22 @@ impl TereSettings {
             ret.case_sensitive = CaseSensitiveMode::SmartCase;
         }
 
-        ret.autocd_timeout = clap::value_t!(args.value_of("autocd-timeout"), u64)
-            // TODO: proper error message (the current one doesn't mention the arg name, it's just "'x' isn't a valid value"
-            //?; // TODO: return error instead of exiting immediately
-            .unwrap_or_else(|e| e.exit());
+        ret.autocd_timeout = match args.value_of("autocd-timeout")
+            // ok to unwrap because autocd-timeout has a default value
+            .unwrap()
+        {
+            "off" => None,
+            x => Some(
+                u64::from_str(x)
+                .unwrap_or_else(|_| clap::Error::with_description(
+                        //TODO: color? (should be consistent with other errors)
+                        &format!("Invalid value for autocd-timeout: '{}'", x),
+                        clap::ErrorKind::InvalidValue
+                        // TODO: return error instead of exiting immediately, for better cleanup
+                        ).exit()
+                    )
+            ),
+        };
 
         ret
     }
