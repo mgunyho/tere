@@ -334,18 +334,20 @@ impl<'a> TereTui<'a> {
     pub fn on_search_char(&mut self, c: char) -> CTResult<()> {
         self.app_state.advance_search(&c.to_string());
         if self.app_state.num_matching_items() == 1 {
-            // There's only one match, highlight it and then change dir
-            self.highlight_row_exclusive(self.app_state.cursor_pos)?;
+            // There's only one match, highlight it and then change dir if applicable
+            if let Some(timeout) = self.app_state.settings.autocd_timeout {
+                self.highlight_row_exclusive(self.app_state.cursor_pos)?;
 
-            std::thread::sleep(std::time::Duration::from_millis(self.app_state.settings.autocd_timeout));
+                std::thread::sleep(std::time::Duration::from_millis(timeout));
 
-            // ignore keys that were pressed during sleep
-            while crossterm::event::poll(std::time::Duration::from_secs(0))
-                .unwrap_or(false) {
-                read_event()?;
+                // ignore keys that were pressed during sleep
+                while crossterm::event::poll(std::time::Duration::from_secs(0))
+                    .unwrap_or(false) {
+                        read_event()?;
+                    }
+
+                self.change_dir("")?;
             }
-
-            self.change_dir("")?;
         }
         self.redraw_main_window()?;
         self.redraw_footer()?;
