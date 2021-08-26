@@ -43,7 +43,7 @@ pub struct TereSettings {
 }
 
 impl TereSettings {
-    pub fn parse_cli_args(args: &ArgMatches) -> Self {
+    pub fn parse_cli_args(args: &ArgMatches) -> Result<Self, clap::Error> {
         let mut ret = Self::default();
 
         if args.is_present("folders-only") {
@@ -62,6 +62,6 @@ impl TereSettings {
             ret.case_sensitive = CaseSensitiveMode::SmartCase;
         }
 
-        ret
+        Ok(ret)
     }
 }

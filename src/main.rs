@@ -48,7 +48,7 @@ impl<'a> TereTui<'a> {
             args,
             // TODO: have to convert to u32 here. but correct solution would be to use u16 instead in app_state as well
             w.into(), h.into()
-        );
+        ).map_err(|e| Error::new(ErrorKind::Other, e))?;
         let mut ret = Self {
             window: window,
             app_state: state,

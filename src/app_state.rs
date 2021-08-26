@@ -145,7 +145,7 @@ pub struct TereAppState {
 }
 
 impl TereAppState {
-    pub fn init(cli_args: &ArgMatches, window_w: u32, window_h: u32) -> Self {
+    pub fn init(cli_args: &ArgMatches, window_w: u32, window_h: u32) -> Result<Self, clap::Error> {
         let mut ret = Self {
             main_win_w: window_w,
             main_win_h: window_h,
@@ -156,12 +156,12 @@ impl TereAppState {
             info_msg: "".into(), // TODO: initial help message, like 'tere vXXX, type "?" for help'
             search_string: "".into(),
             //search_anywhere: false,
-            settings: TereSettings::parse_cli_args(cli_args),
+            settings: TereSettings::parse_cli_args(cli_args)?,
         };
 
         ret.update_header();
         ret.update_ls_output_buf();
-        return ret;
+        Ok(ret)
     }
 
     ///////////////////////////////////////////
