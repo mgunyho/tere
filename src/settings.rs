@@ -66,7 +66,7 @@ impl TereSettings {
         }
 
         ret.autocd_timeout = match args.values_of("autocd-timeout")
-            // ok to unwrap because autocd-timeout has a default value
+            // ok to unwrap because autocd-timeout has a default value which is always present
             .unwrap().last().unwrap()
         {
             "off" => None,
@@ -76,7 +76,7 @@ impl TereSettings {
                         //TODO: color? (should be consistent with other errors) - could use `Arg::Validator`
                         &format!("Invalid value for 'autocd-timeout': '{}'", x),
                         clap::ErrorKind::InvalidValue
-                        // TODO: return error instead of exiting immediately, for better cleanup
+                        // TODO: return error instead of exiting immediately, to properly cleanup
                         ).exit()
                     )
             ),
