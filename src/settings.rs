@@ -73,7 +73,7 @@ impl TereSettings {
             x => Some(
                 u64::from_str(x)
                 .unwrap_or_else(|_| clap::Error::with_description(
-                        //TODO: color? (should be consistent with other errors)
+                        //TODO: color? (should be consistent with other errors) - could use `Arg::Validator`
                         &format!("Invalid value for autocd-timeout: '{}'", x),
                         clap::ErrorKind::InvalidValue
                         // TODO: return error instead of exiting immediately, for better cleanup
