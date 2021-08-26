@@ -648,6 +648,7 @@ fn main() -> crossterm::Result<()> {
     terminal::disable_raw_mode()?;
 
     // panic if there was an error
+    // TODO: properly format error message instead of panicking (in case of e.g. errors when parsing args)
     res.unwrap();
 
     // no error, print cwd
