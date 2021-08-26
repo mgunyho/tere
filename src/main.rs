@@ -1,5 +1,4 @@
 use std::convert::{From, TryFrom};
-use std::str::FromStr;
 use std::io::{Stderr, Write, Error, ErrorKind};
 use crossterm::{
     execute, queue,
@@ -618,15 +617,6 @@ fn main() -> crossterm::Result<()> {
              .default_value("200")
              .value_name("TIMEOUT or 'off'")
              .multiple(true).number_of_values(1)
-             .validator(|a| if a == "off" {
-                 Ok(())
-             } else {
-                 u64::from_str(&a).map_or(
-                    //NOTE: because of 'multiple', the error message here has '--autocd-timeout <>...', which is kinda ugly
-                     Err(format!("should be a positive number or 'off', got '{}'", &a)),
-                     |_| Ok(())
-                     )
-             })
             )
         .get_matches_safe()
         .unwrap_or_else(|err| {
