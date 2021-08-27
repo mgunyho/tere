@@ -99,6 +99,7 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 - `--filter-search` / `--no-filter-search`: If this option is set, hide items in the output listing that don't match the current search query.
 - `--folders-only` / `--no-folders-only`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
 - `--smart-case` / `--ignore-case` / `--case-sensitive`: Set the case sensitivity mode. The default mode is smart case.
+- `--autocd-timeout` - If only one folder matches the current search query, automatically enter it after this many milliseconds. Can also be set to `off`, which disables this behaviour.
 
 Some options have two or more versions that override each other (for example
 `--folders-only` and `--no-folders-only`). This means that whichever is passed

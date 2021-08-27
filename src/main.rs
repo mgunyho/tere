@@ -334,19 +334,20 @@ impl<'a> TereTui<'a> {
     pub fn on_search_char(&mut self, c: char) -> CTResult<()> {
         self.app_state.advance_search(&c.to_string());
         if self.app_state.num_matching_items() == 1 {
-            // There's only one match, highlight it and then change dir
-            self.highlight_row_exclusive(self.app_state.cursor_pos)?;
+            // There's only one match, highlight it and then change dir if applicable
+            if let Some(timeout) = self.app_state.settings.autocd_timeout {
+                self.highlight_row_exclusive(self.app_state.cursor_pos)?;
 
-            //TODO: make duration configurable
-            std::thread::sleep(std::time::Duration::from_millis(200));
+                std::thread::sleep(std::time::Duration::from_millis(timeout));
 
-            // ignore keys that were pressed during sleep
-            while crossterm::event::poll(std::time::Duration::from_secs(0))
-                .unwrap_or(false) {
-                read_event()?;
+                // ignore keys that were pressed during sleep
+                while crossterm::event::poll(std::time::Duration::from_secs(0))
+                    .unwrap_or(false) {
+                        read_event()?;
+                    }
+
+                self.change_dir("")?;
             }
-
-            self.change_dir("")?;
         }
         self.redraw_main_window()?;
         self.redraw_footer()?;
@@ -604,6 +605,14 @@ fn main() -> crossterm::Result<()> {
                         case_sensitive_template!("case-sensitive", "ignore-case")))
              .overrides_with("smart-case")
              .display_order(23)
+            )
+        .arg(Arg::with_name("autocd-timeout")
+             .long("autocd-timeout")
+             .help("Timeout for auto-cd when there's only one match, in ms. Use 'off' to disable auto-cd.")
+             .long_help("If the current search matches only one folder, automatically change to it after this many milliseconds. If the value is 'off', automatic cding is disabled, and you have to manually enter the folder. Setting the timeout to zero is not recommended, because it makes navigation confusing.")
+             .default_value("200")
+             .value_name("TIMEOUT or 'off'")
+             .overrides_with("autocd-timeout")
             )
         .get_matches_safe()
         .unwrap_or_else(|err| {
