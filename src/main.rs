@@ -1,4 +1,4 @@
-use std::convert::{From, TryFrom};
+use std::convert::TryFrom;
 use std::io::{Stderr, Write, Error, ErrorKind};
 use crossterm::{
     execute, queue,
@@ -114,8 +114,7 @@ impl<'a> TereTui<'a> {
 
     pub fn error_message(&mut self, msg: &str) -> CTResult<()> {
         //TODO: red color (also: make it configurable)
-        let mut error_msg = String::from("error: ");
-        error_msg.push_str(msg);
+        let error_msg = format!("error: {}", &msg);
         self.info_message(&error_msg)
     }
 
