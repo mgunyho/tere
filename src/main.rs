@@ -333,7 +333,8 @@ impl<'a> TereTui<'a> {
 
     pub fn on_search_char(&mut self, c: char) -> CTResult<()> {
         self.app_state.advance_search(&c.to_string());
-        if self.app_state.num_matching_items() == 1 {
+        let n_matches = self.app_state.num_matching_items();
+        if n_matches == 1 {
             // There's only one match, highlight it and then change dir if applicable
             if let Some(timeout) = self.app_state.settings.autocd_timeout {
                 self.highlight_row_exclusive(self.app_state.cursor_pos)?;
@@ -348,6 +349,9 @@ impl<'a> TereTui<'a> {
 
                 self.change_dir("")?;
             }
+        } else if n_matches == 0 {
+            //TODO: clear this info message on next search char...
+            self.info_message("No matches")?;
         }
         self.redraw_main_window()?;
         self.redraw_footer()?;
