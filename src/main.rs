@@ -350,8 +350,9 @@ impl<'a> TereTui<'a> {
                 self.change_dir("")?;
             }
         } else if n_matches == 0 {
-            //TODO: clear this info message on next search char...
-            self.info_message("No matches")?;
+            self.info_message(app_state::NO_MATCHES_MSG)?;
+        } else {
+            self.info_message("")?;
         }
         self.redraw_main_window()?;
         self.redraw_footer()?;
@@ -360,6 +361,13 @@ impl<'a> TereTui<'a> {
 
     pub fn erase_search_char(&mut self) -> CTResult<()> {
         self.app_state.erase_search_char();
+
+        if self.app_state.num_matching_items() == 0 {
+            self.info_message(app_state::NO_MATCHES_MSG)?;
+        } else {
+            self.info_message("")?;
+        }
+
         self.redraw_main_window()?;
         self.redraw_footer()?;
         Ok(())
