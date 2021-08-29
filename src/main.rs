@@ -276,9 +276,17 @@ impl<'a> TereTui<'a> {
 
         self.queue_clear_main_window()?;
 
+        // are there any matches?
+        let any_matches = self.app_state.num_matching_items() > 0;
+        let any_visible_items = self.app_state.visible_items().len() > 0; //TODO: ~O(n) calculation of 'n'
+        let is_search = self.app_state.is_searching();
+
         // draw entries
         for row in 0..max_y {
-            self.draw_main_window_row(row, self.app_state.cursor_pos == row.into())?;
+            // highlight the current row under the cursor when applicable
+            let highlight = self.app_state.cursor_pos == row.into()
+                && (!is_search || (any_matches || any_visible_items));
+            self.draw_main_window_row(row, highlight)?;
         }
 
         win.flush()
@@ -333,7 +341,8 @@ impl<'a> TereTui<'a> {
 
     pub fn on_search_char(&mut self, c: char) -> CTResult<()> {
         self.app_state.advance_search(&c.to_string());
-        if self.app_state.num_matching_items() == 1 {
+        let n_matches = self.app_state.num_matching_items();
+        if n_matches == 1 {
             // There's only one match, highlight it and then change dir if applicable
             if let Some(timeout) = self.app_state.settings.autocd_timeout {
                 self.highlight_row_exclusive(self.app_state.cursor_pos)?;
@@ -348,6 +357,10 @@ impl<'a> TereTui<'a> {
 
                 self.change_dir("")?;
             }
+        } else if n_matches == 0 {
+            self.info_message(app_state::NO_MATCHES_MSG)?;
+        } else {
+            self.info_message("")?;
         }
         self.redraw_main_window()?;
         self.redraw_footer()?;
@@ -356,6 +369,13 @@ impl<'a> TereTui<'a> {
 
     pub fn erase_search_char(&mut self) -> CTResult<()> {
         self.app_state.erase_search_char();
+
+        if self.app_state.num_matching_items() == 0 {
+            self.info_message(app_state::NO_MATCHES_MSG)?;
+        } else {
+            self.info_message("")?;
+        }
+
         self.redraw_main_window()?;
         self.redraw_footer()?;
         Ok(())

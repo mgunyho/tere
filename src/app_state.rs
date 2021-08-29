@@ -11,6 +11,8 @@ mod settings;
 use settings::TereSettings;
 pub use settings::CaseSensitiveMode;
 
+pub const NO_MATCHES_MSG: &str = "No matches";
+
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
 /// both the vector of filtered items and the whole unfiltered vector.
 struct FilteredVec<T> {
