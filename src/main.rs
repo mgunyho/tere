@@ -128,16 +128,18 @@ impl<'a> TereTui<'a> {
 
         extra_msg.push_str(&format!("{} ", self.app_state.settings.case_sensitive));
 
+        queue!(
+            win,
+            cursor::MoveTo(0, footer_win_row),
+            style::SetAttribute(Attribute::Reset),
+            style::Print(&format!("{}: {}",
+                                  if self.app_state.settings.filter_search { "filter" } else { "search" },
+                                  self.app_state.search_string()
+                                  ).bold()),
+        )?;
+
         let cursor_idx = self.app_state.cursor_pos_to_visible_item_index(self.app_state.cursor_pos);
         if self.app_state.is_searching() {
-            //self.footer_win.mvaddstr(0, 0, &self.app_state.search_string());
-            queue!(
-                win,
-                cursor::MoveTo(0, footer_win_row),
-                style::SetAttribute(Attribute::Reset),
-                style::Print(&self.app_state.search_string().clone().bold()),
-            )?;
-
             let index_in_matches = self.app_state
                 .visible_match_indices().iter()
                 .position(|x| *x == cursor_idx)
