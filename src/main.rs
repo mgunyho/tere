@@ -276,9 +276,17 @@ impl<'a> TereTui<'a> {
 
         self.queue_clear_main_window()?;
 
+        // are there any matches?
+        let any_matches = self.app_state.num_matching_items() > 0;
+        let any_visible_items = self.app_state.visible_items().len() > 0; //TODO: ~O(n) calculation of 'n'
+        let is_search = self.app_state.is_searching();
+
         // draw entries
         for row in 0..max_y {
-            self.draw_main_window_row(row, self.app_state.cursor_pos == row.into())?;
+            // highlight the current row under the cursor when applicable
+            let highlight = self.app_state.cursor_pos == row.into()
+                && (!is_search || (any_matches || any_visible_items));
+            self.draw_main_window_row(row, highlight)?;
         }
 
         win.flush()
