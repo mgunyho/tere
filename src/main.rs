@@ -673,17 +673,13 @@ fn main() -> crossterm::Result<()> {
     // we are now inside the alternate screen, so collect all errors and attempt
     // to leave the alt screen in case of an error
 
-    let res: Result<(), TereError> = stderr.flush()
-        .and_then(|_| terminal::enable_raw_mode())
-        .and_then(|_| TereTui::init(&cli_args, &mut stderr)
-            //.map_err(|e| match e {
-            //    TereError::IoError(e) => Error::new(ErrorKind::Other, format!("error in initializing UI: {:?}", e)),
-            //    TereError::ClapError(e) => Error::new(ErrorKind::Other, format!("{}", e)),
-            //})
-        )
-        .and_then(|mut ui| ui.main_event_loop()
-            .map_err(|e| Error::new(ErrorKind::Other, format!("error in main event loop: {:?}", e)))
-        ); //.map_err(|e| TereError::from(e));
+    let res: Result<(), TereError> = terminal::enable_raw_mode()
+        .and_then(|_| stderr.flush()).map_err(TereError::from)
+        .and_then(|_| TereTui::init(&cli_args, &mut stderr))
+        .and_then(|mut ui| ui.main_event_loop().map_err(TereError::from));
+
+    // Always disable raw mode
+    let res = res.and(terminal::disable_raw_mode().map_err(TereError::from));
 
     execute!(
         stderr,
@@ -691,13 +687,12 @@ fn main() -> crossterm::Result<()> {
         cursor::Show
         )?;
 
-    terminal::disable_raw_mode()?;
-
     // panic if there was an error
     // TODO: properly format error message instead of panicking (in case of e.g. errors when parsing args)
     if let Err(err) = res {
         match err {
             TereError::ClapError(e) => e.exit(),
+            _ => todo!(),
         }
     }
 
