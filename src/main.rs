@@ -1,5 +1,5 @@
 use std::convert::TryFrom;
-use std::io::{Stderr, Write, Error, ErrorKind};
+use std::io::{Stderr, Write};
 use crossterm::{
     execute, queue,
     terminal,
