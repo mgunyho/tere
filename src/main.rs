@@ -687,12 +687,14 @@ fn main() -> crossterm::Result<()> {
         cursor::Show
         )?;
 
-    // panic if there was an error
-    // TODO: properly format error message instead of panicking (in case of e.g. errors when parsing args)
+    // Check if there was an error
     if let Err(err) = res {
         match err {
+            // Print pretty error message if the error was in arg parsing
             TereError::ClapError(e) => e.exit(),
-            _ => todo!(),
+
+            // exit in case of any other error
+            TereError::IoError(e) => return Err(e),
         }
     }
 
