@@ -46,7 +46,7 @@ pub struct TereSettings {
 }
 
 impl TereSettings {
-    pub fn parse_cli_args(args: &ArgMatches) -> Self {
+    pub fn parse_cli_args(args: &ArgMatches) -> Result<Self, clap::Error> {
         let mut ret = Self::default();
 
         if args.is_present("folders-only") {
@@ -65,6 +65,7 @@ impl TereSettings {
             ret.case_sensitive = CaseSensitiveMode::SmartCase;
         }
 
+
         ret.autocd_timeout = match args.values_of("autocd-timeout")
             // ok to unwrap because autocd-timeout has a default value which is always present
             .unwrap().last().unwrap()
@@ -72,16 +73,16 @@ impl TereSettings {
             "off" => None,
             x => Some(
                 u64::from_str(x)
-                .unwrap_or_else(|_| clap::Error::with_description(
+                .map_err(|_| clap::Error::with_description(
                         //TODO: color? (should be consistent with other errors) - could use `Arg::Validator`
                         &format!("Invalid value for 'autocd-timeout': '{}'", x),
                         clap::ErrorKind::InvalidValue
                         // TODO: return error instead of exiting immediately, to properly cleanup
-                        ).exit()
-                    )
+                        )
+                    )?
             ),
         };
 
-        ret
+        Ok(ret)
     }
 }

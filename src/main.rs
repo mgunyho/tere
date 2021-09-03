@@ -1,5 +1,5 @@
 use std::convert::TryFrom;
-use std::io::{Stderr, Write, Error, ErrorKind};
+use std::io::{Stderr, Write};
 use crossterm::{
     execute, queue,
     terminal,
@@ -40,15 +40,31 @@ fn main_window_size() -> CTResult<(u16, u16)> {
     Ok((w, h.checked_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE).unwrap_or(0)))
 }
 
+enum TereError {
+    IoError(std::io::Error),
+    ClapError(clap::Error),
+}
+
+
+impl From<std::io::Error> for TereError
+{
+    fn from(e: std::io::Error) -> Self { Self::IoError(e) }
+}
+
+impl From<clap::Error> for TereError {
+    fn from(e: clap::Error) -> Self { Self::ClapError(e) }
+}
+
+
 impl<'a> TereTui<'a> {
 
-    pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> CTResult<Self> {
+    pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> Result<Self, TereError> {
         let (w, h) = main_window_size()?;
         let state = TereAppState::init(
             args,
             // TODO: have to convert to u32 here. but correct solution would be to use u16 instead in app_state as well
             w.into(), h.into()
-        );
+        )?; //.map_err(|e| Error::new(ErrorKind::Other, e))?;
         let mut ret = Self {
             window: window,
             app_state: state,
@@ -657,13 +673,13 @@ fn main() -> crossterm::Result<()> {
     // we are now inside the alternate screen, so collect all errors and attempt
     // to leave the alt screen in case of an error
 
-    let res = stderr.flush()
-        .and_then(|_| terminal::enable_raw_mode())
-        .and_then(|_| TereTui::init(&cli_args, &mut stderr)
-            .map_err(|e| Error::new(ErrorKind::Other, format!("error in initializing UI: {:?}", e))))
-        .and_then(|mut ui| ui.main_event_loop()
-            .map_err(|e| Error::new(ErrorKind::Other, format!("error in main event loop: {:?}", e)))
-        );
+    let res: Result<(), TereError> = terminal::enable_raw_mode()
+        .and_then(|_| stderr.flush()).map_err(TereError::from)
+        .and_then(|_| TereTui::init(&cli_args, &mut stderr))
+        .and_then(|mut ui| ui.main_event_loop().map_err(TereError::from));
+
+    // Always disable raw mode
+    let res = res.and(terminal::disable_raw_mode().map_err(TereError::from));
 
     execute!(
         stderr,
@@ -671,10 +687,16 @@ fn main() -> crossterm::Result<()> {
         cursor::Show
         )?;
 
-    terminal::disable_raw_mode()?;
+    // Check if there was an error
+    if let Err(err) = res {
+        match err {
+            // Print pretty error message if the error was in arg parsing
+            TereError::ClapError(e) => e.exit(),
 
-    // panic if there was an error
-    res.unwrap();
+            // exit in case of any other error
+            TereError::IoError(e) => return Err(e),
+        }
+    }
 
     // no error, print cwd
     let cwd = std::env::current_dir().expect("error getting cwd");
