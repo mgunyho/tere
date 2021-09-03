@@ -1,5 +1,5 @@
-use std::convert::{From, TryFrom};
-use std::io::{Stderr, Write, Error, ErrorKind};
+use std::convert::TryFrom;
+use std::io::{Stderr, Write};
 use crossterm::{
     execute, queue,
     terminal,
@@ -40,15 +40,31 @@ fn main_window_size() -> CTResult<(u16, u16)> {
     Ok((w, h.checked_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE).unwrap_or(0)))
 }
 
+enum TereError {
+    IoError(std::io::Error),
+    ClapError(clap::Error),
+}
+
+
+impl From<std::io::Error> for TereError
+{
+    fn from(e: std::io::Error) -> Self { Self::IoError(e) }
+}
+
+impl From<clap::Error> for TereError {
+    fn from(e: clap::Error) -> Self { Self::ClapError(e) }
+}
+
+
 impl<'a> TereTui<'a> {
 
-    pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> CTResult<Self> {
+    pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> Result<Self, TereError> {
         let (w, h) = main_window_size()?;
         let state = TereAppState::init(
             args,
             // TODO: have to convert to u32 here. but correct solution would be to use u16 instead in app_state as well
             w.into(), h.into()
-        );
+        )?; //.map_err(|e| Error::new(ErrorKind::Other, e))?;
         let mut ret = Self {
             window: window,
             app_state: state,
@@ -114,8 +130,7 @@ impl<'a> TereTui<'a> {
 
     pub fn error_message(&mut self, msg: &str) -> CTResult<()> {
         //TODO: red color (also: make it configurable)
-        let mut error_msg = String::from("error: ");
-        error_msg.push_str(msg);
+        let error_msg = format!("error: {}", &msg);
         self.info_message(&error_msg)
     }
 
@@ -131,16 +146,18 @@ impl<'a> TereTui<'a> {
         extra_msg.push_str(&format!("{} - ", self.app_state.settings.omni_search_mode));
         extra_msg.push_str(&format!("{} - ", self.app_state.settings.case_sensitive));
 
+        queue!(
+            win,
+            cursor::MoveTo(0, footer_win_row),
+            style::SetAttribute(Attribute::Reset),
+            style::Print(&format!("{}: {}",
+                                  if self.app_state.settings.filter_search { "filter" } else { "search" },
+                                  self.app_state.search_string()
+                                  ).bold()),
+        )?;
+
         let cursor_idx = self.app_state.cursor_pos_to_visible_item_index(self.app_state.cursor_pos);
         if self.app_state.is_searching() {
-            //self.footer_win.mvaddstr(0, 0, &self.app_state.search_string());
-            queue!(
-                win,
-                cursor::MoveTo(0, footer_win_row),
-                style::SetAttribute(Attribute::Reset),
-                style::Print(&self.app_state.search_string().clone().bold()),
-            )?;
-
             let index_in_matches = self.app_state
                 .visible_match_indices().iter()
                 .position(|x| *x == cursor_idx)
@@ -311,10 +328,20 @@ impl<'a> TereTui<'a> {
 
         self.queue_clear_main_window()?;
 
+        // are there any matches?
+        let any_matches = self.app_state.num_matching_items() > 0;
+        let any_visible_items = self.app_state.visible_items().len() > 0; //TODO: ~O(n) calculation of 'n'
+        let is_search = self.app_state.is_searching();
+
         // draw entries
         for row in 0..max_y {
-            self.draw_main_window_row(row, self.app_state.cursor_pos == row.into())?;
-            if self.app_state.is_searching() && self.app_state.cursor_pos == row.into() && self.app_state.match_locations().len() > 0 {
+            // highlight the current row under the cursor when applicable
+            let highlight = self.app_state.cursor_pos == row.into()
+                && (!is_search || (any_matches || any_visible_items));
+            self.draw_main_window_row(row, highlight)?;
+
+            //TODO: remove
+            if highlight && self.app_state.match_locations().len() > row as usize {
                 self.info_message(&format!("captures: {:?} (search string length {})", self.app_state.match_locations()[row as usize], self.app_state.search_string().len()));
             }
         }
@@ -371,20 +398,26 @@ impl<'a> TereTui<'a> {
 
     pub fn on_search_char(&mut self, c: char) -> CTResult<()> {
         self.app_state.advance_search(&c.to_string());
-        if self.app_state.num_matching_items() == 1 {
-            // There's only one match, highlight it and then change dir
-            self.highlight_row_exclusive(self.app_state.cursor_pos)?;
+        let n_matches = self.app_state.num_matching_items();
+        if n_matches == 1 {
+            // There's only one match, highlight it and then change dir if applicable
+            if let Some(timeout) = self.app_state.settings.autocd_timeout {
+                self.highlight_row_exclusive(self.app_state.cursor_pos)?;
 
-            //TODO: make duration configurable
-            std::thread::sleep(std::time::Duration::from_millis(200));
+                std::thread::sleep(std::time::Duration::from_millis(timeout));
 
-            // ignore keys that were pressed during sleep
-            while crossterm::event::poll(std::time::Duration::from_secs(0))
-                .unwrap_or(false) {
-                read_event()?;
+                // ignore keys that were pressed during sleep
+                while crossterm::event::poll(std::time::Duration::from_secs(0))
+                    .unwrap_or(false) {
+                        read_event()?;
+                    }
+
+                self.change_dir("")?;
             }
-
-            self.change_dir("")?;
+        } else if n_matches == 0 {
+            self.info_message(app_state::NO_MATCHES_MSG)?;
+        } else {
+            self.info_message("")?;
         }
         self.redraw_main_window()?;
         self.redraw_footer()?;
@@ -393,6 +426,13 @@ impl<'a> TereTui<'a> {
 
     pub fn erase_search_char(&mut self) -> CTResult<()> {
         self.app_state.erase_search_char();
+
+        if self.app_state.num_matching_items() == 0 {
+            self.info_message(app_state::NO_MATCHES_MSG)?;
+        } else {
+            self.info_message("")?;
+        }
+
         self.redraw_main_window()?;
         self.redraw_footer()?;
         Ok(())
@@ -606,7 +646,7 @@ fn main() -> crossterm::Result<()> {
              //.visible_alias("fs") //TODO: consider
              .help("Show only items matching the search in listing")
              .long_help("Show only items matching the search in listing. This overrides the --no-filter-search option.")
-             .multiple(true)
+             .overrides_with("filter-search")
              .display_order(1)
             )
         .arg(Arg::with_name("no-filter-search")
@@ -614,8 +654,7 @@ fn main() -> crossterm::Result<()> {
              //.visible_alias("nfs") //TODO: consider
              .help("Show all items in the listing even when searching (default)")
              .long_help("Show all items in the listing even when searching (default). This overrides the --filter-search option.")
-             .overrides_with("filter-search")
-             .multiple(true)
+             .overrides_with_all(&["filter-search", "no-filter-search"])
              .display_order(2)
             )
         .arg(Arg::with_name("folders-only")
@@ -624,7 +663,7 @@ fn main() -> crossterm::Result<()> {
              //.short("f")  // TODO: check conflicts
              .help("Show only folders in the listing")
              .long_help("Show only folders (and symlinks pointing to folders) in the listing. This overrides the --no-folders-only option.")
-             .multiple(true)
+             .overrides_with("folders-only")
              .display_order(11)
              )
         .arg(Arg::with_name("no-folders-only")
@@ -633,8 +672,7 @@ fn main() -> crossterm::Result<()> {
              //.short("f")  // TODO: check conflicts
              .help("Show files and folders in the listing (default)")
              .long_help("Show both files and folders in the listing. This is the default view mode. This overrides the --folders-only option.")
-             .multiple(true)
-             .overrides_with("folders-only")
+             .overrides_with_all(&["folders-only", "no-folders-only"])
              .display_order(11)
              )
         .arg(Arg::with_name("case-sensitive")
@@ -643,8 +681,7 @@ fn main() -> crossterm::Result<()> {
              .help("Case sensitive search")
              .long_help(&format!("Enable case-sensitive search.\n\n{}",
                         case_sensitive_template!("ignore-case", "smart-case")))
-             .overrides_with_all(&["ignore-case", "smart-case"])
-             .multiple(true)
+             .overrides_with_all(&["ignore-case", "smart-case", "case-sensitive"])
              .display_order(21)
             )
         .arg(Arg::with_name("ignore-case")
@@ -652,8 +689,7 @@ fn main() -> crossterm::Result<()> {
              .help("Ignore case when searching")
              .long_help(&format!("Enable case-insensitive search.\n\n{}",
                         case_sensitive_template!("case-sensitive", "smart-case")))
-             .overrides_with("smart-case")
-             .multiple(true)
+             .overrides_with_all(&["smart-case", "ignore-case"])
              .display_order(22)
             )
         .arg(Arg::with_name("smart-case")
@@ -661,8 +697,16 @@ fn main() -> crossterm::Result<()> {
              .help("Smart case search (default)")
              .long_help(&format!("Enable smart-case search. If the search query contains only lowercase letters, search case insensitively. Otherwise search case sensitively. This is the default search mode.\n\n{}",
                         case_sensitive_template!("case-sensitive", "ignore-case")))
-             .multiple(true)
+             .overrides_with("smart-case")
              .display_order(23)
+            )
+        .arg(Arg::with_name("autocd-timeout")
+             .long("autocd-timeout")
+             .help("Timeout for auto-cd when there's only one match, in ms. Use 'off' to disable auto-cd.")
+             .long_help("If the current search matches only one folder, automatically change to it after this many milliseconds. If the value is 'off', automatic cding is disabled, and you have to manually enter the folder. Setting the timeout to zero is not recommended, because it makes navigation confusing.")
+             .default_value("200")
+             .value_name("TIMEOUT or 'off'")
+             .overrides_with("autocd-timeout")
             )
         .get_matches_safe()
         .unwrap_or_else(|err| {
@@ -686,13 +730,13 @@ fn main() -> crossterm::Result<()> {
     // we are now inside the alternate screen, so collect all errors and attempt
     // to leave the alt screen in case of an error
 
-    let res = stderr.flush()
-        .and_then(|_| terminal::enable_raw_mode())
-        .and_then(|_| TereTui::init(&cli_args, &mut stderr)
-            .map_err(|e| Error::new(ErrorKind::Other, format!("error in initializing UI: {:?}", e))))
-        .and_then(|mut ui| ui.main_event_loop()
-            .map_err(|e| Error::new(ErrorKind::Other, format!("error in main event loop: {:?}", e)))
-        );
+    let res: Result<(), TereError> = terminal::enable_raw_mode()
+        .and_then(|_| stderr.flush()).map_err(TereError::from)
+        .and_then(|_| TereTui::init(&cli_args, &mut stderr))
+        .and_then(|mut ui| ui.main_event_loop().map_err(TereError::from));
+
+    // Always disable raw mode
+    let res = res.and(terminal::disable_raw_mode().map_err(TereError::from));
 
     execute!(
         stderr,
@@ -700,10 +744,16 @@ fn main() -> crossterm::Result<()> {
         cursor::Show
         )?;
 
-    terminal::disable_raw_mode()?;
+    // Check if there was an error
+    if let Err(err) = res {
+        match err {
+            // Print pretty error message if the error was in arg parsing
+            TereError::ClapError(e) => e.exit(),
 
-    // panic if there was an error
-    res.unwrap();
+            // exit in case of any other error
+            TereError::IoError(e) => return Err(e),
+        }
+    }
 
     // no error, print cwd
     let cwd = std::env::current_dir().expect("error getting cwd");

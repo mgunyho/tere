@@ -1,6 +1,7 @@
 /// Module for managing the settings (command line arguments) of the app
 
 use std::fmt;
+use std::str::FromStr;
 use clap::ArgMatches;
 
 //TODO: config file
@@ -62,11 +63,14 @@ pub struct TereSettings {
     pub filter_search: bool,
 
     pub case_sensitive: CaseSensitiveMode,
+
     pub omni_search_mode: OmniSearchMode,
+
+    pub autocd_timeout: Option<u64>,
 }
 
 impl TereSettings {
-    pub fn parse_cli_args(args: &ArgMatches) -> Self {
+    pub fn parse_cli_args(args: &ArgMatches) -> Result<Self, clap::Error> {
         let mut ret = Self::default();
 
         if args.is_present("folders-only") {
@@ -85,6 +89,20 @@ impl TereSettings {
             ret.case_sensitive = CaseSensitiveMode::SmartCase;
         }
 
-        ret
+
+        ret.autocd_timeout = match args.values_of("autocd-timeout")
+            // ok to unwrap because autocd-timeout has a default value which is always present
+            .unwrap().last().unwrap()
+        {
+            "off" => None,
+            x => u64::from_str(x).map_err(|_| {
+                clap::Error::with_description(
+                    &format!("Invalid value for 'autocd-timeout': '{}'", x),
+                    clap::ErrorKind::InvalidValue
+                )
+            })?.into()
+        };
+
+        Ok(ret)
     }
 }
