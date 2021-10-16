@@ -19,9 +19,6 @@ functionality found in many GUI file managers.
 1. Compile the binary by running `cargo build --release` in the main folder of the repo. This creates the binary in the folder `target/release/tere`.
 1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function instead of an alias, since the latter only changes the working directory of the subshell.
 
-    Note that to make the `--help` option to work, `tere` prints the help message
-    to stderr instead of stdout.
-
     For bash/zsh, put this into your `.bashrc` or `.zshrc`:
 
     ```sh
@@ -71,7 +68,7 @@ Shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
 ### Searching
 
 To search for an item in the current folder, just type some letters. `tere` will
-highlight all folders and files that match the search query.
+incrementally highlight all folders and files that match the search query.
 
 While searching, moving the cursor up / down jumps between only the items that
 match the search. The search query, as well as the number of matching items is
@@ -94,7 +91,7 @@ search is case sensitive. This can be changed with the `--ignore-case` and
 
 You can adjust the behavior of `tere` by passing the following CLI options to it:
 
-- `--help` or `-h`: Print a short help and all CLI options to stderr
+- `--help` or `-h`: Print a short help and all CLI options. Note that the output goes to stderr, to not interfere with `cd` ing in the shell functions defined above
 - `--version` or `-V`: Print the version of `tere`
 - `--filter-search` / `--no-filter-search`: If this option is set, hide items in the output listing that don't match the current search query.
 - `--folders-only` / `--no-folders-only`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
@@ -102,9 +99,10 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 - `--autocd-timeout` - If only one folder matches the current search query, automatically enter it after this many milliseconds. Can also be set to `off`, which disables this behaviour.
 
 Some options have two or more versions that override each other (for example
-`--folders-only` and `--no-folders-only`). This means that whichever is passed
-last is applied. This way, you can have one option as the default in your `rc`
-file, but you can sometimes manually override that option when running `tere`.
+`--folders-only` and `--no-folders-only`). For such options, whichever is
+passed last wins. This way, you can have one option as the default in your
+shell's `rc` file, but you can sometimes manually override that option when
+running `tere`.
 
 ## Prior art
 
