@@ -11,6 +11,10 @@ mod settings;
 use settings::TereSettings;
 pub use settings::CaseSensitiveMode;
 
+#[path = "history.rs"]
+mod history;
+use history::HistoryTreeEntry;
+
 pub const NO_MATCHES_MSG: &str = "No matches";
 
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
