@@ -259,7 +259,12 @@ mod tests_for_history_tree {
         tree.visit("bar");
         assert_eq!(tree.current_entry().last_visited_child_label(), Some("baz".to_string()));
 
-        todo!(); //TODO: more tests
+        tree.change_dir("/");
+        assert!(Rc::ptr_eq(&tree.current_entry(), &tree.root));
+
+        tree.change_dir("/foo/bax");
+
+        //println!("{:#?}", tree); panic!();
     }
 
     #[test]
@@ -268,7 +273,7 @@ mod tests_for_history_tree {
         tree.change_dir("/foo/bar/boo");
         tree.change_dir("/qux/zoo");
         println!("{:#?}", tree);
-        panic!();
+        //panic!(); // uncomment this to see print
     }
 
 }
