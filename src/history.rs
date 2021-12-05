@@ -12,37 +12,38 @@ pub struct HistoryTreeEntry {
 
 struct HistoryTree {
     root: Rc<HistoryTreeEntry>,
-    current_entry: Rc<HistoryTreeEntry>,
+    current_entry: RefCell<Rc<HistoryTreeEntry>>,
 }
 
 impl HistoryTree {
 
-    pub fn current_entry(&self) -> &Rc<HistoryTreeEntry> {
-        &self.current_entry
+    pub fn current_entry(&self) -> Rc<HistoryTreeEntry> {
+        self.current_entry.borrow().clone()
     }
 
     pub fn visit(&mut self, fname: &str) {
-        if let Some(child) = Rc::clone(&self.current_entry).children.borrow().iter()
-            .find(|child| child.name == fname) {
-                //self.current_entry.last_visited_child = Some(Rc::downgrade(child.clone()))
-                self.current_entry = Rc::clone(&child)
+        let matching_child = self.current_entry.borrow().children.borrow().iter()
+            .find(|child| child.name == fname).map(|c| c.clone());
+
+        if let Some(child) = matching_child {
+            self.current_entry = RefCell::new(Rc::clone(&child));
+        } else {
+            let child = HistoryTreeEntry {
+                name: fname.to_string(),
+                parent: Rc::downgrade(&self.current_entry.borrow()),
+                children: RefCell::new(vec![]),
+                //last_visited_child: None,
+            };
+            let child = Rc::new(child);
+            self.current_entry.borrow_mut().children.borrow_mut().push(Rc::clone(&child));
+            self.current_entry = RefCell::new(child);
         }
-        //no such child found, create a new one
-        let child = HistoryTreeEntry {
-            name: fname.to_string(),
-            parent: Rc::downgrade(&self.current_entry),
-            children: RefCell::new(vec![]),
-        };
-
-        let child = Rc::new(child);
-        self.current_entry.children.borrow_mut().push(Rc::clone(&child));
-
-        self.current_entry = child;
     }
 
     pub fn go_up(&mut self) {
-        if let Some(parent) = self.current_entry.parent.upgrade() {
-            self.current_entry = Rc::clone(&parent);
+        let maybe_parent = self.current_entry.borrow().parent.upgrade();
+        if let Some(parent) = maybe_parent {
+            self.current_entry = RefCell::new(Rc::clone(&parent));
         } // if the parent is None, we're at the root, so no need to do anything
     }
 
@@ -62,7 +63,7 @@ mod tests_for_history_tree {
 
         HistoryTree {
             root: Rc::clone(&root),
-            current_entry: root,
+            current_entry: RefCell::new(root),
         }
     }
 
@@ -106,9 +107,9 @@ mod tests_for_history_tree {
     fn test_tree_pointer_counts() {
         let mut tree = init_history_tree();
         tree.visit("foo");
-        let foo = Rc::downgrade(tree.current_entry());
+        let foo = Rc::downgrade(&tree.current_entry());
         tree.visit("bar");
-        let bar = Rc::downgrade(tree.current_entry());
+        let bar = Rc::downgrade(&tree.current_entry());
 
         assert_eq!(Rc::weak_count(&tree.root), 1); // the child (foo)
 
