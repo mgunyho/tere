@@ -6,47 +6,47 @@ use std::rc::{Rc, Weak};
 pub struct HistoryTreeEntry {
     name: String, //TODO: use Path / PathComponent instead? or None? to represent root (and what else?) correctly
     parent: Weak<Self>, // option is not needed (I guess), we can just use a null weak to represent the root
-    last_visited_child: Option<Weak<Self>>,
+    last_visited_child: RefCell<Option<Weak<Self>>>,
     children: RefCell<Vec<Rc<Self>>>,
 }
 
 struct HistoryTree {
     root: Rc<HistoryTreeEntry>,
-    current_entry: RefCell<Rc<HistoryTreeEntry>>,
+    current_entry: Rc<HistoryTreeEntry>,
 }
 
 impl HistoryTree {
 
-    pub fn current_entry(&self) -> Rc<HistoryTreeEntry> {
-        self.current_entry.borrow().clone()
+    pub fn current_entry(&self) -> &Rc<HistoryTreeEntry> {
+        &self.current_entry
     }
 
     pub fn visit(&mut self, fname: &str) {
-        let matching_child = self.current_entry.borrow().children.borrow().iter()
+        let matching_child = self.current_entry.children.borrow().iter()
             .find(|child| child.name == fname).map(|c| c.clone());
 
         if let Some(child) = matching_child {
 
-            let mut previous_entry = self.current_entry.replace(Rc::clone(&child));
-            Rc::get_mut(&mut previous_entry).unwrap().last_visited_child = Some(Rc::downgrade(&child));
+            self.current_entry = Rc::clone(&child);
+            //Rc::get_mut(&mut previous_entry).unwrap().last_visited_child = Some(Rc::downgrade(&child));
 
         } else {
             let child = HistoryTreeEntry {
                 name: fname.to_string(),
-                parent: Rc::downgrade(&self.current_entry.borrow()),
+                parent: Rc::downgrade(&self.current_entry),
                 children: RefCell::new(vec![]),
-                last_visited_child: None,
+                last_visited_child: RefCell::new(None),
             };
             let child = Rc::new(child);
-            self.current_entry.borrow_mut().children.borrow_mut().push(Rc::clone(&child));
-            self.current_entry = RefCell::new(child);
+            self.current_entry.children.borrow_mut().push(Rc::clone(&child));
+            self.current_entry = child;
         }
     }
 
     pub fn go_up(&mut self) {
-        let maybe_parent = self.current_entry.borrow().parent.upgrade();
+        let maybe_parent = self.current_entry.parent.upgrade();
         if let Some(parent) = maybe_parent {
-            self.current_entry = RefCell::new(Rc::clone(&parent));
+            self.current_entry = Rc::clone(&parent);
         } // if the parent is None, we're at the root, so no need to do anything
     }
 
@@ -60,13 +60,13 @@ mod tests_for_history_tree {
         let root = Rc::new(HistoryTreeEntry {
             name: "/".to_string(),
             parent: Weak::new(),
-            last_visited_child: None,
+            last_visited_child: RefCell::new(None),
             children: RefCell::new(vec![]),
         });
 
         HistoryTree {
             root: Rc::clone(&root),
-            current_entry: RefCell::new(root),
+            current_entry: root,
         }
     }
 
