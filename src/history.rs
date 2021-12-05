@@ -65,7 +65,7 @@ impl HistoryTree {
             .find(|child| child.label == fname).map(|c| c.clone());
 
         let child = found_child.unwrap_or_else(|| {
-            // no such child found, create a new one
+            // no existing child with this name found, create a new one
             let mut child = HistoryTreeEntry::new(fname);
             child.parent = Rc::downgrade(&self.current_entry);
 
