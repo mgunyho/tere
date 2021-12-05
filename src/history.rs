@@ -27,9 +27,9 @@ impl HistoryTree {
 
         if let Some(child) = matching_child {
 
+            self.current_entry.last_visited_child.replace(Some(Rc::downgrade(&child)));
             self.current_entry = Rc::clone(&child);
             //Rc::get_mut(&mut previous_entry).unwrap().last_visited_child = Some(Rc::downgrade(&child));
-
         } else {
             let child = HistoryTreeEntry {
                 name: fname.to_string(),
@@ -38,6 +38,8 @@ impl HistoryTree {
                 last_visited_child: RefCell::new(None),
             };
             let child = Rc::new(child);
+            //TODO: combine this with the above, do last_visited_child.replace only once
+            self.current_entry.last_visited_child.replace(Some(Rc::downgrade(&child)));
             self.current_entry.children.borrow_mut().push(Rc::clone(&child));
             self.current_entry = child;
         }
@@ -129,6 +131,15 @@ mod tests_for_history_tree {
         tree.visit("baz");
         assert_eq!(Rc::weak_count(&tree.root), 2); // two children
 
+    }
+
+    #[test]
+    fn test_last_visisted_child() {
+        let mut tree = init_history_tree();
+        tree.visit("foo");
+        let foo = Rc::clone(tree.current_entry());
+        tree.go_up();
+        assert!(Rc::ptr_eq(&foo, &tree.current_entry().last_visited_child.borrow().as_ref().unwrap().upgrade().unwrap()));
     }
 
 }
