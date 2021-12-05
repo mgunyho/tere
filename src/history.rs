@@ -23,14 +23,13 @@ impl<'a> HistoryTree<'a> {
     }
 
     pub fn visit(&mut self, fname: &'a str) {
-        let component = Component::Normal(fname.as_ref());
         let found_child = self.current_entry.children.borrow().iter()
-            .find(|child| child.path == component).map(|c| c.clone());
+            .find(|child| child.path.as_os_str() == fname).map(|c| c.clone());
 
         let child = found_child.unwrap_or_else(|| {
             // no such child found, create a new one
             let child = HistoryTreeEntry {
-                path: component,
+                path: Component::Normal(fname.as_ref()),
                 parent: Rc::downgrade(&self.current_entry),
                 children: RefCell::new(vec![]),
                 last_visited_child: RefCell::new(None),
