@@ -56,6 +56,10 @@ impl HistoryTree {
         } // if the parent is None, we're at the root, so no need to do anything
     }
 
+    pub fn go_to_root(&mut self) {
+        self.current_entry = Rc::clone(&self.root);
+    }
+
 }
 
 #[cfg(test)]
@@ -144,6 +148,17 @@ mod tests_for_history_tree {
         let foo = Rc::clone(tree.current_entry());
         tree.go_up();
         assert!(Rc::ptr_eq(&foo, &tree.current_entry().last_visited_child.borrow().as_ref().unwrap().upgrade().unwrap()));
+    }
+
+    #[test]
+    fn test_go_to_root() {
+        let mut tree = init_history_tree();
+        let root = Rc::clone(tree.current_entry());
+        tree.visit("foo");
+        tree.visit("bar");
+        tree.visit("baz");
+        tree.go_to_root();
+        assert!(Rc::ptr_eq(&root, tree.current_entry()));
     }
 
 }
