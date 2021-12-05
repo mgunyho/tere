@@ -22,15 +22,11 @@ impl HistoryTree {
     }
 
     pub fn visit(&mut self, fname: &str) {
-        let matching_child = self.current_entry.children.borrow().iter()
+        let found_child = self.current_entry.children.borrow().iter()
             .find(|child| child.name == fname).map(|c| c.clone());
 
-        if let Some(child) = matching_child {
-
-            self.current_entry.last_visited_child.replace(Some(Rc::downgrade(&child)));
-            self.current_entry = Rc::clone(&child);
-            //Rc::get_mut(&mut previous_entry).unwrap().last_visited_child = Some(Rc::downgrade(&child));
-        } else {
+        let child = found_child.unwrap_or_else(|| {
+            // no such child found, create a new one
             let child = HistoryTreeEntry {
                 name: fname.to_string(),
                 parent: Rc::downgrade(&self.current_entry),
@@ -38,11 +34,12 @@ impl HistoryTree {
                 last_visited_child: RefCell::new(None),
             };
             let child = Rc::new(child);
-            //TODO: combine this with the above, do last_visited_child.replace only once
-            self.current_entry.last_visited_child.replace(Some(Rc::downgrade(&child)));
             self.current_entry.children.borrow_mut().push(Rc::clone(&child));
-            self.current_entry = child;
-        }
+            child
+        });
+
+        self.current_entry.last_visited_child.replace(Some(Rc::downgrade(&child)));
+        self.current_entry = child;
     }
 
     pub fn go_up(&mut self) {
