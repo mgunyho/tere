@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
-use std::path::Component;
 
 
 // Tree struct based on https://doc.rust-lang.org/stable/book/ch15-06-reference-cycles.html
