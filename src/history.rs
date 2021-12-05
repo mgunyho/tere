@@ -19,6 +19,17 @@ impl HistoryTreeEntry {
             last_visited_child: RefCell::new(None),
         }
     }
+
+    /// Convenience method for accessing the name of the last visited child, if it exists.
+    /// Returns an owned String, because I couldn't figure out the borrowing here.
+    pub fn last_visited_child_label(&self) -> Option<String> {
+        self.last_visited_child
+            .borrow()
+            .as_ref()
+            .and_then(|ptr| ptr.upgrade())
+            // note: tried .map(|parent| parent.label.as_str()), but it's no good.
+            .map(|parent| parent.label.clone())
+    }
 }
 
 struct HistoryTree {
