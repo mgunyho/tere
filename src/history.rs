@@ -22,10 +22,10 @@ impl HistoryTree {
     }
 
     pub fn visit(&mut self, fname: &str) {
-        if let Some(child) = self.current_entry.clone().children.borrow().iter()
+        if let Some(child) = Rc::clone(&self.current_entry).children.borrow().iter()
             .find(|child| child.name == fname) {
                 //self.current_entry.last_visited_child = Some(Rc::downgrade(child.clone()))
-                self.current_entry = child.clone()
+                self.current_entry = Rc::clone(&child)
         }
         //no such child found, create a new one
         let child = HistoryTreeEntry {
@@ -35,14 +35,14 @@ impl HistoryTree {
         };
 
         let child = Rc::new(child);
-        self.current_entry.children.borrow_mut().push(child.clone());
+        self.current_entry.children.borrow_mut().push(Rc::clone(&child));
 
         self.current_entry = child;
     }
 
     pub fn go_up(&mut self) {
         if let Some(parent) = self.current_entry.parent.upgrade() {
-            self.current_entry = parent.clone();
+            self.current_entry = Rc::clone(&parent);
         } // if the parent is None, we're at the root, so no need to do anything
     }
 
@@ -61,7 +61,7 @@ mod tests_for_history_tree {
         });
 
         HistoryTree {
-            root: root.clone(),
+            root: Rc::clone(&root),
             current_entry: root,
         }
     }
