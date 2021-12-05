@@ -99,6 +99,36 @@ impl HistoryTree {
 }
 
 
+impl std::fmt::Debug for HistoryTreeEntry {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        f.debug_map()
+            .entry(&"label", &self.label)
+            .entry(&"last_visited_child", &self.last_visited_child_label().unwrap_or("".to_string()))
+            .entry(&"children", &self.children.borrow())
+            .finish()
+    }
+}
+
+impl std::fmt::Debug for HistoryTree {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+
+        // ad-hoc iterator to get all parents / full path of a node. should probably move this to its own method
+        // (HistoryTreeEntry::get_full_path or something), but currently not used anywhere else
+        let mut initial_entry = Some(self.current_entry.clone());
+        let mut cur_parents = vec![];
+        while let Some(cur) = initial_entry {
+            cur_parents.push(cur.label.clone());
+            initial_entry = cur.parent.upgrade();
+        }
+        let cur_parents: std::path::PathBuf = cur_parents.iter().rev().collect();
+
+        f.debug_struct("HistoryTree")
+            .field("root", &self.root)
+            .field("current_entry", &cur_parents)
+            .finish()
+    }
+}
+
 #[cfg(test)]
 mod tests_for_history_tree {
     use super::*;
@@ -230,6 +260,15 @@ mod tests_for_history_tree {
         assert_eq!(tree.current_entry().last_visited_child_label(), Some("baz".to_string()));
 
         todo!(); //TODO: more tests
+    }
+
+    #[test]
+    fn test_debug_print() {
+        let mut tree = HistoryTree::from_abs_path("/foo/bar/baz");
+        tree.change_dir("/foo/bar/boo");
+        tree.change_dir("/qux/zoo");
+        println!("{:#?}", tree);
+        panic!();
     }
 
 }
