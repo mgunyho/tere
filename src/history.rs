@@ -88,7 +88,16 @@ impl HistoryTree {
         self.current_entry = Rc::clone(&self.root);
     }
 
+    /// Change directory completely to a new absolute path
+    pub fn change_dir<P: AsRef<Path>>(&mut self, abs_path: P) {
+        self.go_to_root();
+        for component in abs_path.as_ref().components().skip(1) {
+            self.visit(&component.as_os_str().to_string_lossy())
+        }
+    }
+
 }
+
 
 #[cfg(test)]
 mod tests_for_history_tree {
@@ -204,6 +213,23 @@ mod tests_for_history_tree {
         tree.visit("baz");
         assert_eq!(tree.current_entry().label, "baz");
         assert_eq!(tree.current_entry().last_visited_child_label(), None);
+    }
+
+    #[test]
+    fn test_change_dir() {
+        let mut tree = HistoryTree::from_abs_path("/foo/bar/baz");
+        tree.change_dir("/foo/bax");
+        assert_eq!(tree.current_entry().label, "bax");
+        tree.go_up();
+        assert_eq!(
+            vec!["bar".to_string(), "bax".to_string()],
+            tree.current_entry().children.borrow().iter()
+                .map(|child| child.label.clone()).collect::<Vec<String>>()
+            );
+        tree.visit("bar");
+        assert_eq!(tree.current_entry().last_visited_child_label(), Some("baz".to_string()));
+
+        todo!(); //TODO: more tests
     }
 
 }
