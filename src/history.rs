@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
+use std::path::Path;
 
 
 // Tree struct based on https://doc.rust-lang.org/stable/book/ch15-06-reference-cycles.html
@@ -41,6 +42,22 @@ impl HistoryTree {
 
     pub fn current_entry(&self) -> &Rc<HistoryTreeEntry> {
         &self.current_entry
+    }
+
+    /// Parse an absolute path into a history tree, with one child for each folder.
+    pub fn from_abs_path<P: AsRef<Path>>(path: P) -> Self
+    {
+       let root = Rc::new(HistoryTreeEntry::new("/"));
+       let mut tree = Self {
+           root: Rc::clone(&root),
+           current_entry: root,
+       };
+
+       path.as_ref().components()
+           .skip(1) // skip root component (NOTE: this will cause problems on windows...)
+           .for_each(|component| tree.visit(&component.as_os_str().to_string_lossy()));
+       tree.go_to_root();
+       tree
     }
 
     pub fn visit(&mut self, fname: &str) {
@@ -170,6 +187,23 @@ mod tests_for_history_tree {
         tree.visit("baz");
         tree.go_to_root();
         assert!(Rc::ptr_eq(&root, tree.current_entry()));
+        assert_eq!(tree.current_entry().label, "/");
+    }
+
+    #[test]
+    fn test_from_abs_path() {
+        let mut tree = HistoryTree::from_abs_path("/foo/bar/baz");
+        assert_eq!(tree.current_entry().label, "/");
+        assert_eq!(tree.current_entry().last_visited_child_label().unwrap(), "foo");
+        tree.visit("foo");
+        assert_eq!(tree.current_entry().label, "foo");
+        assert_eq!(tree.current_entry().last_visited_child_label().unwrap(), "bar");
+        tree.visit("bar");
+        assert_eq!(tree.current_entry().label, "bar");
+        assert_eq!(tree.current_entry().last_visited_child_label().unwrap(), "baz");
+        tree.visit("baz");
+        assert_eq!(tree.current_entry().label, "baz");
+        assert_eq!(tree.current_entry().last_visited_child_label(), None);
     }
 
 }
