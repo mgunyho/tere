@@ -40,8 +40,10 @@ impl HistoryTree {
         self.current_entry = child;
     }
 
-    pub fn go_up(mut self) -> Self {
-        todo!()
+    pub fn go_up(&mut self) {
+        if let Some(parent) = self.current_entry.parent.upgrade() {
+            self.current_entry = parent.clone();
+        } // if the parent is None, we're at the root, so no need to do anything
     }
 
 }
