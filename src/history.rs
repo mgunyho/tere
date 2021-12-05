@@ -5,7 +5,7 @@ use std::rc::{Rc, Weak};
 // Tree struct based on https://doc.rust-lang.org/stable/book/ch15-06-reference-cycles.html
 pub struct HistoryTreeEntry {
     name: String, //TODO: use Path / PathComponent instead? or None? to represent root (and what else?) correctly
-    parent: RefCell<Weak<Self>>, // option is not needed (I guess), we can just use a null weak to represent the root
+    parent: Weak<Self>, // option is not needed (I guess), we can just use a null weak to represent the root
     //last_visited_child: Option<RefCell<Self>>, //TODO
     children: RefCell<Vec<Rc<Self>>>,
 }
@@ -30,7 +30,7 @@ impl HistoryTree {
         //no such child found, create a new one
         let child = HistoryTreeEntry {
             name: fname.to_string(),
-            parent: RefCell::new(Rc::downgrade(&self.current_entry)),
+            parent: Rc::downgrade(&self.current_entry),
             children: RefCell::new(vec![]),
         };
 
@@ -54,7 +54,7 @@ mod tests_for_history_tree {
     fn test_history_tree_visit() {
         let root = Rc::new(HistoryTreeEntry {
             name: "/".to_string(),
-            parent: RefCell::new(Weak::new()),
+            parent: Weak::new(),
             //last_visited_child: None,
             children: RefCell::new(vec![]),
         });
@@ -65,7 +65,7 @@ mod tests_for_history_tree {
 
         tree.visit("foo");
         assert_eq!(tree.current_entry.name, "foo");
-        assert_eq!(tree.current_entry.parent.borrow().upgrade().unwrap().name, "/");
+        assert_eq!(tree.current_entry.parent.upgrade().unwrap().name, "/");
 
     }
 
