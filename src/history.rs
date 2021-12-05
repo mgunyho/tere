@@ -33,7 +33,7 @@ impl HistoryTreeEntry {
     }
 }
 
-struct HistoryTree {
+pub struct HistoryTree {
     root: Rc<HistoryTreeEntry>,
     current_entry: Rc<HistoryTreeEntry>,
 }
