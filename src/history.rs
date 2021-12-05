@@ -4,32 +4,32 @@ use std::path::Component;
 
 
 // Tree struct based on https://doc.rust-lang.org/stable/book/ch15-06-reference-cycles.html
-pub struct HistoryTreeEntry<'a> {
-    label: Component<'a>,
+pub struct HistoryTreeEntry {
+    label: String,
     parent: Weak<Self>, // option is not needed (I guess), we can just use a null weak to represent the root
     last_visited_child: RefCell<Option<Weak<Self>>>,
     children: RefCell<Vec<Rc<Self>>>,
 }
 
-struct HistoryTree<'a> {
-    root: Rc<HistoryTreeEntry<'a>>,
-    current_entry: Rc<HistoryTreeEntry<'a>>,
+struct HistoryTree {
+    root: Rc<HistoryTreeEntry>,
+    current_entry: Rc<HistoryTreeEntry>,
 }
 
-impl<'a> HistoryTree<'a> {
+impl HistoryTree {
 
-    pub fn current_entry(&self) -> &Rc<HistoryTreeEntry<'a>> {
+    pub fn current_entry(&self) -> &Rc<HistoryTreeEntry> {
         &self.current_entry
     }
 
-    pub fn visit(&mut self, fname: &'a str) {
+    pub fn visit(&mut self, fname: &str) {
         let found_child = self.current_entry.children.borrow().iter()
-            .find(|child| child.label.as_os_str() == fname).map(|c| c.clone());
+            .find(|child| child.label == fname).map(|c| c.clone());
 
         let child = found_child.unwrap_or_else(|| {
             // no such child found, create a new one
             let child = HistoryTreeEntry {
-                label: Component::Normal(fname.as_ref()),
+                label: fname.to_string(),
                 parent: Rc::downgrade(&self.current_entry),
                 children: RefCell::new(vec![]),
                 last_visited_child: RefCell::new(None),
@@ -55,9 +55,9 @@ impl<'a> HistoryTree<'a> {
 mod tests_for_history_tree {
     use super::*;
 
-    fn init_history_tree<'a>() -> HistoryTree<'a> {
+    fn init_history_tree() -> HistoryTree {
         let root = Rc::new(HistoryTreeEntry {
-            label: Component::RootDir,
+            label: "/".to_string(),
             parent: Weak::new(),
             last_visited_child: RefCell::new(None),
             children: RefCell::new(vec![]),
@@ -74,13 +74,13 @@ mod tests_for_history_tree {
         let mut tree = init_history_tree();
 
         tree.visit("foo");
-        assert_eq!(tree.current_entry().label, Component::Normal("foo".as_ref()));
-        assert_eq!(tree.current_entry().parent.upgrade().unwrap().label, Component::RootDir);
+        assert_eq!(tree.current_entry().label, "foo");
+        assert_eq!(tree.current_entry().parent.upgrade().unwrap().label, "/");
 
         tree.visit("bar");
-        assert_eq!(tree.current_entry().label, Component::Normal("bar".as_ref()));
-        assert_eq!(tree.current_entry().parent.upgrade().unwrap().label, Component::Normal("foo".as_ref()));
-        assert_eq!(tree.current_entry().parent.upgrade().unwrap().parent.upgrade().unwrap().label, Component::RootDir);
+        assert_eq!(tree.current_entry().label, "bar");
+        assert_eq!(tree.current_entry().parent.upgrade().unwrap().label, "foo");
+        assert_eq!(tree.current_entry().parent.upgrade().unwrap().parent.upgrade().unwrap().label, "/");
 
     }
 
@@ -91,20 +91,17 @@ mod tests_for_history_tree {
         tree.visit("foo");
         tree.visit("bar");
 
-        let foo_path = Component::Normal("foo".as_ref());
-        let bar_path = Component::Normal("bar".as_ref());
+        tree.go_up();
+        assert_eq!(tree.current_entry().label, "foo");
+        assert_eq!(tree.current_entry().children.borrow()[0].label, "bar");
 
         tree.go_up();
-        assert_eq!(tree.current_entry().label, foo_path);
-        assert_eq!(tree.current_entry().children.borrow()[0].label, bar_path);
+        assert_eq!(tree.current_entry().label, "/");
+        assert_eq!(tree.current_entry().children.borrow()[0].label, "foo");
 
         tree.go_up();
-        assert_eq!(tree.current_entry().label, Component::RootDir);
-        assert_eq!(tree.current_entry().children.borrow()[0].label, foo_path);
-
-        tree.go_up();
-        assert_eq!(tree.current_entry().label, Component::RootDir);
-        assert_eq!(tree.current_entry().children.borrow()[0].label, foo_path);
+        assert_eq!(tree.current_entry().label, "/");
+        assert_eq!(tree.current_entry().children.borrow()[0].label, "foo");
 
     }
 
