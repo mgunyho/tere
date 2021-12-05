@@ -81,4 +81,50 @@ mod tests_for_history_tree {
 
     }
 
+    #[test]
+    fn test_history_tree_go_up_down() {
+        let mut tree = init_history_tree();
+
+        tree.visit("foo");
+        tree.visit("bar");
+
+        tree.go_up();
+        assert_eq!(tree.current_entry().name, "foo");
+        assert_eq!(tree.current_entry().children.borrow()[0].name, "bar");
+
+        tree.go_up();
+        assert_eq!(tree.current_entry().name, "/");
+        assert_eq!(tree.current_entry().children.borrow()[0].name, "foo");
+
+        tree.go_up();
+        assert_eq!(tree.current_entry().name, "/");
+        assert_eq!(tree.current_entry().children.borrow()[0].name, "foo");
+
+    }
+
+    #[test]
+    fn test_tree_pointer_counts() {
+        let mut tree = init_history_tree();
+        tree.visit("foo");
+        let foo = Rc::downgrade(tree.current_entry());
+        tree.visit("bar");
+        let bar = Rc::downgrade(tree.current_entry());
+
+        assert_eq!(Rc::weak_count(&tree.root), 1); // the child (foo)
+
+        assert_eq!(Weak::strong_count(&foo), 1); // the root
+        assert_eq!(Weak::weak_count(&foo), 2); // the child and the variable 'foo' above
+
+        assert_eq!(Weak::strong_count(&bar), 2); // the parent (foo) and the tree current entry
+        assert_eq!(Weak::weak_count(&bar), 1); // the variable 'bar' above
+
+        tree.go_up(); tree.go_up();
+        assert_eq!(Weak::strong_count(&bar), 1); // the parent only now
+        assert_eq!(Weak::weak_count(&bar), 1); // the variable 'bar' above
+
+        tree.visit("baz");
+        assert_eq!(Rc::weak_count(&tree.root), 2); // two children
+
+    }
+
 }
