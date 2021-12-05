@@ -6,7 +6,7 @@ use std::rc::{Rc, Weak};
 pub struct HistoryTreeEntry {
     name: String, //TODO: use Path / PathComponent instead? or None? to represent root (and what else?) correctly
     parent: Weak<Self>, // option is not needed (I guess), we can just use a null weak to represent the root
-    //last_visited_child: Option<RefCell<Self>>, //TODO
+    last_visited_child: Option<Weak<Self>>,
     children: RefCell<Vec<Rc<Self>>>,
 }
 
@@ -26,13 +26,16 @@ impl HistoryTree {
             .find(|child| child.name == fname).map(|c| c.clone());
 
         if let Some(child) = matching_child {
-            self.current_entry = RefCell::new(Rc::clone(&child));
+
+            let mut previous_entry = self.current_entry.replace(Rc::clone(&child));
+            Rc::get_mut(&mut previous_entry).unwrap().last_visited_child = Some(Rc::downgrade(&child));
+
         } else {
             let child = HistoryTreeEntry {
                 name: fname.to_string(),
                 parent: Rc::downgrade(&self.current_entry.borrow()),
                 children: RefCell::new(vec![]),
-                //last_visited_child: None,
+                last_visited_child: None,
             };
             let child = Rc::new(child);
             self.current_entry.borrow_mut().children.borrow_mut().push(Rc::clone(&child));
@@ -57,7 +60,7 @@ mod tests_for_history_tree {
         let root = Rc::new(HistoryTreeEntry {
             name: "/".to_string(),
             parent: Weak::new(),
-            //last_visited_child: None,
+            last_visited_child: None,
             children: RefCell::new(vec![]),
         });
 
