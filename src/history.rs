@@ -119,14 +119,14 @@ mod tests_for_history_tree {
         assert_eq!(Rc::weak_count(&tree.root), 1); // the child (foo)
 
         assert_eq!(Weak::strong_count(&foo), 1); // the root
-        assert_eq!(Weak::weak_count(&foo), 2); // the child and the variable 'foo' above
+        assert_eq!(Weak::weak_count(&foo), 3); // the child, last_visited_child of the root and the variable 'foo' above
 
         assert_eq!(Weak::strong_count(&bar), 2); // the parent (foo) and the tree current entry
-        assert_eq!(Weak::weak_count(&bar), 1); // the variable 'bar' above
+        assert_eq!(Weak::weak_count(&bar), 2); // the variable 'bar' above, and last_visited_child of foo
 
         tree.go_up(); tree.go_up();
         assert_eq!(Weak::strong_count(&bar), 1); // the parent only now
-        assert_eq!(Weak::weak_count(&bar), 1); // the variable 'bar' above
+        assert_eq!(Weak::weak_count(&bar), 2); // the variable 'bar' above, and last_visited_child of foo
 
         tree.visit("baz");
         assert_eq!(Rc::weak_count(&tree.root), 2); // two children
