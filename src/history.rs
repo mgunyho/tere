@@ -56,7 +56,6 @@ impl HistoryTree {
        path.as_ref().components()
            .skip(1) // skip root component (NOTE: this will cause problems on windows...)
            .for_each(|component| tree.visit(&component.as_os_str().to_string_lossy()));
-       tree.go_to_root();
        tree
     }
 
@@ -232,7 +231,8 @@ mod tests_for_history_tree {
     #[test]
     fn test_from_abs_path() {
         let mut tree = HistoryTree::from_abs_path("/foo/bar/baz");
-        assert_eq!(tree.current_entry().label, "/");
+        assert_eq!(tree.current_entry().label, "baz");
+        tree.go_to_root();
         assert_eq!(tree.current_entry().last_visited_child_label().unwrap(), "foo");
         tree.visit("foo");
         assert_eq!(tree.current_entry().label, "foo");
