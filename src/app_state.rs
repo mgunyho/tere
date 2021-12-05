@@ -13,7 +13,7 @@ pub use settings::CaseSensitiveMode;
 
 #[path = "history.rs"]
 mod history;
-use history::HistoryTreeEntry;
+use history::HistoryTree;
 
 pub const NO_MATCHES_MSG: &str = "No matches";
 
@@ -148,6 +148,8 @@ pub struct TereAppState {
     pub info_msg: String,
 
     pub settings: TereSettings,
+
+    history: HistoryTree,
 }
 
 impl TereAppState {
@@ -163,6 +165,7 @@ impl TereAppState {
             search_string: "".into(),
             //search_anywhere: false,
             settings: TereSettings::parse_cli_args(cli_args)?,
+            history: HistoryTree::from_abs_path(std::env::current_dir()?),
         };
 
         ret.update_header();
@@ -319,18 +322,24 @@ impl TereAppState {
         self.clear_search();
         std::env::set_current_dir(&final_path)?;
         self.update_ls_output_buf();
-        //TODO: proper history
+
         self.cursor_pos = 0;
         self.scroll_pos = 0;
-        if let Ok(old_cwd) = old_cwd {
-            if let Some(old_cwd) = old_cwd.file_name() {
-                if let Some(idx) = self.index_of_filename(old_cwd) {
-                    self.move_cursor(idx as i32, false);
-                } else {
-                    // move cursor one position down, so we're not at '..'
-                    self.move_cursor(1, false);
-                }
-            }
+        if final_path == ".." { // a bit hacky.. should somehow check properly using path::Component::ParentDir or something
+            self.history.go_up();
+        } else {
+            //TODO: handle absolute paths... see std::path::Path::is_absolute().
+            self.history.visit(&final_path);
+        }
+        //self.info_msg = format!("final_path: {}", final_path); //TODO: clean up
+        if let Some(prev_dir) = self.history.current_entry().last_visited_child_label() {
+            self.info_msg = format!("final_path: {:?}, prev_dir: {:?}", final_path, prev_dir); //TODO: clean up
+            if let Some(idx) = self.index_of_filename(prev_dir) {
+                self.move_cursor(idx as i32, false);
+            } //TODO: move cursor also here
+        } else {
+            // move cursor one position down, so we're not at '..'
+            self.move_cursor(1, false);
         }
         Ok(())
     }
@@ -572,6 +581,7 @@ mod tests {
             info_msg: "".into(),
             search_string: "".into(),
             settings: Default::default(),
+            history: HistoryTree::from_abs_path("/"),
         }
     }
 
