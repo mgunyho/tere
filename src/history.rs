@@ -10,6 +10,17 @@ pub struct HistoryTreeEntry {
     children: RefCell<Vec<Rc<Self>>>,
 }
 
+impl HistoryTreeEntry {
+    pub fn new(label: &str) -> Self {
+        Self {
+            label: label.to_string(),
+            parent: Weak::new(),
+            children: RefCell::new(vec![]),
+            last_visited_child: RefCell::new(None),
+        }
+    }
+}
+
 struct HistoryTree {
     root: Rc<HistoryTreeEntry>,
     current_entry: Rc<HistoryTreeEntry>,
@@ -27,12 +38,9 @@ impl HistoryTree {
 
         let child = found_child.unwrap_or_else(|| {
             // no such child found, create a new one
-            let child = HistoryTreeEntry {
-                label: fname.to_string(),
-                parent: Rc::downgrade(&self.current_entry),
-                children: RefCell::new(vec![]),
-                last_visited_child: RefCell::new(None),
-            };
+            let mut child = HistoryTreeEntry::new(fname);
+            child.parent = Rc::downgrade(&self.current_entry);
+
             let child = Rc::new(child);
             self.current_entry.children.borrow_mut().push(Rc::clone(&child));
             child
