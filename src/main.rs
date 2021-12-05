@@ -480,7 +480,7 @@ impl<'a> TereTui<'a> {
                 Event::Key(k) => {
                     match k.code {
                         KeyCode::Right | KeyCode::Enter => self.change_dir("")?,
-                        KeyCode::Left => self.change_dir("..")?,
+                        KeyCode::Left => self.change_dir("..")?, //TODO: use std::path::Component::ParentDir
                         KeyCode::Up if k.modifiers == ALT => {
                             self.change_dir("..")?;
                         },

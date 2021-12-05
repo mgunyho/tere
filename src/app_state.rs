@@ -167,6 +167,7 @@ impl TereAppState {
 
         ret.update_header();
         ret.update_ls_output_buf();
+        ret.move_cursor(1, false); // start out from second entry, because first entry is '..'.
         Ok(ret)
     }
 
@@ -325,6 +326,9 @@ impl TereAppState {
             if let Some(old_cwd) = old_cwd.file_name() {
                 if let Some(idx) = self.index_of_filename(old_cwd) {
                     self.move_cursor(idx as i32, false);
+                } else {
+                    // move cursor one position down, so we're not at '..'
+                    self.move_cursor(1, false);
                 }
             }
         }
