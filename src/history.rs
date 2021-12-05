@@ -50,22 +50,32 @@ impl HistoryTree {
 mod tests_for_history_tree {
     use super::*;
 
-    #[test]
-    fn test_history_tree_visit() {
+    fn init_history_tree() -> HistoryTree {
         let root = Rc::new(HistoryTreeEntry {
             name: "/".to_string(),
             parent: Weak::new(),
             //last_visited_child: None,
             children: RefCell::new(vec![]),
         });
-        let mut tree = HistoryTree {
+
+        HistoryTree {
             root: root.clone(),
             current_entry: root,
-        };
+        }
+    }
+
+    #[test]
+    fn test_history_tree_visit() {
+        let mut tree = init_history_tree();
 
         tree.visit("foo");
-        assert_eq!(tree.current_entry.name, "foo");
-        assert_eq!(tree.current_entry.parent.upgrade().unwrap().name, "/");
+        assert_eq!(tree.current_entry().name, "foo");
+        assert_eq!(tree.current_entry().parent.upgrade().unwrap().name, "/");
+
+        tree.visit("bar");
+        assert_eq!(tree.current_entry().name, "bar");
+        assert_eq!(tree.current_entry().parent.upgrade().unwrap().name, "foo");
+        assert_eq!(tree.current_entry().parent.upgrade().unwrap().parent.upgrade().unwrap().name, "/");
 
     }
 
