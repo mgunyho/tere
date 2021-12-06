@@ -192,15 +192,27 @@ impl<'de> Deserialize<'de> for HistoryTreeEntry {
                     }
                 }
 
-                let children = children.ok_or_else(|| deError::missing_field("children"))?
+                let children: Vec<Rc<HistoryTreeEntry>> = children.ok_or_else(|| deError::missing_field("children"))?
                     .drain(..).map(|c| Rc::new(c)).collect();
-                //let last_visited_child = children.iter().find(|c| c.label);
-                Ok(HistoryTreeEntry {
+
+                let last_visited_child = last_visited_child
+                    .ok_or_else(|| deError::missing_field("last_visited_child"))?
+                    .map(|label| children.iter().find(|c| c.label == label).map(|found| Rc::downgrade(found)))
+                    .flatten();
+
+                let ret = HistoryTreeEntry {
                     label: label.ok_or_else(|| deError::missing_field("label"))?,
-                    last_visited_child: RefCell::new(None), //last_visited_child.ok_or_else(|| deError::missing_field("last_visited_child"))?, TODO
+                    last_visited_child: RefCell::new(last_visited_child),
                     parent: Weak::new(), //TODO
                     children: RefCell::new(children),
-                })
+                };
+
+                for child in ret.children.borrow_mut().iter() {
+                    //TODO: how to do this???
+                    child.parent = Rc::downgrade(&Rc::new(ret));
+                }
+
+                Ok(ret)
             }
         }
 
