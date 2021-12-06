@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 use std::path::Path;
+use serde::ser::{Serialize, Serializer, SerializeMap, SerializeSeq};
 
 
 // Tree struct based on https://doc.rust-lang.org/stable/book/ch15-06-reference-cycles.html
@@ -97,7 +98,6 @@ impl HistoryTree {
 
 }
 
-
 impl std::fmt::Debug for HistoryTreeEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         f.debug_map()
@@ -125,6 +125,19 @@ impl std::fmt::Debug for HistoryTree {
             .field("root", &self.root)
             .field("current_entry", &cur_parents)
             .finish()
+    }
+}
+
+impl Serialize for HistoryTreeEntry {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer
+    {
+        let mut map = serializer.serialize_map(Some(3))?;
+        map.serialize_entry("label", &self.label)?;
+        map.serialize_entry("last_visited_child", &self.last_visited_child_label())?;
+        map.serialize_entry("visited_children", &*self.children.borrow())?;
+        map.end()
     }
 }
 
@@ -274,6 +287,14 @@ mod tests_for_history_tree {
         tree.change_dir("/qux/zoo");
         println!("{:#?}", tree);
         //panic!(); // uncomment this to see print
+    }
+
+    #[test]
+    fn test_serialize() {
+        let mut tree = HistoryTree::from_abs_path("/foo/bar");
+        tree.change_dir("/foo/baz");
+        let ser = serde_json::to_string(&tree.root.as_ref()).unwrap();
+        assert_eq!(ser, r#"{"label":"/","last_visited_child":"foo","visited_children":[{"label":"foo","last_visited_child":"baz","visited_children":[{"label":"bar","last_visited_child":null,"visited_children":[]},{"label":"baz","last_visited_child":null,"visited_children":[]}]}]}"#);
     }
 
 }
