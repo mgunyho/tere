@@ -325,12 +325,16 @@ impl TereAppState {
 
         self.cursor_pos = 0;
         self.scroll_pos = 0;
-        if final_path == ".." { // a bit hacky.. should somehow check properly using path::Component::ParentDir or something
+
+        // note: we assume that the path is either '..', a single folder name or an absolute path.
+        if final_path == ".." { // a bit hacky.. should probably use path::Component::ParentDir or something
             self.history.go_up();
-        } else {
-            //TODO: handle absolute paths... see std::path::Path::is_absolute().
+        } else if std::path::Path::new(&final_path).is_relative() {
             self.history.visit(&final_path);
+        } else {
+            self.history.change_dir(&final_path);
         }
+
         //self.info_msg = format!("final_path: {}", final_path); //TODO: clean up
         if let Some(prev_dir) = self.history.current_entry().last_visited_child_label() {
             self.info_msg = format!("final_path: {:?}, prev_dir: {:?}", final_path, prev_dir); //TODO: clean up
