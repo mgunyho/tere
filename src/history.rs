@@ -152,9 +152,7 @@ impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
         D: Deserializer<'de>
     {
 
-        struct HistoryTreeEntryVisitor {
-            cur_parent: Rc<HistoryTreeEntry>,
-        };
+        struct HistoryTreeEntryVisitor;
 
         impl<'de> Visitor<'de> for HistoryTreeEntryVisitor {
             type Value = HistoryTreeEntryPtr;
@@ -216,29 +214,23 @@ impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
                 let ret = HistoryTreeEntry {
                     label: label.ok_or_else(|| deError::missing_field("label"))?,
                     last_visited_child: RefCell::new(last_visited_child),
-                    parent: Rc::downgrade(&self.cur_parent),
+                    parent: Weak::new(), //TODO
                     children: RefCell::new(children),
                 };
+
                 let ret = Rc::new(ret);
-
-                ////let ret = self.cur_parent;
-                //self.cur_parent.children.replace(children);
-                //let ret = self.cur_parent;
-
-
-                //for child in ret.children.borrow_mut().iter() {
-                //    //TODO: how to do this??? can't return Rc<> from serialize...
-                //    child.parent = Rc::downgrade(&ret);
-                //}
+                for child in ret.children.borrow_mut().iter() {
+                    //TODO: how to do this??? can't return Rc<> from serialize...
+                    child.parent = Rc::downgrade(&ret);
+                }
 
                 Ok(HistoryTreeEntryPtr(ret))
             }
         }
 
         //TODO: fix parent relationships here?
-        //todo!();
-        let root = Rc::new(HistoryTreeEntry::new("/"));
-        deserializer.deserialize_map(HistoryTreeEntryVisitor { cur_parent: Rc::clone(&root) })
+        todo!();
+        let root = deserializer.deserialize_map(HistoryTreeEntryVisitor);
     }
 }
 
@@ -256,11 +248,7 @@ impl<'de> Deserialize<'de> for HistoryTree {
     where
         D: Deserializer<'de>
     {
-        let root = HistoryTreeEntryPtr::deserialize(deserializer)?.0;
-        Ok(Self {
-            root: Rc::clone(&root),
-            current_entry: root,
-        })
+        todo!()
     }
 }
 
