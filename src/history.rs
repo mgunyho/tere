@@ -8,7 +8,7 @@ use serde::de::{Deserialize, Deserializer, Visitor, MapAccess, SeqAccess, Error 
 // Tree struct based on https://doc.rust-lang.org/stable/book/ch15-06-reference-cycles.html
 pub struct HistoryTreeEntry {
     label: String,
-    parent: Weak<Self>, // option is not needed (I guess), we can just use a null weak to represent the root
+    parent: RefCell<Weak<Self>>, // option is not needed (I guess), we can just use a null weak to represent the root
     last_visited_child: RefCell<Option<Weak<Self>>>,
     children: RefCell<Vec<Rc<Self>>>,
 }
@@ -17,7 +17,7 @@ impl HistoryTreeEntry {
     pub fn new(label: &str) -> Self {
         Self {
             label: label.to_string(),
-            parent: Weak::new(),
+            parent: RefCell::new(Weak::new()),
             children: RefCell::new(vec![]),
             last_visited_child: RefCell::new(None),
         }
@@ -70,7 +70,7 @@ impl HistoryTree {
         let child = found_child.unwrap_or_else(|| {
             // no existing child with this name found, create a new one
             let mut child = HistoryTreeEntry::new(fname);
-            child.parent = Rc::downgrade(&self.current_entry);
+            child.parent.replace(Rc::downgrade(&self.current_entry));
 
             let child = Rc::new(child);
             self.current_entry.children.borrow_mut().push(Rc::clone(&child));
@@ -82,7 +82,8 @@ impl HistoryTree {
     }
 
     pub fn go_up(&mut self) {
-        if let Some(parent) = self.current_entry.parent.upgrade() {
+        let maybe_parent = self.current_entry.parent.borrow().upgrade();
+        if let Some(parent) = maybe_parent {
             self.current_entry = Rc::clone(&parent);
         } // if the parent is None, we're at the root, so no need to do anything
     }
@@ -104,7 +105,7 @@ impl HistoryTree {
 impl std::fmt::Debug for HistoryTreeEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         f.debug_map()
-            .entry(&"parent", &self.parent.upgrade().map(|p| p.label.clone()).unwrap_or("".to_string()))
+            .entry(&"parent", &self.parent.borrow().upgrade().map(|p| p.label.clone()).unwrap_or("".to_string()))
             .entry(&"label", &self.label)
             .entry(&"last_visited_child", &self.last_visited_child_label().unwrap_or("".to_string()))
             .entry(&"children", &self.children.borrow())
@@ -121,7 +122,7 @@ impl std::fmt::Debug for HistoryTree {
         let mut cur_parents = vec![];
         while let Some(cur) = initial_entry {
             cur_parents.push(cur.label.clone());
-            initial_entry = cur.parent.upgrade();
+            initial_entry = cur.parent.borrow().upgrade();
         }
         let cur_parents: std::path::PathBuf = cur_parents.iter().rev().collect();
 
@@ -195,6 +196,8 @@ impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
                     }
                 }
 
+                let label = label.ok_or_else(|| deError::missing_field("label"))?;
+
                 //TODO: cleanup
                 let children: Vec<Rc<HistoryTreeEntry>> = children
                     .ok_or_else(|| deError::missing_field("children"))?
@@ -212,25 +215,22 @@ impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
                     .flatten();
 
                 let ret = HistoryTreeEntry {
-                    label: label.ok_or_else(|| deError::missing_field("label"))?,
+                    label: label,
                     last_visited_child: RefCell::new(last_visited_child),
-                    parent: Weak::new(), //TODO
+                    parent: RefCell::new(Weak::new()), //TODO
                     children: RefCell::new(children),
                 };
 
                 let ret = Rc::new(ret);
                 for child in ret.children.borrow_mut().iter() {
-                    //TODO: how to do this??? can't return Rc<> from serialize...
-                    child.parent = Rc::downgrade(&ret);
+                    child.parent.replace(Rc::downgrade(&ret));
                 }
 
                 Ok(HistoryTreeEntryPtr(ret))
             }
         }
 
-        //TODO: fix parent relationships here?
-        todo!();
-        let root = deserializer.deserialize_map(HistoryTreeEntryVisitor);
+        deserializer.deserialize_map(HistoryTreeEntryVisitor)
     }
 }
 
@@ -248,7 +248,11 @@ impl<'de> Deserialize<'de> for HistoryTree {
     where
         D: Deserializer<'de>
     {
-        todo!()
+        let root = HistoryTreeEntryPtr::deserialize(deserializer)?.0;
+        Ok(Self {
+            root: Rc::clone(&root),
+            current_entry: root,
+        })
     }
 }
 
@@ -259,7 +263,7 @@ mod tests_for_history_tree {
     fn init_history_tree() -> HistoryTree {
         let root = Rc::new(HistoryTreeEntry {
             label: "/".to_string(),
-            parent: Weak::new(),
+            parent: RefCell::new(Weak::new()),
             last_visited_child: RefCell::new(None),
             children: RefCell::new(vec![]),
         });
@@ -276,12 +280,12 @@ mod tests_for_history_tree {
 
         tree.visit("foo");
         assert_eq!(tree.current_entry().label, "foo");
-        assert_eq!(tree.current_entry().parent.upgrade().unwrap().label, "/");
+        assert_eq!(tree.current_entry().parent.borrow().upgrade().unwrap().label, "/");
 
         tree.visit("bar");
         assert_eq!(tree.current_entry().label, "bar");
-        assert_eq!(tree.current_entry().parent.upgrade().unwrap().label, "foo");
-        assert_eq!(tree.current_entry().parent.upgrade().unwrap().parent.upgrade().unwrap().label, "/");
+        assert_eq!(tree.current_entry().parent.borrow().upgrade().unwrap().label, "foo");
+        assert_eq!(tree.current_entry().parent.borrow().upgrade().unwrap().parent.borrow().upgrade().unwrap().label, "/");
 
     }
 
@@ -412,7 +416,8 @@ mod tests_for_history_tree {
     fn test_deserialize() {
         //let mut tree = HistoryTree::from_abs_path("/");
         let mut tree = HistoryTree::from_abs_path("/foo/bar");
-        //tree.change_dir("/foo/baz");
+        tree.change_dir("/foo/baz");
+        println!("{:#?}", tree);
 
         let ser = serde_json::to_string(&tree).unwrap();
         println!("{}", ser); //{"label":"/","last_visited_child":null,"children":[]}
