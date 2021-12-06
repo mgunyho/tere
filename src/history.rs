@@ -193,7 +193,9 @@ impl<'de> Deserialize<'de> for HistoryTreeEntry {
                 }
 
                 let children: Vec<Rc<HistoryTreeEntry>> = children.ok_or_else(|| deError::missing_field("children"))?
-                    .drain(..).map(|c| Rc::new(c)).collect();
+                    .drain(..)
+                    //.map(|c| {c.parent = Rc::downgrade(&ret); c})
+                    .map(|c| Rc::new(c)).collect();
 
                 let last_visited_child = last_visited_child
                     .ok_or_else(|| deError::missing_field("last_visited_child"))?
@@ -207,9 +209,11 @@ impl<'de> Deserialize<'de> for HistoryTreeEntry {
                     children: RefCell::new(children),
                 };
 
+                let ret = Rc::new(ret);
+
                 for child in ret.children.borrow_mut().iter() {
-                    //TODO: how to do this???
-                    child.parent = Rc::downgrade(&Rc::new(ret));
+                    //TODO: how to do this??? can't return Rc<> from serialize...
+                    child.parent = Rc::downgrade(&ret);
                 }
 
                 Ok(ret)
