@@ -13,7 +13,7 @@ use crossterm::{
     },
     Result as CTResult,
 };
-use home::home_dir;
+use dirs::home_dir;
 
 use clap::{App, Arg, ArgMatches};
 
