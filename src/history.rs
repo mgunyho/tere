@@ -209,17 +209,20 @@ impl<'de> Deserialize<'de> for HistoryTreeEntry {
                     children: RefCell::new(children),
                 };
 
+                /*
                 let ret = Rc::new(ret);
-
                 for child in ret.children.borrow_mut().iter() {
                     //TODO: how to do this??? can't return Rc<> from serialize...
                     child.parent = Rc::downgrade(&ret);
                 }
+                */
 
                 Ok(ret)
             }
         }
 
+        //TODO: fix parent relationships here?
+        todo!();
         deserializer.deserialize_map(HistoryTreeEntryVisitor)
     }
 }
