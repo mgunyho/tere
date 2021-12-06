@@ -424,9 +424,7 @@ mod tests_for_history_tree {
         let tree2: HistoryTree = serde_json::from_str(&ser).unwrap();
         println!("{:#?}", tree2);
 
-        //assert_eq!(ser, r#"{"label":"/","last_visited_child":"foo","children":[{"label":"foo","last_visited_child":"baz","children":[{"label":"bar","last_visited_child":null,"children":[]},{"label":"baz","last_visited_child":null,"children":[]}]}]}"#);
-
-        todo!()
+        assert_eq!(ser, serde_json::to_string(&tree2).unwrap());
 
     }
 
