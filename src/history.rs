@@ -152,7 +152,9 @@ impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
         D: Deserializer<'de>
     {
 
-        struct HistoryTreeEntryVisitor;
+        struct HistoryTreeEntryVisitor {
+            cur_parent: Rc<HistoryTreeEntry>,
+        };
 
         impl<'de> Visitor<'de> for HistoryTreeEntryVisitor {
             type Value = HistoryTreeEntryPtr;
@@ -214,23 +216,29 @@ impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
                 let ret = HistoryTreeEntry {
                     label: label.ok_or_else(|| deError::missing_field("label"))?,
                     last_visited_child: RefCell::new(last_visited_child),
-                    parent: Weak::new(), //TODO
+                    parent: Rc::downgrade(&self.cur_parent),
                     children: RefCell::new(children),
                 };
-
                 let ret = Rc::new(ret);
-                for child in ret.children.borrow_mut().iter() {
-                    //TODO: how to do this??? can't return Rc<> from serialize...
-                    child.parent = Rc::downgrade(&ret);
-                }
+
+                ////let ret = self.cur_parent;
+                //self.cur_parent.children.replace(children);
+                //let ret = self.cur_parent;
+
+
+                //for child in ret.children.borrow_mut().iter() {
+                //    //TODO: how to do this??? can't return Rc<> from serialize...
+                //    child.parent = Rc::downgrade(&ret);
+                //}
 
                 Ok(HistoryTreeEntryPtr(ret))
             }
         }
 
         //TODO: fix parent relationships here?
-        todo!();
-        let root = deserializer.deserialize_map(HistoryTreeEntryVisitor);
+        //todo!();
+        let root = Rc::new(HistoryTreeEntry::new("/"));
+        deserializer.deserialize_map(HistoryTreeEntryVisitor { cur_parent: Rc::clone(&root) })
     }
 }
 
@@ -248,7 +256,11 @@ impl<'de> Deserialize<'de> for HistoryTree {
     where
         D: Deserializer<'de>
     {
-        todo!()
+        let root = HistoryTreeEntryPtr::deserialize(deserializer)?.0;
+        Ok(Self {
+            root: Rc::clone(&root),
+            current_entry: root,
+        })
     }
 }
 
