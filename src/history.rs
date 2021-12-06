@@ -194,10 +194,7 @@ impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
                     }
                 }
 
-                let label = label.ok_or_else(|| deError::missing_field("label"))?;
-
                 //TODO: cleanup
-                /* attempt 1
                 let children: Vec<Rc<HistoryTreeEntry>> = children
                     .ok_or_else(|| deError::missing_field("children"))?
                     .drain(..)
@@ -214,7 +211,7 @@ impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
                     .flatten();
 
                 let ret = HistoryTreeEntry {
-                    label: 
+                    label: label.ok_or_else(|| deError::missing_field("label"))?,
                     last_visited_child: RefCell::new(last_visited_child),
                     parent: Weak::new(), //TODO
                     children: RefCell::new(children),
@@ -225,17 +222,6 @@ impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
                     //TODO: how to do this??? can't return Rc<> from serialize...
                     child.parent = Rc::downgrade(&ret);
                 }
-
-                */
-
-                // attempt 2
-                let mut ret = Rc::new(HistoryTreeEntry::new(&label));
-                let children: Vec<Rc<HistoryTreeEntry>> = children
-                    .ok_or_else(|| deError::missing_field("children"))?
-                    .drain(..)
-                    .map(|c| { c.0.parent = Rc::downgrade(&ret); c.0})
-                    .collect()
-                    ;
 
                 Ok(HistoryTreeEntryPtr(ret))
             }
