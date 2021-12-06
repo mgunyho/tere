@@ -35,6 +35,8 @@ impl HistoryTreeEntry {
     }
 }
 
+struct HistoryTreeEntryPtr(Rc<HistoryTreeEntry>);
+
 pub struct HistoryTree {
     root: Rc<HistoryTreeEntry>,
     current_entry: Rc<HistoryTreeEntry>,
@@ -143,7 +145,7 @@ impl Serialize for HistoryTreeEntry {
 }
 
 
-impl<'de> Deserialize<'de> for HistoryTreeEntry {
+impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>
@@ -152,7 +154,7 @@ impl<'de> Deserialize<'de> for HistoryTreeEntry {
         struct HistoryTreeEntryVisitor;
 
         impl<'de> Visitor<'de> for HistoryTreeEntryVisitor {
-            type Value = Rc<HistoryTreeEntry>;
+            type Value = HistoryTreeEntryPtr;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
                 formatter.write_str("valid history tree data")
@@ -192,10 +194,15 @@ impl<'de> Deserialize<'de> for HistoryTreeEntry {
                     }
                 }
 
-                let children: Vec<Rc<HistoryTreeEntry>> = children.ok_or_else(|| deError::missing_field("children"))?
-                    //.drain(..)
+                //TODO: cleanup
+                let children: Vec<Rc<HistoryTreeEntry>> = children
+                    .ok_or_else(|| deError::missing_field("children"))?
+                    .drain(..)
+                    //.map(|c| HistoryTreeEntryPtr(c))
+                    .map(|p| p.0)
                     ////.map(|c| {c.parent = Rc::downgrade(&ret); c})
-                    //.map(|c| Rc::new(c)).collect()
+                    //.map(|c| Rc::new(c))
+                    .collect()
                     ;
 
                 let last_visited_child = last_visited_child
@@ -216,13 +223,31 @@ impl<'de> Deserialize<'de> for HistoryTreeEntry {
                     child.parent = Rc::downgrade(&ret);
                 }
 
-                Ok(ret)
+                Ok(HistoryTreeEntryPtr(ret))
             }
         }
 
         //TODO: fix parent relationships here?
         todo!();
-        deserializer.deserialize_map(HistoryTreeEntryVisitor)
+        let root = deserializer.deserialize_map(HistoryTreeEntryVisitor);
+    }
+}
+
+impl Serialize for HistoryTree {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer
+    {
+        self.root.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for HistoryTree {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>
+    {
+        todo!()
     }
 }
 
@@ -388,9 +413,9 @@ mod tests_for_history_tree {
         let mut tree = HistoryTree::from_abs_path("/foo/bar");
         //tree.change_dir("/foo/baz");
 
-        let ser = serde_json::to_string(&tree.root.as_ref()).unwrap();
+        let ser = serde_json::to_string(&tree).unwrap();
         println!("{}", ser); //{"label":"/","last_visited_child":null,"children":[]}
-        let tree2: HistoryTreeEntry = serde_json::from_str(&ser).unwrap();
+        let tree2: HistoryTree = serde_json::from_str(&ser).unwrap();
         println!("{:#?}", tree2);
 
         //assert_eq!(ser, r#"{"label":"/","last_visited_child":"foo","children":[{"label":"foo","last_visited_child":"baz","children":[{"label":"bar","last_visited_child":null,"children":[]},{"label":"baz","last_visited_child":null,"children":[]}]}]}"#);
