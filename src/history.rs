@@ -136,7 +136,7 @@ impl Serialize for HistoryTreeEntry {
         let mut map = serializer.serialize_map(Some(3))?;
         map.serialize_entry("label", &self.label)?;
         map.serialize_entry("last_visited_child", &self.last_visited_child_label())?;
-        map.serialize_entry("visited_children", &*self.children.borrow())?;
+        map.serialize_entry("children", &*self.children.borrow())?;
         map.end()
     }
 }
@@ -294,7 +294,7 @@ mod tests_for_history_tree {
         let mut tree = HistoryTree::from_abs_path("/foo/bar");
         tree.change_dir("/foo/baz");
         let ser = serde_json::to_string(&tree.root.as_ref()).unwrap();
-        assert_eq!(ser, r#"{"label":"/","last_visited_child":"foo","visited_children":[{"label":"foo","last_visited_child":"baz","visited_children":[{"label":"bar","last_visited_child":null,"visited_children":[]},{"label":"baz","last_visited_child":null,"visited_children":[]}]}]}"#);
+        assert_eq!(ser, r#"{"label":"/","last_visited_child":"foo","children":[{"label":"foo","last_visited_child":"baz","children":[{"label":"bar","last_visited_child":null,"children":[]},{"label":"baz","last_visited_child":null,"children":[]}]}]}"#);
     }
 
 }
