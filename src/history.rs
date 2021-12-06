@@ -28,8 +28,8 @@ impl HistoryTreeEntry {
             .borrow()
             .as_ref()
             .and_then(|ptr| ptr.upgrade())
-            // note: tried .map(|parent| parent.label.as_str()), but it's no good.
-            .map(|parent| parent.label.clone())
+            // note: tried .map(|child| child.label.as_str()), but it's no good.
+            .map(|child| child.label.clone())
     }
 }
 
