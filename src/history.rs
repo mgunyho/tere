@@ -104,6 +104,7 @@ impl HistoryTree {
 impl std::fmt::Debug for HistoryTreeEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         f.debug_map()
+            .entry(&"parent", &self.parent.upgrade().map(|p| p.label.clone()).unwrap_or("".to_string()))
             .entry(&"label", &self.label)
             .entry(&"last_visited_child", &self.last_visited_child_label().unwrap_or("".to_string()))
             .entry(&"children", &self.children.borrow())
