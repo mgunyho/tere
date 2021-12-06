@@ -340,7 +340,7 @@ impl TereAppState {
             self.info_msg = format!("final_path: {:?}, prev_dir: {:?}", final_path, prev_dir); //TODO: clean up
             if let Some(idx) = self.index_of_filename(prev_dir) {
                 self.move_cursor(idx as i32, false);
-            } //TODO: move cursor also here
+            } //TODO: move cursor also here (if folder name doesn't exist anymore)
         } else {
             // move cursor one position down, so we're not at '..'
             self.move_cursor(1, false);
