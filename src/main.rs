@@ -301,7 +301,7 @@ impl<'a> TereTui<'a> {
         // draw entries
         for row in 0..max_y {
             // highlight the current row under the cursor when applicable
-            let highlight = self.app_state.cursor_pos == row.into()
+            let highlight = self.app_state.cursor_pos == (row as u32)
                 && (!is_search || (any_matches || any_visible_items));
             self.draw_main_window_row(row, highlight)?;
         }
