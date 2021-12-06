@@ -1,7 +1,8 @@
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 use std::path::Path;
-use serde::ser::{Serialize, Serializer, SerializeMap, SerializeSeq};
+use serde::ser::{Serialize, Serializer, SerializeMap};
+use serde::de::{Deserialize, Deserializer, Visitor, MapAccess, SeqAccess, Error as deError};
 
 
 // Tree struct based on https://doc.rust-lang.org/stable/book/ch15-06-reference-cycles.html
@@ -138,6 +139,72 @@ impl Serialize for HistoryTreeEntry {
         map.serialize_entry("last_visited_child", &self.last_visited_child_label())?;
         map.serialize_entry("children", &*self.children.borrow())?;
         map.end()
+    }
+}
+
+
+impl<'de> Deserialize<'de> for HistoryTreeEntry {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>
+    {
+
+        struct HistoryTreeEntryVisitor;
+
+        impl<'de> Visitor<'de> for HistoryTreeEntryVisitor {
+            type Value = HistoryTreeEntry;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("valid history tree data")
+            }
+
+            fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>
+            {
+                let mut label: Option<String> = None;
+                let mut last_visited_child: Option<Option<String>> = None;
+                let mut children: Option<Vec<Self::Value>> = None;
+
+                while let Some(key) = access.next_key()? {
+                    match key {
+                        "label" => {
+                            if label.is_some() {
+                                return Err(deError::duplicate_field("label"));
+                            }
+                            label = Some(access.next_value()?);
+                        },
+                        "last_visited_child" => {
+                            if last_visited_child.is_some() {
+                                return Err(deError::duplicate_field("last_visited_child"));
+                            }
+                            let val: Option<String> = access.next_value()?;
+                            last_visited_child = Some(val); //Some(if val.is_none() { None } else { Some(val) });
+                        },
+                        "children" => {
+                            if children.is_some() {
+                                return Err(deError::duplicate_field("children"));
+                            }
+                            let val: Vec<Self::Value> = access.next_value()?;
+                            children = Some(val);
+                        },
+                        k => return Err(deError::unknown_field(k, &["label", "last_visited_child", "children"])),
+                    }
+                }
+
+                let children = children.ok_or_else(|| deError::missing_field("children"))?
+                    .drain(..).map(|c| Rc::new(c)).collect();
+                //let last_visited_child = children.iter().find(|c| c.label);
+                Ok(HistoryTreeEntry {
+                    label: label.ok_or_else(|| deError::missing_field("label"))?,
+                    last_visited_child: RefCell::new(None), //last_visited_child.ok_or_else(|| deError::missing_field("last_visited_child"))?, TODO
+                    parent: Weak::new(), //TODO
+                    children: RefCell::new(children),
+                })
+            }
+        }
+
+        deserializer.deserialize_map(HistoryTreeEntryVisitor)
     }
 }
 
@@ -295,6 +362,23 @@ mod tests_for_history_tree {
         tree.change_dir("/foo/baz");
         let ser = serde_json::to_string(&tree.root.as_ref()).unwrap();
         assert_eq!(ser, r#"{"label":"/","last_visited_child":"foo","children":[{"label":"foo","last_visited_child":"baz","children":[{"label":"bar","last_visited_child":null,"children":[]},{"label":"baz","last_visited_child":null,"children":[]}]}]}"#);
+    }
+
+    #[test]
+    fn test_deserialize() {
+        //let mut tree = HistoryTree::from_abs_path("/");
+        let mut tree = HistoryTree::from_abs_path("/foo/bar");
+        //tree.change_dir("/foo/baz");
+
+        let ser = serde_json::to_string(&tree.root.as_ref()).unwrap();
+        println!("{}", ser); //{"label":"/","last_visited_child":null,"children":[]}
+        let tree2: HistoryTreeEntry = serde_json::from_str(&ser).unwrap();
+        println!("{:#?}", tree2);
+
+        //assert_eq!(ser, r#"{"label":"/","last_visited_child":"foo","children":[{"label":"foo","last_visited_child":"baz","children":[{"label":"bar","last_visited_child":null,"children":[]},{"label":"baz","last_visited_child":null,"children":[]}]}]}"#);
+
+        todo!()
+
     }
 
 }
