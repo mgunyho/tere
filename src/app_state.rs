@@ -318,7 +318,7 @@ impl TereAppState {
         } else {
             path.to_string()
         };
-        let old_cwd = std::env::current_dir();
+
         self.clear_search();
         std::env::set_current_dir(&final_path)?;
         self.update_ls_output_buf();
@@ -335,9 +335,7 @@ impl TereAppState {
             self.history.change_dir(&final_path);
         }
 
-        //self.info_msg = format!("final_path: {}", final_path); //TODO: clean up
         if let Some(prev_dir) = self.history.current_entry().last_visited_child_label() {
-            self.info_msg = format!("final_path: {:?}, prev_dir: {:?}", final_path, prev_dir); //TODO: clean up
             if let Some(idx) = self.index_of_filename(prev_dir) {
                 self.move_cursor(idx as i32, false);
             } //TODO: move cursor also here (if folder name doesn't exist anymore)
@@ -345,6 +343,7 @@ impl TereAppState {
             // move cursor one position down, so we're not at '..'
             self.move_cursor(1, false);
         }
+
         Ok(())
     }
 
