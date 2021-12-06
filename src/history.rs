@@ -35,7 +35,6 @@ impl HistoryTreeEntry {
     }
 }
 
-struct HistoryTreeEntryPtr(Rc<HistoryTreeEntry>);
 
 pub struct HistoryTree {
     root: Rc<HistoryTreeEntry>,
@@ -146,6 +145,8 @@ impl Serialize for HistoryTreeEntry {
     }
 }
 
+// Wrapper for Rc<HistoryTreeEntry> to make it possible to impl Deserialize
+struct HistoryTreeEntryPtr(Rc<HistoryTreeEntry>);
 
 impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -198,16 +199,9 @@ impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
 
                 let label = label.ok_or_else(|| deError::missing_field("label"))?;
 
-                //TODO: cleanup
                 let children: Vec<Rc<HistoryTreeEntry>> = children
                     .ok_or_else(|| deError::missing_field("children"))?
-                    .drain(..)
-                    //.map(|c| HistoryTreeEntryPtr(c))
-                    .map(|p| p.0)
-                    ////.map(|c| {c.parent = Rc::downgrade(&ret); c})
-                    //.map(|c| Rc::new(c))
-                    .collect()
-                    ;
+                    .drain(..).map(|p| p.0).collect();
 
                 let last_visited_child = last_visited_child
                     .ok_or_else(|| deError::missing_field("last_visited_child"))?
