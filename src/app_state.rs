@@ -16,6 +16,8 @@ pub use settings::CaseSensitiveMode;
 mod history;
 use history::HistoryTree;
 
+use crate::error::TereError;
+
 pub const NO_MATCHES_MSG: &str = "No matches";
 
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
@@ -154,7 +156,7 @@ pub struct TereAppState {
 }
 
 impl TereAppState {
-    pub fn init(cli_args: &ArgMatches, window_w: u32, window_h: u32) -> Result<Self, clap::Error> {
+    pub fn init(cli_args: &ArgMatches, window_w: u32, window_h: u32) -> Result<Self, TereError> {
         let mut ret = Self {
             main_win_w: window_w,
             main_win_h: window_h,
