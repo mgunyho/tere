@@ -2,6 +2,7 @@
 
 use std::fmt;
 use std::str::FromStr;
+use std::path::PathBuf;
 use clap::ArgMatches;
 
 //TODO: config file
@@ -43,6 +44,8 @@ pub struct TereSettings {
     pub case_sensitive: CaseSensitiveMode,
 
     pub autocd_timeout: Option<u64>,
+
+    pub history_file: Option<PathBuf>,
 }
 
 impl TereSettings {
@@ -78,6 +81,19 @@ impl TereSettings {
                 )
             })?.into()
         };
+
+
+        if let Some(hist_file) = args.value_of("history-file") {
+            ret.history_file = if hist_file.is_empty() {
+                None
+            } else {
+                Some(PathBuf::from(hist_file))
+            }
+        } else {
+            ret.history_file = dirs::cache_dir().map(|path| path
+                                                     .join(PathBuf::from(env!("CARGO_PKG_NAME")))
+                                                     .join(PathBuf::from("history.json")));
+        }
 
         Ok(ret)
     }
