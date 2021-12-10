@@ -174,9 +174,17 @@ impl TereAppState {
 
         //read history tree from file, if applicable
         if let Some(hist_file) = &ret.settings.history_file {
-            let mut tree: HistoryTree = serde_json::from_str(&std::fs::read_to_string(hist_file)?)?;
-            tree.change_dir(cwd);
-            ret.history = tree;
+            match std::fs::read_to_string(hist_file) {
+                Ok(file_contents) => {
+                    let mut tree: HistoryTree = serde_json::from_str(&file_contents)?;
+                    tree.change_dir(cwd);
+                    ret.history = tree;
+                },
+                Err(ref e) if e.kind() == ErrorKind::NotFound => {
+                    // history file not created yet, no need to do anything
+                },
+                Err(e) => return Err(e.into()),
+            }
         }
 
         ret.update_header();
