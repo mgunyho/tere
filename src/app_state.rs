@@ -174,6 +174,11 @@ impl TereAppState {
         Ok(ret)
     }
 
+    /// Things to do when the app is about to exit.
+    pub fn on_exit(&self) -> std::io::Result<()> {
+        Ok(())
+    }
+
     ///////////////////////////////////////////
     // Helpers for reading the current state //
     ///////////////////////////////////////////

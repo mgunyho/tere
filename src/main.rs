@@ -567,7 +567,7 @@ impl<'a> TereTui<'a> {
             }
         }
 
-        Ok(())
+        self.app_state.on_exit()
     }
 }
 
