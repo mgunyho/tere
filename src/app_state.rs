@@ -157,6 +157,7 @@ pub struct TereAppState {
 
 impl TereAppState {
     pub fn init(cli_args: &ArgMatches, window_w: u32, window_h: u32) -> Result<Self, TereError> {
+        let cwd = std::env::current_dir()?;
         let mut ret = Self {
             main_win_w: window_w,
             main_win_h: window_h,
@@ -168,8 +169,15 @@ impl TereAppState {
             search_string: "".into(),
             //search_anywhere: false,
             settings: TereSettings::parse_cli_args(cli_args)?,
-            history: HistoryTree::from_abs_path(std::env::current_dir()?),
+            history: HistoryTree::from_abs_path(cwd.clone()),
         };
+
+        //read history tree from file, if applicable
+        if let Some(hist_file) = &ret.settings.history_file {
+            let mut tree: HistoryTree = serde_json::from_str(&std::fs::read_to_string(hist_file)?)?;
+            tree.change_dir(cwd);
+            ret.history = tree;
+        }
 
         ret.update_header();
         ret.update_ls_output_buf();
