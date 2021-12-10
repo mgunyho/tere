@@ -566,7 +566,7 @@ macro_rules! case_sensitive_template {
     }
 }
 
-fn main() -> crossterm::Result<()> {
+fn main() -> Result<(), TereError> {
 
     let cli_args = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
@@ -688,7 +688,7 @@ fn main() -> crossterm::Result<()> {
             TereError::ClapError(e) => e.exit(),
 
             // exit in case of any other error
-            TereError::IoError(e) => return Err(e),
+            e => return Err(e),
         }
     }
 
