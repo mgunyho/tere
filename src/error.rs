@@ -1,4 +1,5 @@
 /// Custom error type
+#[derive(Debug)]
 pub enum TereError {
     IoError(std::io::Error),
     ClapError(clap::Error),
