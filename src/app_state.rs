@@ -319,7 +319,7 @@ impl TereAppState {
         //TODO: show error message (add separate msg box)
     }
 
-    pub fn change_dir(&mut self, path: &str) -> std::io::Result<()> {
+    pub fn change_dir(&mut self, path: &str) -> IOResult<()> {
         // TODO: add option to use xdg-open (or similar) on files?
         // check out https://crates.io/crates/open
         // (or https://docs.rs/opener/0.4.1/opener/)
