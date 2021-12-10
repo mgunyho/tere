@@ -5,6 +5,7 @@ use clap::ArgMatches;
 
 use std::convert::TryFrom;
 use std::ffi::OsStr;
+use std::io::{Result as IOResult, Error as IOError, ErrorKind};
 
 #[path = "settings.rs"]
 mod settings;
@@ -175,7 +176,13 @@ impl TereAppState {
     }
 
     /// Things to do when the app is about to exit.
-    pub fn on_exit(&self) -> std::io::Result<()> {
+    pub fn on_exit(&self) -> IOResult<()> {
+        if let Some(hist_file) = &self.settings.history_file {
+            let parent_dir = hist_file.parent().ok_or(IOError::new(ErrorKind::NotFound,
+                                                                   "history file has no parent folder"))?;
+            std::fs::DirBuilder::new().recursive(true).create(parent_dir)?;
+            std::fs::write(hist_file, serde_json::to_string(&self.history)?)?;
+        }
         Ok(())
     }
 
