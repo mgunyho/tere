@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 use std::path::Path;
 use serde::ser::{Serialize, Serializer, SerializeMap};
-use serde::de::{Deserialize, Deserializer, Visitor, MapAccess, SeqAccess, Error as deError};
+use serde::de::{Deserialize, Deserializer, Visitor, MapAccess, Error as deError};
 
 
 // Tree struct based on https://doc.rust-lang.org/stable/book/ch15-06-reference-cycles.html
@@ -68,7 +68,7 @@ impl HistoryTree {
 
         let child = found_child.unwrap_or_else(|| {
             // no existing child with this name found, create a new one
-            let mut child = HistoryTreeEntry::new(fname);
+            let child = HistoryTreeEntry::new(fname);
             child.parent.replace(Rc::downgrade(&self.current_entry));
 
             let child = Rc::new(child);
