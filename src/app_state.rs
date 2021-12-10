@@ -370,13 +370,10 @@ impl TereAppState {
             self.history.change_dir(&final_path);
         }
 
+        // move cursor one position down, so we're not at '..'
+        self.move_cursor(1, false);
         if let Some(prev_dir) = self.history.current_entry().last_visited_child_label() {
-            if let Some(idx) = self.index_of_filename(prev_dir) {
-                self.move_cursor(idx as i32, false);
-            } //TODO: move cursor also here (if folder name doesn't exist anymore)
-        } else {
-            // move cursor one position down, so we're not at '..'
-            self.move_cursor(1, false);
+            self.move_cursor_to_filename(prev_dir);
         }
 
         Ok(())
