@@ -246,8 +246,8 @@ impl TereAppState {
 
     pub fn update_header(&mut self) {
         //TODO: add another row to header (or footer?) with info, like 'tere - type ALT+? for help', and show status message when trying to open file etc
-        let cwd: std::string::String = match std::env::var("PWD") { //NOTE: this is wrong, PWD is not updated when the program's working dir changes
-            Ok(path) => format!("{}", path),
+        let cwd: std::string::String = match std::env::current_dir() {
+            Ok(path) => format!("{}", path.display()),
             Err(e) => format!("Unable to get current dir! ({})", e),
         };
         self.header_msg = cwd;
