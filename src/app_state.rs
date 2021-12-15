@@ -156,6 +156,8 @@ impl TereAppState {
             main_win_w: window_w,
             main_win_h: window_h,
             ls_output_buf: vec![].into(),
+            current_path: std::env::var("PWD").map(|p| PathBuf::from(p))
+                .or_else(|_| std::env::current_dir())?,
             cursor_pos: 0, // TODO: get last value from previous run
             scroll_pos: 0,
             header_msg: "".into(),
