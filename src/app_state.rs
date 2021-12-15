@@ -313,21 +313,20 @@ impl TereAppState {
         } else {
             path.to_string()
         };
-        let old_cwd = std::env::current_dir();
+        let old_cwd = self.current_path.clone();
         self.clear_search();
         std::env::set_current_dir(&final_path)?;
+        self.current_path = PathBuf::from(final_path); //TODO: make this absolute...
         self.update_ls_output_buf();
         //TODO: proper history
         self.cursor_pos = 0;
         self.scroll_pos = 0;
-        if let Ok(old_cwd) = old_cwd {
-            if let Some(old_cwd) = old_cwd.file_name() {
-                if let Some(idx) = self.index_of_filename(old_cwd) {
-                    self.move_cursor(idx as i32, false);
-                } else {
-                    // move cursor one position down, so we're not at '..'
-                    self.move_cursor(1, false);
-                }
+        if let Some(old_cwd) = old_cwd.file_name() {
+            if let Some(idx) = self.index_of_filename(old_cwd) {
+                self.move_cursor(idx as i32, false);
+            } else {
+                // move cursor one position down, so we're not at '..'
+                self.move_cursor(1, false);
             }
         }
         Ok(())
