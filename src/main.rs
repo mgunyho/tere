@@ -667,13 +667,18 @@ fn main() -> Result<(), TereError> {
     // we are now inside the alternate screen, so collect all errors and attempt
     // to leave the alt screen in case of an error
 
-    let res: Result<(), TereError> = terminal::enable_raw_mode()
+    let res: Result<std::path::PathBuf, TereError> = terminal::enable_raw_mode()
         .and_then(|_| stderr.flush()).map_err(TereError::from)
         .and_then(|_| TereTui::init(&cli_args, &mut stderr))
-        .and_then(|mut ui| ui.main_event_loop().map_err(TereError::from));
+        .and_then(|mut ui| {
+            ui.main_event_loop().map_err(TereError::from)
+                .map(|_| ui.app_state.current_path)
+        });
 
     // Always disable raw mode
-    let res = res.and(terminal::disable_raw_mode().map_err(TereError::from));
+    let raw_mode_success = terminal::disable_raw_mode().map_err(TereError::from);
+    // this 'and' has to be in this order to keep the path if both results are ok.
+    let res = raw_mode_success.and(res);
 
     execute!(
         stderr,
@@ -682,19 +687,21 @@ fn main() -> Result<(), TereError> {
         )?;
 
     // Check if there was an error
-    if let Err(err) = res {
-        match err {
-            // Print pretty error message if the error was in arg parsing
-            TereError::ClapError(e) => e.exit(),
+    let final_path = match res {
+        Err(err) => {
+            match err {
+                // Print pretty error message if the error was in arg parsing
+                TereError::ClapError(e) => e.exit(),
 
-            // exit in case of any other error
-            e => return Err(e),
+                // exit in case of any other error
+                e => return Err(e),
+            }
         }
-    }
+        Ok(path) => path
+    };
 
-    // no error, print cwd
-    let cwd = std::env::current_dir().expect("error getting cwd");
-    println!("{}", cwd.display());
+    // No error, print cwd, as returned by the app state
+    println!("{}", final_path.display());
 
     Ok(())
 }
