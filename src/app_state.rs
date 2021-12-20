@@ -132,7 +132,7 @@ pub struct TereAppState {
     //sort_mode: SortMode // TODO: sort by date etc
 
     // Have to manually keep track of the logical absolute path of our app, see https://stackoverflow.com/a/70309860/5208725
-    current_path: PathBuf,
+    pub current_path: PathBuf,
 
     // The row on which the cursor is currently on, counted starting from the
     // top of the screen (not from the start of `ls_output_buf`). Note that this
