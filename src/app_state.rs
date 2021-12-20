@@ -156,6 +156,9 @@ impl TereAppState {
             main_win_w: window_w,
             main_win_h: window_h,
             ls_output_buf: vec![].into(),
+            // Try to read the current folder from the PWD environment variable, since it doesn't
+            // have symlinks resolved (which is what we want). If this fails for some reason (on
+            // windows?), default to std::env::current_dir, which has resolved symlinks.
             current_path: std::env::var("PWD").map(|p| PathBuf::from(p))
                 .or_else(|_| std::env::current_dir())?,
             cursor_pos: 0, // TODO: get last value from previous run
