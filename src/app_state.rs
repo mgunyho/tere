@@ -5,7 +5,7 @@ use clap::ArgMatches;
 
 use std::convert::TryFrom;
 use std::ffi::OsStr;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf, Component};
 
 #[path = "settings.rs"]
 mod settings;
@@ -306,13 +306,56 @@ impl TereAppState {
         // TODO: add option to use xdg-open (or similar) on files?
         // check out https://crates.io/crates/open
         // (or https://docs.rs/opener/0.4.1/opener/)
-        let final_path = if path.is_empty() {
+        let target_path = if path.is_empty() {
             //TODO: error here if result is empty?
             self.get_item_under_cursor()
                 .map_or("".to_string(), |s| s.file_name_checked())
         } else {
             path.to_string()
         };
+        let target_path = PathBuf::from(target_path);
+
+        // NOTE: have to manually normalize path because the std doesn't have that feature yet, as
+        // of December 2021.
+        // see:
+        // - https://github.com/rust-lang/rfcs/issues/2208
+        // - https://github.com/gdzx/rfcs/commit/3c69f787b5b32fb9c9960c1e785e5cabcc794238
+        // - abs_path crate
+        // - relative_path crate
+        // This function is copy-pasted from cargo::util::paths::normalize_path, https://docs.rs/cargo-util/0.1.1/cargo_util/paths/fn.normalize_path.html, under the MIT license
+        fn normalize_path(path: &Path) -> PathBuf {
+            let mut components = path.components().peekable();
+            let mut ret = if let Some(c @ Component::Prefix(..)) = components.peek().cloned() {
+                components.next();
+                PathBuf::from(c.as_os_str())
+            } else {
+                PathBuf::new()
+            };
+
+            for component in components {
+                match component {
+                    Component::Prefix(..) => unreachable!(),
+                    Component::RootDir => {
+                        ret.push(component.as_os_str());
+                    }
+                    Component::CurDir => {}
+                    Component::ParentDir => {
+                        ret.pop();
+                    }
+                    Component::Normal(c) => {
+                        ret.push(c);
+                    }
+                }
+            }
+            ret
+        }
+
+        let final_path = if target_path.is_absolute() {
+            target_path
+        } else {
+            normalize_path(&self.current_path.join(target_path))
+        };
+
         let old_cwd = self.current_path.clone();
         self.clear_search();
         std::env::set_current_dir(&final_path)?;
