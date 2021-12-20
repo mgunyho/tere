@@ -418,7 +418,7 @@ impl TereAppState {
         // path out of sync.
         self.history.change_dir(&final_path);
 
-        // move cursor one position down, so we're not at '..'
+        // move cursor one position down, so we're not at '..' if we've entered a folder with no history
         self.move_cursor(1, false);
         if let Some(prev_dir) = self.history.current_entry().last_visited_child_label() {
             self.move_cursor_to_filename(prev_dir);
