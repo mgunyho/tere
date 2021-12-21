@@ -91,8 +91,8 @@ impl TereSettings {
             }
         } else {
             ret.history_file = dirs::cache_dir().map(|path| path
-                                                     .join(PathBuf::from(env!("CARGO_PKG_NAME")))
-                                                     .join(PathBuf::from("history.json")));
+                                                     .join(env!("CARGO_PKG_NAME"))
+                                                     .join("history.json"));
         }
 
         Ok(ret)
