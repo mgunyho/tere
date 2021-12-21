@@ -401,7 +401,6 @@ impl TereAppState {
             normalize_path(&self.current_path.join(target_path))
         };
 
-        let old_cwd = self.current_path.clone();
         self.clear_search();
         std::env::set_current_dir(&final_path)?;
         self.current_path = PathBuf::from(&final_path); //TODO: make this absolute...
