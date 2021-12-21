@@ -591,6 +591,7 @@ fn main() -> crossterm::Result<()> {
         .arg(Arg::with_name("filter-search")
              .long("filter-search")
              //.visible_alias("fs") //TODO: consider
+             .short("f")
              .help("Show only items matching the search in listing")
              .long_help("Show only items matching the search in listing. This overrides the --no-filter-search option.")
              .overrides_with("filter-search")
@@ -599,6 +600,7 @@ fn main() -> crossterm::Result<()> {
         .arg(Arg::with_name("no-filter-search")
              .long("no-filter-search")
              //.visible_alias("nfs") //TODO: consider
+             .short("F")
              .help("Show all items in the listing even when searching (default)")
              .long_help("Show all items in the listing even when searching (default). This overrides the --filter-search option.")
              .overrides_with_all(&["filter-search", "no-filter-search"])
@@ -607,7 +609,7 @@ fn main() -> crossterm::Result<()> {
         .arg(Arg::with_name("folders-only")
              .long("folders-only")
              //.visible_alias("fo") //TODO: consider
-             //.short("f")  // TODO: check conflicts
+             .short("d")
              .help("Show only folders in the listing")
              .long_help("Show only folders (and symlinks pointing to folders) in the listing. This overrides the --no-folders-only option.")
              .overrides_with("folders-only")
@@ -616,7 +618,7 @@ fn main() -> crossterm::Result<()> {
         .arg(Arg::with_name("no-folders-only")
              .long("no-folders-only")
              //.visible_alias("nfo") //TODO: consider
-             //.short("f")  // TODO: check conflicts
+             .short("D")
              .help("Show files and folders in the listing (default)")
              .long_help("Show both files and folders in the listing. This is the default view mode. This overrides the --folders-only option.")
              .overrides_with_all(&["folders-only", "no-folders-only"])
@@ -624,7 +626,7 @@ fn main() -> crossterm::Result<()> {
              )
         .arg(Arg::with_name("case-sensitive")
              .long("case-sensitive")
-             //.short("c")  // TODO: check conflicts
+             .short("s")  // same as ripgrep
              .help("Case sensitive search")
              .long_help(&format!("Enable case-sensitive search.\n\n{}",
                         case_sensitive_template!("ignore-case", "smart-case")))
@@ -633,6 +635,7 @@ fn main() -> crossterm::Result<()> {
             )
         .arg(Arg::with_name("ignore-case")
              .long("ignore-case")
+             .short("i") // same as ripgrep
              .help("Ignore case when searching")
              .long_help(&format!("Enable case-insensitive search.\n\n{}",
                         case_sensitive_template!("case-sensitive", "smart-case")))
@@ -641,6 +644,7 @@ fn main() -> crossterm::Result<()> {
             )
         .arg(Arg::with_name("smart-case")
              .long("smart-case")
+             .short("S") // same as ripgrep
              .help("Smart case search (default)")
              .long_help(&format!("Enable smart-case search. If the search query contains only lowercase letters, search case insensitively. Otherwise search case sensitively. This is the default search mode.\n\n{}",
                         case_sensitive_template!("case-sensitive", "ignore-case")))
