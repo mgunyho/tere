@@ -39,6 +39,7 @@ functionality found in many GUI file managers.
     aliases["tere"] = _tere
     ```
 
+    If isntructions for your shell are missing, feel free to send a pull request that includes them!
 
 ## User guide
 
