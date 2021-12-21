@@ -85,7 +85,7 @@ By default, the searching uses "smart case", meaning that if the query contains
 only lowercase letters, case is ignored, but if there are uppercase letters, the
 search is case sensitive. This can be changed with the `--ignore-case` and
 `--case-sensitive` options, or with the keyboard shortcut
-<kbd>Alt</kbd>+<kbd>c</kbd>.
+<kbd>Alt</kbd>+<kbd>c</kbd> while running.
 
 ### CLI options
 
@@ -130,7 +130,7 @@ folder in the terminal and then `cd` to it.
 These programs have a very similar goal as `tere`, to speed up filesystem
 navigation. However, such programs are not suitable for exploration, as they
 require that you visit a folder before you can jump to it. They also differ from
-`tere` in  philosophy; `tere` aims to be deterministic, while the results of a
+`tere` in philosophy; `tere` aims to be deterministic, while the results of a
 fuzzy match or "frecency"-based query vary over time.
 
 - [z](https://github.com/rupa/z)
