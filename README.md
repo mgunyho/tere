@@ -96,7 +96,8 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 - `--filter-search` / `--no-filter-search`: If this option is set, hide items in the output listing that don't match the current search query.
 - `--folders-only` / `--no-folders-only`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
 - `--smart-case` / `--ignore-case` / `--case-sensitive`: Set the case sensitivity mode. The default mode is smart case.
-- `--autocd-timeout` - If only one folder matches the current search query, automatically enter it after this many milliseconds. Can also be set to `off`, which disables this behaviour.
+- `--autocd-timeout`: If only one folder matches the current search query, automatically enter it after this many milliseconds. Can also be set to `off`, which disables this behaviour.
+- `--history-file`: `tere` saves a history of folders you have visited to make browsing more convenient. The value of this option tells where to save the history file in JSON format. It should be an absolute path. Defaults to `$CACHE_DIR/tere/history.json`, where `$CACHE_DIR` is `$XDG_CACHE_HOME` or `~/.cache`. Set to the empty string `''` to disable saving the history. Note that this may reveal parts of your filesystem hierarchy if the file is possible to read by other users.
 
 Some options have two or more versions that override each other (for example
 `--folders-only` and `--no-folders-only`). For such options, whichever is
