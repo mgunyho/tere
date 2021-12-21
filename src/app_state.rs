@@ -75,6 +75,7 @@ impl<T> From<Vec<T>> for FilteredVec<T> {
 pub struct CustomDirEntry {
     _path: std::path::PathBuf,
     pub metadata: Option<std::fs::Metadata>,
+    pub is_symlink: bool,
     _file_name: std::ffi::OsString,
 }
 
@@ -86,6 +87,7 @@ impl CustomDirEntry {
         self._file_name.clone().into_string().unwrap_or("".to_string())
     }
     pub fn path(&self) -> &std::path::PathBuf { &self._path }
+
     pub fn is_dir(&self) -> bool {
         match &self.metadata {
             Some(m) => m.is_dir(),
@@ -99,7 +101,10 @@ impl From<std::fs::DirEntry> for CustomDirEntry
     fn from(e: std::fs::DirEntry) -> Self {
         Self {
             _path: e.path(),
+            // Note: this traverses symlinks, so is_dir will return true for symlinks as well.
             metadata: std::fs::metadata(e.path()).ok(),
+            // NOTE: can't use metadata.is_symlink(), because it's not stable yet as of December 2021
+            is_symlink: std::fs::symlink_metadata(e.path()).map(|metadata| metadata.file_type().is_symlink()).unwrap_or(false),
             _file_name: e.file_name(),
         }
     }
@@ -111,6 +116,7 @@ impl From<&std::path::Path> for CustomDirEntry
         Self {
             _path: p.to_path_buf(),
             metadata: p.metadata().ok(),
+            is_symlink: p.symlink_metadata().map(|metadata| metadata.file_type().is_symlink()).unwrap_or(false),
             _file_name: p.file_name().unwrap_or(p.as_os_str()).to_os_string(),
         }
     }
