@@ -658,6 +658,7 @@ mod tests {
             scroll_pos: 0,
             main_win_h: win_h,
             main_win_w: 10,
+            current_path: "/".into(),
             ls_output_buf: buf,
             header_msg: "".into(),
             info_msg: "".into(),
