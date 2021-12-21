@@ -186,9 +186,9 @@ impl<'a> TereTui<'a> {
         let row_abs = row  + HEADER_SIZE;
         let w: usize = main_window_size()?.0.into();
 
-        let (item, bold) = self.app_state.get_item_at_cursor_pos(row.into()).map_or(
-            ("".to_string(), false),
-            |itm| (itm.file_name_checked(), itm.is_dir())
+        let (item, bold, italic) = self.app_state.get_item_at_cursor_pos(row.into()).map_or(
+            ("".to_string(), false, false),
+            |itm| (itm.file_name_checked(), itm.is_dir(), itm.is_symlink)
         );
         let item_size = item.len();
 
@@ -207,6 +207,10 @@ impl<'a> TereTui<'a> {
             style::ResetColor,
             style::SetAttribute(attr),
         )?;
+
+        if italic {
+            queue!(self.window, style::SetAttribute(Attribute::Italic))?;
+        }
 
         let idx = self.app_state.cursor_pos_to_visible_item_index(row.into());
         if self.app_state.is_searching()
