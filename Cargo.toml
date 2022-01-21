@@ -14,7 +14,7 @@ crossterm = "0.20.0"
 home = "0.5.3"
 
 [dependencies.clap]
-version = "2"
+version = "3"
 features = ["wrap_help"]  # TODO: consider color?
 
 [profile.release]
