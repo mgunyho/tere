@@ -588,6 +588,7 @@ fn main() -> crossterm::Result<()> {
         .version(env!("CARGO_PKG_VERSION"))
         .about(env!("CARGO_PKG_DESCRIPTION"))
         //.author(env!("CARGO_PKG_AUTHORS")) // TODO: rest of these https://stackoverflow.com/a/27841363
+        .global_setting(clap::AppSettings::DeriveDisplayOrder)
         .arg(Arg::new("filter-search")
              .long("filter-search")
              //.visible_alias("fs") //TODO: consider
@@ -595,7 +596,6 @@ fn main() -> crossterm::Result<()> {
              .help("Show only items matching the search in listing")
              .long_help("Show only items matching the search in listing. This overrides the --no-filter-search option.")
              .overrides_with("filter-search")
-             .display_order(1)
             )
         .arg(Arg::new("no-filter-search")
              .long("no-filter-search")
@@ -604,7 +604,6 @@ fn main() -> crossterm::Result<()> {
              .help("Show all items in the listing even when searching (default)")
              .long_help("Show all items in the listing even when searching (default). This overrides the --filter-search option.")
              .overrides_with_all(&["filter-search", "no-filter-search"])
-             .display_order(2)
             )
         .arg(Arg::new("folders-only")
              .long("folders-only")
@@ -613,7 +612,6 @@ fn main() -> crossterm::Result<()> {
              .help("Show only folders in the listing")
              .long_help("Show only folders (and symlinks pointing to folders) in the listing. This overrides the --no-folders-only option.")
              .overrides_with("folders-only")
-             .display_order(11)
              )
         .arg(Arg::new("no-folders-only")
              .long("no-folders-only")
@@ -622,7 +620,6 @@ fn main() -> crossterm::Result<()> {
              .help("Show files and folders in the listing (default)")
              .long_help("Show both files and folders in the listing. This is the default view mode. This overrides the --folders-only option.")
              .overrides_with_all(&["folders-only", "no-folders-only"])
-             .display_order(11)
              )
         .arg(Arg::new("case-sensitive")
              .long("case-sensitive")
@@ -631,7 +628,6 @@ fn main() -> crossterm::Result<()> {
              .long_help(format!("Enable case-sensitive search.\n\n{}",
                         case_sensitive_template!("ignore-case", "smart-case")).as_str())
              .overrides_with_all(&["ignore-case", "smart-case", "case-sensitive"])
-             .display_order(21)
             )
         .arg(Arg::new("ignore-case")
              .long("ignore-case")
@@ -640,7 +636,6 @@ fn main() -> crossterm::Result<()> {
              .long_help(format!("Enable case-insensitive search.\n\n{}",
                         case_sensitive_template!("case-sensitive", "smart-case")).as_str())
              .overrides_with_all(&["smart-case", "ignore-case"])
-             .display_order(22)
             )
         .arg(Arg::new("smart-case")
              .long("smart-case")
@@ -649,7 +644,6 @@ fn main() -> crossterm::Result<()> {
              .long_help(format!("Enable smart-case search. If the search query contains only lowercase letters, search case insensitively. Otherwise search case sensitively. This is the default search mode.\n\n{}",
                         case_sensitive_template!("case-sensitive", "ignore-case")).as_str())
              .overrides_with("smart-case")
-             .display_order(23)
             )
         .arg(Arg::new("autocd-timeout")
              .long("autocd-timeout")
