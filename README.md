@@ -1,9 +1,11 @@
 # tere - a faster alternative to cd + ls
 
 
-`tere` is a terminal file explorer. It is a faster alternative to `cd`ing and
-`ls`ing. It only really does one thing: it allows you to navigate to a folder
-efficiently using a TUI, and then prints the path to that folder when you exit.
+`tere` is a terminal file explorer. It is a faster alternative to using `cd`
+and `ls` to browse folders in your terminal. It only really does one thing: it
+allows you to navigate to a folder efficiently using a TUI, and then prints the
+path to that folder when you exit. Note that `tere` is not a file _manager_, it
+can only be used to browse folders, not to create, rename or delete them.
 
 `tere` aims to be minimal and simple. It should be obvious how to use it.
 Navigating the file system should be efficient and require as few keystrokes as
@@ -39,6 +41,7 @@ functionality found in many GUI file managers.
     aliases["tere"] = _tere
     ```
 
+    If isntructions for your shell are missing, feel free to send a pull request that includes them!
 
 ## User guide
 
@@ -93,10 +96,10 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 
 - `--help` or `-h`: Print a short help and all CLI options. Note that the output goes to stderr, to not interfere with `cd` ing in the shell functions defined above
 - `--version` or `-V`: Print the version of `tere`
-- `--filter-search` / `--no-filter-search`: If this option is set, hide items in the output listing that don't match the current search query.
-- `--folders-only` / `--no-folders-only`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
-- `--smart-case` / `--ignore-case` / `--case-sensitive`: Set the case sensitivity mode. The default mode is smart case.
-- `--autocd-timeout`: If only one folder matches the current search query, automatically enter it after this many milliseconds. Can also be set to `off`, which disables this behaviour.
+- `--filter-search` or `-f` / `--no-filter-search` or `-F`: If this option is set, hide items in the output listing that don't match the current search query.
+- `--folders-only` or `-d` / `--no-folders-only` or `-D`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
+- `--smart-case` or `-S` / `--ignore-case` or `-i` / `--case-sensitive` or `-s`: Set the case sensitivity mode. The default mode is smart case.
+- `--autocd-timeout` - If only one folder matches the current search query, automatically enter it after this many milliseconds. Can also be set to `off`, which disables this behaviour.
 - `--history-file`: To make browsing more convenient, `tere` saves a history of folders you have visited to this file in JSON format. It should be an absolute path. Defaults to `$CACHE_DIR/tere/history.json`, where `$CACHE_DIR` is `$XDG_CACHE_HOME` or `~/.cache`. Set to the empty string `''` to disable saving the history. Note that the history file may reveal parts of your filesystem hierarchy if it is possible to read by other users.
 
 Some options have two or more versions that override each other (for example
@@ -171,4 +174,4 @@ keystrokes to search and navigate folders. File management is not in the scope o
 
 ## License
 
-See the `LICENSE` file.
+Copyright 2021 András Márton Gunyó. Licensed under the EUPL, see the `LICENSE` file.

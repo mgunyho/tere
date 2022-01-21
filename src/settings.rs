@@ -75,9 +75,12 @@ impl TereSettings {
         {
             "off" => None,
             x => u64::from_str(x).map_err(|_| {
-                clap::Error::with_description(
-                    &format!("Invalid value for 'autocd-timeout': '{}'", x),
-                    clap::ErrorKind::InvalidValue
+                // We don't want to pass the App all the way here, so create raw error
+                // NOTE: We don't call error.format(app) anywhere now, but it doesn't seem to
+                // make a difference for this error type.
+                clap::Error::raw(
+                    clap::ErrorKind::InvalidValue,
+                    format!("Invalid value for 'autocd-timeout': '{}'\n", x)
                 )
             })?.into()
         };

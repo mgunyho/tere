@@ -16,7 +16,7 @@ serde_json = "1.0"
 serde = { version = "1.0", features = ["rc"] }
 
 [dependencies.clap]
-version = "2"
+version = "3"
 features = ["wrap_help"]  # TODO: consider color?
 
 [profile.release]
