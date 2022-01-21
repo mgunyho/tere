@@ -641,7 +641,7 @@ fn main() -> Result<(), TereError> {
              .value_name("TIMEOUT or 'off'")
              .overrides_with("autocd-timeout")
             )
-        .arg(Arg::with_name("history-file")
+        .arg(Arg::new("history-file")
              .long("history-file")
              .help("Save a history of visited folders in this file. Set to empty to disable saving history. If not provided, defaults to '$CACHE_DIR/tere/history.json', where $CACHE_DIR is the cache directory, i.e. $XDG_CACHE_HOME or ~/.cache.")
              .takes_value(true)
