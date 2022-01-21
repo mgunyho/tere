@@ -628,8 +628,8 @@ fn main() -> crossterm::Result<()> {
              .long("case-sensitive")
              .short('s')  // same as ripgrep
              .help("Case sensitive search")
-             .long_help(&format!("Enable case-sensitive search.\n\n{}",
-                        case_sensitive_template!("ignore-case", "smart-case")))
+             .long_help(format!("Enable case-sensitive search.\n\n{}",
+                        case_sensitive_template!("ignore-case", "smart-case")).as_str())
              .overrides_with_all(&["ignore-case", "smart-case", "case-sensitive"])
              .display_order(21)
             )
@@ -637,8 +637,8 @@ fn main() -> crossterm::Result<()> {
              .long("ignore-case")
              .short('i') // same as ripgrep
              .help("Ignore case when searching")
-             .long_help(&format!("Enable case-insensitive search.\n\n{}",
-                        case_sensitive_template!("case-sensitive", "smart-case")))
+             .long_help(format!("Enable case-insensitive search.\n\n{}",
+                        case_sensitive_template!("case-sensitive", "smart-case")).as_str())
              .overrides_with_all(&["smart-case", "ignore-case"])
              .display_order(22)
             )
@@ -646,8 +646,8 @@ fn main() -> crossterm::Result<()> {
              .long("smart-case")
              .short('S') // same as ripgrep
              .help("Smart case search (default)")
-             .long_help(&format!("Enable smart-case search. If the search query contains only lowercase letters, search case insensitively. Otherwise search case sensitively. This is the default search mode.\n\n{}",
-                        case_sensitive_template!("case-sensitive", "ignore-case")))
+             .long_help(format!("Enable smart-case search. If the search query contains only lowercase letters, search case insensitively. Otherwise search case sensitively. This is the default search mode.\n\n{}",
+                        case_sensitive_template!("case-sensitive", "ignore-case")).as_str())
              .overrides_with("smart-case")
              .display_order(23)
             )
