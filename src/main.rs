@@ -588,7 +588,7 @@ fn main() -> crossterm::Result<()> {
         .version(env!("CARGO_PKG_VERSION"))
         .about(env!("CARGO_PKG_DESCRIPTION"))
         //.author(env!("CARGO_PKG_AUTHORS")) // TODO: rest of these https://stackoverflow.com/a/27841363
-        .arg(Arg::with_name("filter-search")
+        .arg(Arg::new("filter-search")
              .long("filter-search")
              //.visible_alias("fs") //TODO: consider
              .short('f')
@@ -597,7 +597,7 @@ fn main() -> crossterm::Result<()> {
              .overrides_with("filter-search")
              .display_order(1)
             )
-        .arg(Arg::with_name("no-filter-search")
+        .arg(Arg::new("no-filter-search")
              .long("no-filter-search")
              //.visible_alias("nfs") //TODO: consider
              .short('F')
@@ -606,7 +606,7 @@ fn main() -> crossterm::Result<()> {
              .overrides_with_all(&["filter-search", "no-filter-search"])
              .display_order(2)
             )
-        .arg(Arg::with_name("folders-only")
+        .arg(Arg::new("folders-only")
              .long("folders-only")
              //.visible_alias("fo") //TODO: consider
              .short('d')
@@ -615,7 +615,7 @@ fn main() -> crossterm::Result<()> {
              .overrides_with("folders-only")
              .display_order(11)
              )
-        .arg(Arg::with_name("no-folders-only")
+        .arg(Arg::new("no-folders-only")
              .long("no-folders-only")
              //.visible_alias("nfo") //TODO: consider
              .short('D')
@@ -624,7 +624,7 @@ fn main() -> crossterm::Result<()> {
              .overrides_with_all(&["folders-only", "no-folders-only"])
              .display_order(11)
              )
-        .arg(Arg::with_name("case-sensitive")
+        .arg(Arg::new("case-sensitive")
              .long("case-sensitive")
              .short('s')  // same as ripgrep
              .help("Case sensitive search")
@@ -633,7 +633,7 @@ fn main() -> crossterm::Result<()> {
              .overrides_with_all(&["ignore-case", "smart-case", "case-sensitive"])
              .display_order(21)
             )
-        .arg(Arg::with_name("ignore-case")
+        .arg(Arg::new("ignore-case")
              .long("ignore-case")
              .short('i') // same as ripgrep
              .help("Ignore case when searching")
@@ -642,7 +642,7 @@ fn main() -> crossterm::Result<()> {
              .overrides_with_all(&["smart-case", "ignore-case"])
              .display_order(22)
             )
-        .arg(Arg::with_name("smart-case")
+        .arg(Arg::new("smart-case")
              .long("smart-case")
              .short('S') // same as ripgrep
              .help("Smart case search (default)")
@@ -651,7 +651,7 @@ fn main() -> crossterm::Result<()> {
              .overrides_with("smart-case")
              .display_order(23)
             )
-        .arg(Arg::with_name("autocd-timeout")
+        .arg(Arg::new("autocd-timeout")
              .long("autocd-timeout")
              .help("Timeout for auto-cd when there's only one match, in ms. Use 'off' to disable auto-cd.")
              .long_help("If the current search matches only one folder, automatically change to it after this many milliseconds. If the value is 'off', automatic cding is disabled, and you have to manually enter the folder. Setting the timeout to zero is not recommended, because it makes navigation confusing.")
