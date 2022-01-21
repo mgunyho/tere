@@ -73,7 +73,7 @@ impl TereSettings {
             "off" => None,
             x => u64::from_str(x).map_err(|_| {
                 clap::Error::with_description(
-                    &format!("Invalid value for 'autocd-timeout': '{}'", x),
+                    format!("Invalid value for 'autocd-timeout': '{}'", x),
                     clap::ErrorKind::InvalidValue
                 )
             })?.into()
