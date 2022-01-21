@@ -661,12 +661,10 @@ fn main() -> crossterm::Result<()> {
             )
         .get_matches_safe()
         .unwrap_or_else(|err| {
-            // custom error handling: print also '--help' or '--version' to stderr
-            // instead of the default behavior of clap, which is to write to stdout.
-            // see the following issues:
-            // - https://github.com/clap-rs/clap/issues/1788
-            // - https://github.com/clap-rs/clap/issues/2429 - '--version' still goes to stdout, will be fixed in clap 3.0
-            eprintln!("{}", err.message);
+            // custom error handling: clap writes '--help' and '--version'
+            // to stdout by default, but we want to print those to stderr
+            // as well to not interfere with the intended behavior of tere
+            eprint!("{}", err);
             std::process::exit(1);
         });
 
