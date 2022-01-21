@@ -653,7 +653,7 @@ fn main() -> crossterm::Result<()> {
              .value_name("TIMEOUT or 'off'")
              .overrides_with("autocd-timeout")
             )
-        .get_matches_safe()
+        .try_get_matches()
         .unwrap_or_else(|err| {
             // custom error handling: clap writes '--help' and '--version'
             // to stdout by default, but we want to print those to stderr
