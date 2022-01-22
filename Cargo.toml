@@ -1,6 +1,6 @@
 [package]
 name = "tere"
-version = "0.0.3"
+version = "0.0.4"
 authors = ["mgunyho <marci.gunyho@gmail.com>"]
 edition = "2018"
 description = "A fast way to navigate folders in the terminal"
@@ -11,7 +11,9 @@ description = "A fast way to navigate folders in the terminal"
 
 [dependencies]
 crossterm = "0.20.0"
-home = "0.5.3"
+dirs = "4.0.0"
+serde_json = "1.0"
+serde = { version = "1.0", features = ["rc"] }
 
 [dependencies.clap]
 version = "3"

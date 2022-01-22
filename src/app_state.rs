@@ -5,12 +5,19 @@ use clap::ArgMatches;
 
 use std::convert::TryFrom;
 use std::ffi::OsStr;
+use std::io::{Result as IOResult, Error as IOError, ErrorKind};
 use std::path::{Path, PathBuf, Component};
 
 #[path = "settings.rs"]
 mod settings;
 use settings::TereSettings;
 pub use settings::CaseSensitiveMode;
+
+#[path = "history.rs"]
+mod history;
+use history::HistoryTree;
+
+use crate::error::TereError;
 
 pub const NO_MATCHES_MSG: &str = "No matches";
 
@@ -154,19 +161,22 @@ pub struct TereAppState {
     pub info_msg: String,
 
     pub settings: TereSettings,
+
+    history: HistoryTree,
 }
 
 impl TereAppState {
-    pub fn init(cli_args: &ArgMatches, window_w: u32, window_h: u32) -> Result<Self, clap::Error> {
+    pub fn init(cli_args: &ArgMatches, window_w: u32, window_h: u32) -> Result<Self, TereError> {
+        // Try to read the current folder from the PWD environment variable, since it doesn't
+        // have symlinks resolved (which is what we want). If this fails for some reason (on
+        // windows?), default to std::env::current_dir, which has resolved symlinks.
+        let cwd = std::env::var("PWD").map(|p| PathBuf::from(p))
+            .or_else(|_| std::env::current_dir())?;
         let mut ret = Self {
             main_win_w: window_w,
             main_win_h: window_h,
             ls_output_buf: vec![].into(),
-            // Try to read the current folder from the PWD environment variable, since it doesn't
-            // have symlinks resolved (which is what we want). If this fails for some reason (on
-            // windows?), default to std::env::current_dir, which has resolved symlinks.
-            current_path: std::env::var("PWD").map(|p| PathBuf::from(p))
-                .or_else(|_| std::env::current_dir())?,
+            current_path: cwd.clone(),
             cursor_pos: 0, // TODO: get last value from previous run
             scroll_pos: 0,
             header_msg: "".into(),
@@ -174,12 +184,44 @@ impl TereAppState {
             search_string: "".into(),
             //search_anywhere: false,
             settings: TereSettings::parse_cli_args(cli_args)?,
+            history: HistoryTree::from_abs_path(cwd.clone()),
         };
+
+        //read history tree from file, if applicable
+        if let Some(hist_file) = &ret.settings.history_file {
+            match std::fs::read_to_string(hist_file) {
+                Ok(file_contents) => {
+                    let mut tree: HistoryTree = serde_json::from_str(&file_contents)?;
+                    tree.change_dir(cwd);
+                    ret.history = tree;
+                },
+                Err(ref e) if e.kind() == ErrorKind::NotFound => {
+                    // history file not created yet, no need to do anything
+                },
+                Err(e) => return Err(e.into()),
+            }
+        }
 
         ret.update_header();
         ret.update_ls_output_buf();
+
         ret.move_cursor(1, false); // start out from second entry, because first entry is '..'.
+        if let Some(prev_dir) = ret.history.current_entry().last_visited_child_label() {
+            ret.move_cursor_to_filename(prev_dir);
+        }
+
         Ok(ret)
+    }
+
+    /// Things to do when the app is about to exit.
+    pub fn on_exit(&self) -> IOResult<()> {
+        if let Some(hist_file) = &self.settings.history_file {
+            let parent_dir = hist_file.parent().ok_or(IOError::new(ErrorKind::NotFound,
+                                                                   "history file has no parent folder"))?;
+            std::fs::DirBuilder::new().recursive(true).create(parent_dir)?;
+            std::fs::write(hist_file, serde_json::to_string(&self.history)?)?;
+        }
+        Ok(())
     }
 
     ///////////////////////////////////////////
@@ -311,7 +353,7 @@ impl TereAppState {
         //TODO: show error message (add separate msg box)
     }
 
-    pub fn change_dir(&mut self, path: &str) -> std::io::Result<()> {
+    pub fn change_dir(&mut self, path: &str) -> IOResult<()> {
         // TODO: add option to use xdg-open (or similar) on files?
         // check out https://crates.io/crates/open
         // (or https://docs.rs/opener/0.4.1/opener/)
@@ -365,22 +407,28 @@ impl TereAppState {
             normalize_path(&self.current_path.join(target_path))
         };
 
-        let old_cwd = self.current_path.clone();
         self.clear_search();
         std::env::set_current_dir(&final_path)?;
-        self.current_path = PathBuf::from(final_path); //TODO: make this absolute...
+        self.current_path = PathBuf::from(&final_path); //TODO: make this absolute...
         self.update_ls_output_buf();
-        //TODO: proper history
+
         self.cursor_pos = 0;
         self.scroll_pos = 0;
-        if let Some(old_cwd) = old_cwd.file_name() {
-            if let Some(idx) = self.index_of_filename(old_cwd) {
-                self.move_cursor(idx as i32, false);
-            } else {
-                // move cursor one position down, so we're not at '..'
-                self.move_cursor(1, false);
-            }
+
+        // final_path is always the absolute logical path, so we can just cd to it. This causes a
+        // bit of extra work (the history tree has to go all the way from the root to the path
+        // every time), but that's not too bad. The alernative option of using history_tree.go_up()
+        // / visit() and handling the special cases where target_path is '..' or a relative path or
+        // so on, would be much more complicated and would risk having the history tree and logical
+        // path out of sync.
+        self.history.change_dir(&final_path);
+
+        // move cursor one position down, so we're not at '..' if we've entered a folder with no history
+        self.move_cursor(1, false);
+        if let Some(prev_dir) = self.history.current_entry().last_visited_child_label() {
+            self.move_cursor_to_filename(prev_dir);
         }
+
         Ok(())
     }
 
@@ -616,11 +664,13 @@ mod tests {
             scroll_pos: 0,
             main_win_h: win_h,
             main_win_w: 10,
+            current_path: "/".into(),
             ls_output_buf: buf,
             header_msg: "".into(),
             info_msg: "".into(),
             search_string: "".into(),
             settings: Default::default(),
+            history: HistoryTree::from_abs_path("/"),
         }
     }
 

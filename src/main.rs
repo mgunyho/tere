@@ -13,7 +13,7 @@ use crossterm::{
     },
     Result as CTResult,
 };
-use home::home_dir;
+use dirs::home_dir;
 
 use clap::{App, Arg, ArgMatches};
 
@@ -27,6 +27,9 @@ const FOOTER_SIZE: u16 = 1;
 mod app_state;
 use app_state::{TereAppState, CaseSensitiveMode};
 
+mod error;
+use error::TereError;
+
 /// This struct groups together ncurses windows for the main content, header and
 /// footer, and an application state object
 struct TereTui<'a> {
@@ -38,21 +41,6 @@ struct TereTui<'a> {
 fn main_window_size() -> CTResult<(u16, u16)> {
     let (w, h) = terminal::size()?;
     Ok((w, h.checked_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE).unwrap_or(0)))
-}
-
-enum TereError {
-    IoError(std::io::Error),
-    ClapError(clap::Error),
-}
-
-
-impl From<std::io::Error> for TereError
-{
-    fn from(e: std::io::Error) -> Self { Self::IoError(e) }
-}
-
-impl From<clap::Error> for TereError {
-    fn from(e: clap::Error) -> Self { Self::ClapError(e) }
 }
 
 
@@ -305,7 +293,7 @@ impl<'a> TereTui<'a> {
         // draw entries
         for row in 0..max_y {
             // highlight the current row under the cursor when applicable
-            let highlight = self.app_state.cursor_pos == row.into()
+            let highlight = self.app_state.cursor_pos == (row as u32)
                 && (!is_search || (any_matches || any_visible_items));
             self.draw_main_window_row(row, highlight)?;
         }
@@ -571,7 +559,7 @@ impl<'a> TereTui<'a> {
             }
         }
 
-        Ok(())
+        self.app_state.on_exit()
     }
 }
 
@@ -582,7 +570,7 @@ macro_rules! case_sensitive_template {
     }
 }
 
-fn main() -> crossterm::Result<()> {
+fn main() -> Result<(), TereError> {
 
     let cli_args = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
@@ -653,6 +641,12 @@ fn main() -> crossterm::Result<()> {
              .value_name("TIMEOUT or 'off'")
              .overrides_with("autocd-timeout")
             )
+        .arg(Arg::new("history-file")
+             .long("history-file")
+             .help("Save a history of visited folders in this file. Set to empty to disable saving history. If not provided, defaults to '$CACHE_DIR/tere/history.json', where $CACHE_DIR is the cache directory, i.e. $XDG_CACHE_HOME or ~/.cache.")
+             .takes_value(true)
+             .value_name("FILE or ''")
+            )
         .try_get_matches()
         .unwrap_or_else(|err| {
             // custom error handling: clap writes '--help' and '--version'
@@ -700,7 +694,7 @@ fn main() -> crossterm::Result<()> {
                 TereError::ClapError(e) => e.exit(),
 
                 // exit in case of any other error
-                TereError::IoError(e) => return Err(e),
+                e => return Err(e),
             }
         }
         Ok(path) => path
