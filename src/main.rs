@@ -564,7 +564,6 @@ impl<'a> TereTui<'a> {
 }
 
 macro_rules! case_sensitive_template {
-    // NOTE: long lines don't wrap in long_help message with clap 2.33 (see https://github.com/clap-rs/clap/issues/2445). should update clap to v3.
     ($x:tt, $y:tt) => {
         format!("This overrides the --{} and --{} options. You can also change the case sensitivity mode while the program is running with the keyboard shortcut ALT+C.", $x, $y)
     }
