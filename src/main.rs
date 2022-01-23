@@ -14,6 +14,7 @@ use crossterm::{
     Result as CTResult,
 };
 use dirs::home_dir;
+use unicode_segmentation::UnicodeSegmentation;
 
 use clap::{App, Arg, ArgMatches};
 
@@ -213,6 +214,7 @@ impl<'a> TereTui<'a> {
         let idx = self.app_state.cursor_pos_to_visible_item_index(row.into());
         if self.app_state.is_searching()
             && self.app_state.visible_match_indices().contains(&idx) {
+            // All *byte offsets* that should be underlined
             let underline_locs: Vec<usize> = self.app_state
                 .get_match_locations_at_cursor_pos(row as u32)
                 .unwrap_or(&vec![])
@@ -221,9 +223,10 @@ impl<'a> TereTui<'a> {
                 .flatten()
                 .collect();
 
-            let letters_underlining: Vec<(char, bool)> = item
-                .chars() //TODO: iterate over grapheme clusters
-                .enumerate()
+            // Use unicode_segmentation to find out the grapheme clusters corresponding to the
+            // above byte offsets, and determine whether they should be underlined.
+            let letters_underlining: Vec<(&str, bool)> = UnicodeSegmentation::grapheme_indices(item.as_str(), true)
+                // this contains() could probably be optimized, but shouldn't be too bad.
                 .map(|(i, c)| (c, underline_locs.contains(&i)))
                 .collect();
 
