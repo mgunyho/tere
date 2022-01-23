@@ -734,6 +734,12 @@ macro_rules! case_sensitive_template {
     }
 }
 
+macro_rules! gap_search_mode_template {
+    ($x:tt, $y:tt) => {
+        format!("This overrides the --{} and --{} options. You can also change the search mode while the program is running with the keyboard shortcut CTRL+F.", $x, $y)
+    }
+}
+
 fn main() -> Result<(), TereError> {
 
     let cli_args = App::new(env!("CARGO_PKG_NAME"))
@@ -797,6 +803,29 @@ fn main() -> Result<(), TereError> {
                         case_sensitive_template!("case-sensitive", "ignore-case")).as_str())
              .overrides_with("smart-case")
             )
+        .arg(Arg::new("gap-search")
+             .long("gap-search")
+             .short('g')
+             .help("Match the search from the beginning, but allow gaps (default)")
+             .long_help(format!("When searching, match items that start with the same character as the search query, but allow gaps between the search characters. For example, searching for \"do\" would match \"DesktOp\", \"DOcuments\", and \"DOwnloads\", while searching for \"dt\" would match \"DeskTop\" and \"DocumenTs\" but not \"downloads\", and searching for \"es\" would match none of the above. This is the default behavior.\n\n{}", gap_search_mode_template!("gap-search", "no-gap-search")).as_str())
+             .overrides_with_all(&["gap-search", "gap-search-anywhere", "no-gap-search"])
+             )
+        .arg(Arg::new("gap-search-anywhere")
+             .long("gap-search-anywhere")
+             .short('G')
+             .help("Match the search anywhere, and allow gaps")
+             .long_help(format!("When searching, allow the search characters to appear anywhere in a file/folder name, possibly with gaps between them. For example, searching for \"do\" would match \"DesktOp\", \"DOcuments\", and \"DOwnloads\", while searching for \"es\" would match \"dESktop\" and \"documEntS\", but not \"downloads\".\n\n{}",
+                        gap_search_mode_template!("gap-search-from-start", "no-gap-search")).as_str())
+             .overrides_with_all(&["gap-search-anywhere", "no-gap-search"])
+             )
+        .arg(Arg::new("no-gap-search")
+             .long("no-gap-search")
+             .short('n')
+             .help("Match the search from the beginning, and do not allow gaps")
+             .long_help(format!("Disable gap-search. Match only consecutive characters from the beginning of the search query. For example, searching for \"do\" would match \"DOcuments\" and \"DOwnloads\", but not \"desktop\".\n\n{}", gap_search_mode_template!("gap-search", "gap-search-from-start")).as_str())
+             .overrides_with("no-gap-search")
+             )
+        //TODO: if somebody wants this: '-N', '--no-gap-search-anywhere - don't allow gaps, but can start anywhere. maybe have to come up with a better long name.
         .arg(Arg::new("autocd-timeout")
              .long("autocd-timeout")
              .help("Timeout for auto-cd when there's only one match, in milliseconds. Use 'off' to disable auto-cd.")
