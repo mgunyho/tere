@@ -314,7 +314,12 @@ impl TereAppState {
 
     pub fn get_match_locations_at_cursor_pos(&self, cursor_pos: u32) -> Option<&MatchesLocType> {
         let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
-        self.ls_output_buf.matches.get(&idx)
+        if self.settings.filter_search {
+            // NOTE: we assume that the matches is a sorted map
+            self.ls_output_buf.matches.values().nth(idx)
+        } else {
+            self.ls_output_buf.matches.get(&idx)
+        }
     }
 
 
