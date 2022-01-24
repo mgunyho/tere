@@ -92,6 +92,13 @@ impl TereSettings {
             ret.case_sensitive = CaseSensitiveMode::SmartCase;
         }
 
+        if args.is_present("gap-search") {
+            ret.gap_search_mode = GapSearchMode::GapSearchFromStart;
+        } else if args.is_present("gap-search-anywhere") {
+            ret.gap_search_mode = GapSearchMode::GapSearchAnywere;
+        } else if args.is_present("no-gap-search") {
+            ret.gap_search_mode = GapSearchMode::NoGapSearch;
+        }
 
         ret.autocd_timeout = match args.values_of("autocd-timeout")
             // ok to unwrap because autocd-timeout has a default value which is always present
