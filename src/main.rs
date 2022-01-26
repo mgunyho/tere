@@ -27,6 +27,9 @@ const FOOTER_SIZE: u16 = 1;
 mod app_state;
 use app_state::{TereAppState, CaseSensitiveMode};
 
+mod ui;
+use ui::help_window::get_formatted_help_text;
+
 mod error;
 use error::TereError;
 
@@ -507,6 +510,10 @@ impl<'a> TereTui<'a> {
                             }
                         },
 
+                        KeyCode::Char('?') => {
+                            self.help_view_loop()?;
+                        }
+
                         // alt + hjkl
                         KeyCode::Char('h') if k.modifiers == ALT => {
                             self.change_dir("..")?;
@@ -562,6 +569,63 @@ impl<'a> TereTui<'a> {
         }
 
         self.app_state.on_exit()
+    }
+
+    fn help_view_loop(&mut self) -> CTResult<()> {
+        self.info_message("Press ESC to exit help")?;
+        self.draw_help_view()?;
+
+        loop {
+            match read_event()? {
+                Event::Key(k) => {
+                    match k.code {
+                        KeyCode::Esc | KeyCode::Char('q') => {
+                            self.info_message("")?;
+                            return self.redraw_all_windows();
+                        },
+                        // TODO: scroll help view?
+
+                        _ => {},
+                    }
+                }
+
+                Event::Resize(_, _) => {
+
+                    self.update_main_window_dimensions()?;
+                    // Redraw all windows except for main window
+                    self.redraw_header()?;
+                    self.redraw_info_window()?;
+                    self.redraw_footer()?;
+                    self.draw_help_view()?;
+                }
+
+                _ => {},
+            }
+        }
+    }
+
+    fn draw_help_view(&mut self) -> CTResult<()> {
+        self.queue_clear_main_window()?;
+        queue!(
+            self.window,
+            cursor::MoveTo(0, HEADER_SIZE),
+            style::SetAttribute(Attribute::Reset),
+            style::ResetColor,
+        )?;
+
+        // include contents of the README
+        let (w, h) = main_window_size()?;
+        let lines = get_formatted_help_text(w, h);
+        execute!(self.window, style::PrintStyledContent(lines));
+
+        execute!(self.window)?;
+
+        // TODO: figure out a better way
+        // HACK: the help text can spill over the footer and so on, so just redraw them on top.
+        self.redraw_info_window()?;
+        self.redraw_footer()?;
+
+        Ok(())
     }
 }
 
