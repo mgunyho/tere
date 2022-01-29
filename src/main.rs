@@ -573,7 +573,15 @@ impl<'a> TereTui<'a> {
 
     fn help_view_loop(&mut self) -> CTResult<()> {
         self.info_message("Press ESC to exit help")?;
-        self.draw_help_view()?;
+
+        // clear main window only once here in the beginning, otherwise it causes flashing/blinking.
+        self.queue_clear_main_window()?;
+
+        // We don't need the help view scroll state anywhere else, so not worth it to put in
+        // app_state, just keep it here.
+        let mut help_view_scroll: usize = 0;
+
+        self.draw_help_view(help_view_scroll)?;
 
         loop {
             match read_event()? {
@@ -583,7 +591,16 @@ impl<'a> TereTui<'a> {
                             self.info_message("")?;
                             return self.redraw_all_windows();
                         },
-                        // TODO: scroll help view?
+
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            help_view_scroll += 1;
+                            self.draw_help_view(help_view_scroll)?;
+                        }
+
+                        KeyCode::Up | KeyCode::Char('k') => {
+                            help_view_scroll = help_view_scroll.checked_sub(1).unwrap_or(0);
+                            self.draw_help_view(help_view_scroll)?;
+                        }
 
                         _ => {},
                     }
@@ -596,7 +613,7 @@ impl<'a> TereTui<'a> {
                     self.redraw_header()?;
                     self.redraw_info_window()?;
                     self.redraw_footer()?;
-                    self.draw_help_view()?;
+                    self.draw_help_view(help_view_scroll)?;
                 }
 
                 _ => {},
@@ -604,8 +621,7 @@ impl<'a> TereTui<'a> {
         }
     }
 
-    fn draw_help_view(&mut self) -> CTResult<()> {
-        self.queue_clear_main_window()?;
+    fn draw_help_view(&mut self, scroll: usize) -> CTResult<()> {
 
         queue!(
             self.window,
@@ -616,19 +632,22 @@ impl<'a> TereTui<'a> {
 
         let (w, h) = main_window_size()?;
         let help_text = get_formatted_help_text(w, h);
-        let mut lines = help_text.iter();
+        let mut lines = help_text.iter().skip(scroll);
 
         if let Some(line) = lines.next() {
+            let clr = terminal::Clear(terminal::ClearType::UntilNewLine);
+
             // don't print newline before first line
             // we have to use MoveToColumn(0) because we're in raw mode.
-            queue!(self.window, cursor::MoveToColumn(0), style::Print(line))?;
+            queue!(self.window, cursor::MoveToColumn(0), style::Print(line), clr)?;
 
             for line in lines.take((h - 1) as usize) {
                 queue!(
                     self.window,
                     cursor::MoveToColumn(0),
                     style::Print("\n"),
-                    style::Print(line)
+                    style::Print(line),
+                    clr,
                 )?;
             }
         }
