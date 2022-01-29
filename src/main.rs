@@ -161,6 +161,7 @@ impl<'a> TereTui<'a> {
         }
         execute!(
             win,
+            //TODO: this subtraction can overflow if the window is extremely narrow
             cursor::MoveTo(w - extra_msg.len() as u16, footer_win_row),
             style::SetAttribute(Attribute::Reset),
             style::Print(extra_msg.bold()),
