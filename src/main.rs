@@ -606,6 +606,7 @@ impl<'a> TereTui<'a> {
 
     fn draw_help_view(&mut self) -> CTResult<()> {
         self.queue_clear_main_window()?;
+
         queue!(
             self.window,
             cursor::MoveTo(0, HEADER_SIZE),
@@ -613,17 +614,26 @@ impl<'a> TereTui<'a> {
             style::ResetColor,
         )?;
 
-        // include contents of the README
         let (w, h) = main_window_size()?;
-        let lines = get_formatted_help_text(w, h);
-        execute!(self.window, style::PrintStyledContent(lines));
+        let help_text = get_formatted_help_text(w, h);
+        let mut lines = help_text.iter();
+
+        if let Some(line) = lines.next() {
+            // don't print newline before first line
+            // we have to use MoveToColumn(0) because we're in raw mode.
+            queue!(self.window, cursor::MoveToColumn(0), style::Print(line))?;
+
+            for line in lines.take((h - 1) as usize) {
+                queue!(
+                    self.window,
+                    cursor::MoveToColumn(0),
+                    style::Print("\n"),
+                    style::Print(line)
+                )?;
+            }
+        }
 
         execute!(self.window)?;
-
-        // TODO: figure out a better way
-        // HACK: the help text can spill over the footer and so on, so just redraw them on top.
-        self.redraw_info_window()?;
-        self.redraw_footer()?;
 
         Ok(())
     }
