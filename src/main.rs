@@ -572,7 +572,7 @@ impl<'a> TereTui<'a> {
     }
 
     fn help_view_loop(&mut self) -> CTResult<()> {
-        self.info_message("Press ESC to exit help")?;
+        self.info_message("Use ↓/↑ or j/k to scroll. Press Esc to exit help.")?;
 
         // clear main window only once here in the beginning, otherwise it causes flashing/blinking.
         self.queue_clear_main_window()?;
