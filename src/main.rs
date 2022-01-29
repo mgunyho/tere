@@ -391,13 +391,11 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn on_resize(&mut self) -> CTResult<()> {
-
+    pub fn update_main_window_dimensions(&mut self) -> CTResult<()> {
         let (w, h) = main_window_size()?;
         let (w, h) = (w as u32, h as u32);
         self.app_state.update_main_window_dimensions(w, h);
-
-        self.redraw_all_windows()
+        Ok(())
     }
 
     pub fn on_arrow_key(&mut self, up: bool) -> CTResult<()> {
@@ -553,7 +551,10 @@ impl<'a> TereTui<'a> {
                     }
                 },
 
-                Event::Resize(_, _) => self.on_resize()?,
+                Event::Resize(_, _) => {
+                    self.update_main_window_dimensions()?;
+                    self.redraw_all_windows()?;
+                }
 
                 //TODO don't show this in release
                 e => self.info_message(&format!("{:?}", e))?,
