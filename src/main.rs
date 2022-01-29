@@ -63,6 +63,9 @@ impl<'a> TereTui<'a> {
 
         ret.update_header()?;
         ret.redraw_all_windows()?;
+        ret.info_message(format!("{} {} - Press '?' to view help or Esc to exit.",
+                                 env!("CARGO_PKG_NAME"),
+                                 env!("CARGO_PKG_VERSION")).as_str())?;
         Ok(ret)
     }
 
