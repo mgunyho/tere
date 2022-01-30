@@ -1,7 +1,7 @@
 /// Functions for rendering the help window
 
 use std::borrow::Cow;
-use crossterm::style::{ContentStyle, StyledContent};
+use crossterm::style::{ContentStyle, StyledContent, Stylize};
 use textwrap;
 
 const README_STR: &str = include_str!("../../README.md");
@@ -19,11 +19,30 @@ pub fn get_formatted_help_text<'a>(w: u16, h: u16) -> Vec<Vec<StyledContent<Stri
         README_STR.find("## Similar projects").expect("Could not find end of user guide in README")
     ];
 
-    //TODO: remove <kbd> etc
-    //TODO: table formatting
-    let res = textwrap::wrap(help_str, w as usize);
-    res.iter().map(|line| vec![StyledContent::new(ContentStyle::new(), line.to_string())]).collect()
+    // We need to get rid of the `<kbd>` tags before wrapping so it works correctly. We're going to
+    // bold all words within backticks, so replace the tags with backticks as well.
+    let help_str = help_str
+        .replace("<kbd>", "`")
+        .replace("</kbd>", "`");
 
-    //TODO: format things with bold etc
-    //StyledContent::new(ContentStyle::new(), res)
+    let mut help_str = textwrap::wrap(&help_str, w as usize);
+
+    let mut res = vec![];
+    for line in help_str.drain(..) {
+        if line.starts_with("#") {
+            let styled = line
+                .replace("# ", "")
+                .replace("#", "")
+                .to_string()
+                .bold();
+            res.push(vec![styled]);
+        } else {
+            //TODO: table formatting for keyboard shortcuts
+            res.push(vec![line.to_string().stylize()]);
+        }
+    }
+    res
+
+    //res.iter().map(|line| vec![StyledContent::new(ContentStyle::new(), line.to_string())]).collect()
+
 }
