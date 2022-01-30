@@ -189,8 +189,6 @@ impl<'a> TereTui<'a> {
             Attribute::Dim
         };
 
-        self.queue_clear_row(row_abs)?;
-
         queue!(
             self.window,
             cursor::MoveTo(0, row_abs),
@@ -251,6 +249,7 @@ impl<'a> TereTui<'a> {
             self.window,
             style::ResetColor,
             style::SetAttribute(Attribute::Reset),
+            terminal::Clear(terminal::ClearType::UntilNewLine),
         )
 
     }
