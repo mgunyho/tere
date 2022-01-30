@@ -38,7 +38,17 @@ pub fn get_formatted_help_text<'a>(w: u16, h: u16) -> Vec<Vec<StyledContent<Stri
             res.push(vec![styled]);
         } else {
             //TODO: table formatting for keyboard shortcuts
-            res.push(vec![line.to_string().stylize()]);
+
+            // Make items inside backticks bold. Assuming that back-ticked items are completely on
+            // a single line.
+            let styled = line
+                .split('`')
+                .fold((false, vec![]), |(bold, mut acc), word| {
+                    let word = word.to_string();
+                    acc.push(if bold { word.bold() } else { word.stylize() });
+                    (!bold, acc)
+                }).1;
+            res.push(styled);
         }
     }
     res
