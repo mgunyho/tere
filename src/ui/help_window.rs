@@ -1,7 +1,6 @@
 /// Functions for rendering the help window
 
-use std::borrow::Cow;
-use crossterm::style::{ContentStyle, StyledContent, Stylize};
+use crossterm::style::{StyledContent, Stylize};
 use textwrap;
 
 const README_STR: &str = include_str!("../../README.md");
@@ -12,7 +11,7 @@ const README_STR: &str = include_str!("../../README.md");
 /// Returns a vector of vectors, where the outer vector represents lines, and the inner vector
 /// contains either a single string for the whole line, or multiple strings, if the style varies
 /// within the line.
-pub fn get_formatted_help_text<'a>(w: u16) -> Vec<Vec<StyledContent<String>>> {
+pub fn get_formatted_help_text<'a>(width: u16) -> Vec<Vec<StyledContent<String>>> {
     let help_str = &README_STR[
         README_STR.find("## User guide").expect("Could not find user guide in README")
             ..
@@ -41,7 +40,7 @@ pub fn get_formatted_help_text<'a>(w: u16) -> Vec<Vec<StyledContent<String>>> {
         .replace("</kbd>", "`");
 
     // apply text wrapping
-    let mut help_str = textwrap::wrap(&help_str, w as usize);
+    let mut help_str = textwrap::wrap(&help_str, width as usize);
 
     let mut res = vec![];
     for line in help_str.drain(..) {
@@ -53,10 +52,8 @@ pub fn get_formatted_help_text<'a>(w: u16) -> Vec<Vec<StyledContent<String>>> {
                 .bold();
             res.push(vec![styled]);
         } else {
-            //TODO: table formatting for keyboard shortcuts
-
-            // Make items inside backticks bold. Assuming that back-ticked items are completely on
-            // a single line.
+            // Make items inside backticks bold. Assuming that there are no newlines inside
+            // backticks.
             let styled = line
                 .split('`')
                 .fold((false, vec![]), |(bold, mut acc), word| {
@@ -67,10 +64,8 @@ pub fn get_formatted_help_text<'a>(w: u16) -> Vec<Vec<StyledContent<String>>> {
             res.push(styled);
         }
     }
+
     res
-
-    //res.iter().map(|line| vec![StyledContent::new(ContentStyle::new(), line.to_string())]).collect()
-
 }
 
 
