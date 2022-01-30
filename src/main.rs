@@ -632,24 +632,29 @@ impl<'a> TereTui<'a> {
 
         let (w, h) = main_window_size()?;
         let help_text = get_formatted_help_text(w, h);
-        let mut lines = help_text.iter().skip(scroll);
+        for (i, line) in help_text.iter().skip(scroll).take(h as usize).enumerate() {
+            // Set up cursor position
+            queue!(
+                self.window,
+                // have to do MoveToColumn(0) manually because we're in raw mode
+                cursor::MoveToColumn(0),
+                // don't print newline before first line
+                style::Print(if i == 0 { "" } else { "\n"}),
+            )?;
 
-        if let Some(line) = lines.next() {
-            let clr = terminal::Clear(terminal::ClearType::UntilNewLine);
-
-            // don't print newline before first line
-            // we have to use MoveToColumn(0) because we're in raw mode.
-            queue!(self.window, cursor::MoveToColumn(0), style::Print(line), clr)?;
-
-            for line in lines.take((h - 1) as usize) {
+            // Print the fragments (which can have different styles)
+            for fragment in line {
                 queue!(
                     self.window,
-                    cursor::MoveToColumn(0),
-                    style::Print("\n"),
-                    style::Print(line),
-                    clr,
+                    style::PrintStyledContent(fragment.clone()),
                 )?;
             }
+
+            // Clear the rest of the row
+            queue!(
+                self.window,
+                terminal::Clear(terminal::ClearType::UntilNewLine),
+            )?;
         }
 
         execute!(self.window)?;
