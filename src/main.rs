@@ -136,6 +136,7 @@ impl<'a> TereTui<'a> {
             win,
             cursor::MoveTo(0, footer_win_row),
             style::SetAttribute(Attribute::Reset),
+            //TODO: prevent line wrap here
             style::Print(&format!("{}: {}",
                                   if self.app_state.settings.filter_search { "filter" } else { "search" },
                                   self.app_state.search_string()
