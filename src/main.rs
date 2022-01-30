@@ -313,17 +313,17 @@ impl<'a> TereTui<'a> {
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
     pub fn move_cursor(&mut self, amount: i32, wrap: bool) -> CTResult<()> {
-        self.unhighlight_row(u16::try_from(self.app_state.cursor_pos).unwrap_or(u16::MAX))?;
-
+        let old_cursor_pos = self.app_state.cursor_pos;
         let old_scroll_pos = self.app_state.scroll_pos;
 
         self.app_state.move_cursor(amount, wrap);
 
         if self.app_state.scroll_pos != old_scroll_pos {
-            // redraw_main_window takes care of highlighting the cursor row
+            // redraw_main_window takes care of (un)highlighting the cursor row
             // and refreshing
             self.redraw_main_window()?;
         } else {
+            self.unhighlight_row(u16::try_from(old_cursor_pos).unwrap_or(u16::MAX))?;
             self.highlight_row(self.app_state.cursor_pos)?;
         }
         Ok(())
