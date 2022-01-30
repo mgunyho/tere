@@ -46,7 +46,7 @@ functionality found in many GUI file managers.
 
 ## User guide
 
-The main way to navigate folders in `tere` is by using the keyboard to move the cursor around, and by typing to search.
+You can navigate folders in `tere` by using the arrow keys and by typing to search. Basic navigation works by moving the cursor up or down, and pressing <kbd>Enter</kbd> or the right arrow <kbd>→</kbd> to enter the highlighted folder. You can move to the parent folder by pressing <kbd>Enter</kbd> on the parent folder item `..`, or with the left arrow <kbd>←</kbd>. Below is a full list of keyboard shortcuts.
 
 ### Keyboard shortcuts
 
@@ -74,7 +74,7 @@ Shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
 To search for an item in the current folder, just type some letters. `tere` will
 incrementally highlight all folders and files that match the search query.
 
-While searching, moving the cursor up / down jumps between only the items that
+While searching, moving the cursor up or down jumps between only the items that
 match the search. The search query, as well as the number of matching items is
 shown at the bottom of the screen.
 
@@ -95,7 +95,7 @@ search is case sensitive. This can be changed with the `--ignore-case` and
 
 You can adjust the behavior of `tere` by passing the following CLI options to it:
 
-- `--help` or `-h`: Print a short help and all CLI options. Note that the output goes to stderr, to not interfere with `cd` ing in the shell functions defined above
+- `--help` or `-h`: Print a short help and all CLI options. Note that the output goes to stderr, to not interfere with `cd` ing in the shell functions defined during the setup.
 - `--version` or `-V`: Print the version of `tere`. This also goes to stderr.
 - `--filter-search` or `-f` / `--no-filter-search` or `-F`: If this option is set, hide items in the output listing that don't match the current search query.
 - `--folders-only` or `-d` / `--no-folders-only` or `-D`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
