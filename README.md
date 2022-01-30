@@ -66,6 +66,7 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 |Move cursor to the top   | <kbd>Home</kbd> or <kbd>Alt</kbd>+<kbd>g</kbd> |
 |Move cursor to the bottom| <kbd>End</kbd>  or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>g</kbd> |
 |Change case sensitivity mode| <kbd>Alt</kbd>+<kbd>c</kbd> |
+|Show a help screen| <kbd>?</kbd> |
 
 Shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
 
