@@ -631,7 +631,7 @@ impl<'a> TereTui<'a> {
         )?;
 
         let (w, h) = main_window_size()?;
-        let help_text = get_formatted_help_text(w, h);
+        let help_text = get_formatted_help_text(w);
         for (i, line) in help_text.iter().skip(scroll).take(h as usize).enumerate() {
             // Set up cursor position
             queue!(
