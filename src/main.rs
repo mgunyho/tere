@@ -176,6 +176,7 @@ impl<'a> TereTui<'a> {
         let w: usize = main_window_size()?.0.into();
 
         let (item, bold, italic) = self.app_state.get_item_at_cursor_pos(row.into()).map_or(
+            // Draw empty text at the rows that are outside the listing buffer.
             ("".to_string(), false, false),
             |itm| (itm.file_name_checked(), itm.is_dir(), itm.is_symlink)
         );
@@ -284,14 +285,13 @@ impl<'a> TereTui<'a> {
         let (_, max_y) = main_window_size()?;
         let mut win = self.window;
 
-        self.queue_clear_main_window()?;
-
         // are there any matches?
         let any_matches = self.app_state.num_matching_items() > 0;
         let any_visible_items = self.app_state.visible_items().len() > 0; //TODO: ~O(n) calculation of 'n'
         let is_search = self.app_state.is_searching();
 
-        // draw entries
+        // Draw entries. No need to clear the whole main window, because draw_main_window_row takes
+        // care of clearing each row when applicable.
         for row in 0..max_y {
             // highlight the current row under the cursor when applicable
             let highlight = self.app_state.cursor_pos == (row as u32)
