@@ -175,4 +175,4 @@ keystrokes to search and navigate folders. File management is not in the scope o
 
 ## License
 
-Copyright 2021 András Márton Gunyó. Licensed under the EUPL, see the `LICENSE` file.
+Copyright 2022 András Márton Gunyó. Licensed under the EUPL, see the `LICENSE` file.
