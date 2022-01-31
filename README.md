@@ -109,13 +109,13 @@ passed last wins. This way, you can have one option as the default in your
 shell's `rc` file, but you can sometimes manually override that option when
 running `tere`.
 
-## Prior art
+## Similar projects
 
 The idea of `tere` is by no means unique. There are actually quite a few CLI
-applications that attempt to make folder navigation faster. Below is a listing of
-such programs. The purpose of this section is to justify the existence of `tere`
-by showing how it is different from all these applications in subtle but
-important ways.
+applications that attempt to make folder navigation faster. Below is a
+non-exhaustive list of such programs. The purpose of this section is to justify
+the existence of `tere` by showing how it is different from all these
+applications in subtle but important ways.
 
 If there is a program that should be mentioned here, feel free to open an issue
 or pull request about it!
@@ -133,10 +133,10 @@ folder in the terminal and then `cd` to it.
 ### Fuzzy matching and history-based navigation
 
 These programs have a very similar goal as `tere`, to speed up filesystem
-navigation. However, such programs are not suitable for exploration, as they
-require that you visit a folder before you can jump to it. They also differ from
-`tere` in philosophy; `tere` aims to be deterministic, while the results of a
-fuzzy match or "frecency"-based query vary over time.
+navigation. However, these kinds of programs are not well suited for
+exploration, as they require that you visit a folder before you can jump to it.
+They also differ from `tere` in philosophy; `tere` aims to be deterministic,
+while the results of a fuzzy match or "frecency"-based query vary over time.
 
 - [z](https://github.com/rupa/z)
 - [autojump](https://github.com/wting/autojump)
