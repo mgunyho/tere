@@ -24,6 +24,7 @@ functionality found in many GUI file managers.
     For bash/zsh, put this into your `.bashrc` or `.zshrc`:
 
     ```sh
+    # you can choose a different name if you want
     tere() {
         local result=$(/path/to/tere/target/release/tere "$@")
         [ -n "$result" ] && cd -- "$result"
