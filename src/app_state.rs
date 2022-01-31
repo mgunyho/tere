@@ -296,7 +296,6 @@ impl TereAppState {
     //////////////////////////////////////
 
     pub fn update_header(&mut self) {
-        //TODO: add another row to header (or footer?) with info, like 'tere - type ALT+? for help', and show status message when trying to open file etc
         self.header_msg = format!("{}", self.current_path.display());
     }
 
