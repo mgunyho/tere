@@ -89,14 +89,14 @@ By default, the searching uses "smart case", meaning that if the query contains
 only lowercase letters, case is ignored, but if there are uppercase letters, the
 search is case sensitive. This can be changed with the `--ignore-case` and
 `--case-sensitive` options, or with the keyboard shortcut
-<kbd>Alt</kbd>+<kbd>c</kbd> while running.
+<kbd>Alt</kbd>+<kbd>c</kbd> while `tere` is running.
 
 ### CLI options
 
 You can adjust the behavior of `tere` by passing the following CLI options to it:
 
 - `--help` or `-h`: Print a short help and all CLI options. Note that the output goes to stderr, to not interfere with `cd` ing in the shell functions defined above
-- `--version` or `-V`: Print the version of `tere`
+- `--version` or `-V`: Print the version of `tere`. This also goes to stderr.
 - `--filter-search` or `-f` / `--no-filter-search` or `-F`: If this option is set, hide items in the output listing that don't match the current search query.
 - `--folders-only` or `-d` / `--no-folders-only` or `-D`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
 - `--smart-case` or `-S` / `--ignore-case` or `-i` / `--case-sensitive` or `-s`: Set the case sensitivity mode. The default mode is smart case.
