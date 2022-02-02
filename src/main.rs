@@ -635,7 +635,13 @@ impl<'a> TereTui<'a> {
 
         let (w, h) = main_window_size()?;
         let help_text = get_formatted_help_text(w);
-        for (i, line) in help_text.iter().skip(scroll).take(h as usize).enumerate() {
+        let n_lines = help_text.len();
+        for (i, line) in help_text.iter()
+                .skip(scroll)
+                .chain(vec![vec![]].iter().cycle()) // add empty lines at the end
+                .take(h as usize)
+                .enumerate()
+            {
             // Set up cursor position
             queue!(
                 self.window,
