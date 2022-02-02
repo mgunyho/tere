@@ -1,7 +1,7 @@
 /// Functions for rendering the help window
 
 use crossterm::style::{StyledContent, Stylize};
-use textwrap;
+use textwrap::{self, Options, word_splitters::NoHyphenation};
 
 const README_STR: &str = include_str!("../../README.md");
 
@@ -40,7 +40,8 @@ pub fn get_formatted_help_text<'a>(width: u16) -> Vec<Vec<StyledContent<String>>
         .replace("</kbd>", "`");
 
     // apply text wrapping
-    let mut help_str = textwrap::wrap(&help_str, width as usize);
+    let opts = Options::with_word_splitter(width as usize, NoHyphenation);
+    let mut help_str = textwrap::wrap(&help_str, opts);
 
     let mut res = vec![];
     for line in help_str.drain(..) {
