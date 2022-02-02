@@ -46,7 +46,7 @@ functionality found in many GUI file managers.
 
 ## User guide
 
-The main way to navigate folders in `tere` is by using the keyboard to move the cursor around, and by typing to search.
+You can navigate folders in `tere` by using the arrow keys and by typing to search. Basic navigation works by moving the cursor up or down, and pressing <kbd>Enter</kbd> or the right arrow <kbd>→</kbd> to enter the highlighted folder. You can move to the parent folder by pressing <kbd>Enter</kbd> on the parent folder item `..`, or with the left arrow <kbd>←</kbd>. Below is a full list of keyboard shortcuts.
 
 ### Keyboard shortcuts
 
@@ -66,36 +66,27 @@ The main way to navigate folders in `tere` is by using the keyboard to move the 
 |Move cursor to the top   | <kbd>Home</kbd> or <kbd>Alt</kbd>+<kbd>g</kbd> |
 |Move cursor to the bottom| <kbd>End</kbd>  or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>g</kbd> |
 |Change case sensitivity mode| <kbd>Alt</kbd>+<kbd>c</kbd> |
+|Show a help screen| <kbd>?</kbd> |
 
 Shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
 
 ### Searching
 
-To search for an item in the current folder, just type some letters. `tere` will
-incrementally highlight all folders and files that match the search query.
+To search for an item in the current folder, just type some letters. `tere` will incrementally highlight all folders and files that match the search query.
 
-While searching, moving the cursor up / down jumps between only the items that
-match the search. The search query, as well as the number of matching items is
-shown at the bottom of the screen.
+While searching, moving the cursor up or down jumps between only the items that match the search. The search query, as well as the number of matching items is shown at the bottom of the screen.
 
-If only one folder matches your current search, `tere` will highlight it, and
-change the working directory to that folder. This way you can navigate folders
-very quickly.
+If only one folder matches your current search, `tere` will highlight it, and change the working directory to that folder. This way you can navigate folders very quickly.
 
-To stop searching, press <kbd>Esc</kbd> or erase all search characters by
-pressing <kbd>Backspace</kbd>.
+To stop searching, press <kbd>Esc</kbd> or erase all search characters by pressing <kbd>Backspace</kbd>.
 
-By default, the searching uses "smart case", meaning that if the query contains
-only lowercase letters, case is ignored, but if there are uppercase letters, the
-search is case sensitive. This can be changed with the `--ignore-case` and
-`--case-sensitive` options, or with the keyboard shortcut
-<kbd>Alt</kbd>+<kbd>c</kbd> while `tere` is running.
+By default, the searching uses "smart case", meaning that if the query contains only lowercase letters, case is ignored, but if there are uppercase letters, the search is case sensitive. This can be changed with the `--ignore-case` and `--case-sensitive` options, or with the keyboard shortcut <kbd>Alt</kbd>+<kbd>c</kbd> while `tere` is running.
 
 ### CLI options
 
 You can adjust the behavior of `tere` by passing the following CLI options to it:
 
-- `--help` or `-h`: Print a short help and all CLI options. Note that the output goes to stderr, to not interfere with `cd` ing in the shell functions defined above
+- `--help` or `-h`: Print a short help and all CLI options. Note that the output goes to stderr, to not interfere with `cd` ing in the shell functions defined during the setup.
 - `--version` or `-V`: Print the version of `tere`. This also goes to stderr.
 - `--filter-search` or `-f` / `--no-filter-search` or `-F`: If this option is set, hide items in the output listing that don't match the current search query.
 - `--folders-only` or `-d` / `--no-folders-only` or `-D`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
@@ -103,11 +94,7 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 - `--autocd-timeout` - If only one folder matches the current search query, automatically enter it after this many milliseconds. Can also be set to `off`, which disables this behaviour.
 - `--history-file`: To make browsing more convenient, `tere` saves a history of folders you have visited to this file in JSON format. It should be an absolute path. Defaults to `$CACHE_DIR/tere/history.json`, where `$CACHE_DIR` is `$XDG_CACHE_HOME` or `~/.cache`. Set to the empty string `''` to disable saving the history. Note that the history file may reveal parts of your filesystem hierarchy if it is possible to read by other users.
 
-Some options have two or more versions that override each other (for example
-`--folders-only` and `--no-folders-only`). For such options, whichever is
-passed last wins. This way, you can have one option as the default in your
-shell's `rc` file, but you can sometimes manually override that option when
-running `tere`.
+Some options have two or more versions that override each other (for example `--folders-only` and `--no-folders-only`). For such options, whichever is passed last wins. This way, you can have one option as the default in your shell's `rc` file, but you can sometimes manually override that option when running `tere`.
 
 ## Similar projects
 

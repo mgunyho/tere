@@ -27,6 +27,9 @@ const FOOTER_SIZE: u16 = 1;
 mod app_state;
 use app_state::{TereAppState, CaseSensitiveMode};
 
+mod ui;
+use ui::help_window::get_formatted_help_text;
+
 mod error;
 use error::TereError;
 
@@ -60,6 +63,9 @@ impl<'a> TereTui<'a> {
 
         ret.update_header()?;
         ret.redraw_all_windows()?;
+        ret.info_message(format!("{} {} - Press '?' to view help or Esc to exit.",
+                                 env!("CARGO_PKG_NAME"),
+                                 env!("CARGO_PKG_VERSION")).as_str())?;
         Ok(ret)
     }
 
@@ -391,13 +397,11 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn on_resize(&mut self) -> CTResult<()> {
-
+    pub fn update_main_window_dimensions(&mut self) -> CTResult<()> {
         let (w, h) = main_window_size()?;
         let (w, h) = (w as u32, h as u32);
         self.app_state.update_main_window_dimensions(w, h);
-
-        self.redraw_all_windows()
+        Ok(())
     }
 
     pub fn on_arrow_key(&mut self, up: bool) -> CTResult<()> {
@@ -509,6 +513,10 @@ impl<'a> TereTui<'a> {
                             }
                         },
 
+                        KeyCode::Char('?') => {
+                            self.help_view_loop()?;
+                        }
+
                         // alt + hjkl
                         KeyCode::Char('h') if k.modifiers == ALT => {
                             self.change_dir("..")?;
@@ -553,7 +561,10 @@ impl<'a> TereTui<'a> {
                     }
                 },
 
-                Event::Resize(_, _) => self.on_resize()?,
+                Event::Resize(_, _) => {
+                    self.update_main_window_dimensions()?;
+                    self.redraw_all_windows()?;
+                }
 
                 //TODO don't show this in release
                 e => self.info_message(&format!("{:?}", e))?,
@@ -561,6 +572,103 @@ impl<'a> TereTui<'a> {
         }
 
         self.app_state.on_exit()
+    }
+
+    fn help_view_loop(&mut self) -> CTResult<()> {
+        self.info_message("Use ↓/↑ or j/k to scroll. Press Esc to exit help.")?;
+
+        // clear main window only once here in the beginning, otherwise it causes flashing/blinking.
+        self.queue_clear_main_window()?;
+
+        // We don't need the help view scroll state anywhere else, so not worth it to put in
+        // app_state, just keep it here.
+        let mut help_view_scroll: usize = 0;
+
+        self.draw_help_view(help_view_scroll)?;
+
+        loop {
+            match read_event()? {
+                Event::Key(k) => {
+                    match k.code {
+                        KeyCode::Esc | KeyCode::Char('q') => {
+                            self.info_message("")?;
+                            return self.redraw_all_windows();
+                        },
+
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            help_view_scroll += 1;
+                            self.draw_help_view(help_view_scroll)?;
+                        }
+
+                        KeyCode::Up | KeyCode::Char('k') => {
+                            help_view_scroll = help_view_scroll.checked_sub(1).unwrap_or(0);
+                            self.draw_help_view(help_view_scroll)?;
+                        }
+
+                        _ => {},
+                    }
+                }
+
+                Event::Resize(_, _) => {
+
+                    self.update_main_window_dimensions()?;
+                    // Redraw all windows except for main window
+                    self.redraw_header()?;
+                    self.redraw_info_window()?;
+                    self.redraw_footer()?;
+                    self.draw_help_view(help_view_scroll)?;
+                }
+
+                _ => {},
+            }
+        }
+    }
+
+    fn draw_help_view(&mut self, scroll: usize) -> CTResult<()> {
+
+        queue!(
+            self.window,
+            cursor::MoveTo(0, HEADER_SIZE),
+            style::SetAttribute(Attribute::Reset),
+            style::ResetColor,
+        )?;
+
+        let (w, h) = main_window_size()?;
+        let help_text = get_formatted_help_text(w);
+        let n_lines = help_text.len();
+        for (i, line) in help_text.iter()
+                .skip(scroll)
+                .chain(vec![vec![]].iter().cycle()) // add empty lines at the end
+                .take(h as usize)
+                .enumerate()
+            {
+            // Set up cursor position
+            queue!(
+                self.window,
+                // have to do MoveToColumn(0) manually because we're in raw mode
+                cursor::MoveToColumn(0),
+                // don't print newline before first line
+                style::Print(if i == 0 { "" } else { "\n"}),
+            )?;
+
+            // Print the fragments (which can have different styles)
+            for fragment in line {
+                queue!(
+                    self.window,
+                    style::PrintStyledContent(fragment.clone()),
+                )?;
+            }
+
+            // Clear the rest of the row
+            queue!(
+                self.window,
+                terminal::Clear(terminal::ClearType::UntilNewLine),
+            )?;
+        }
+
+        execute!(self.window)?;
+
+        Ok(())
     }
 }
 

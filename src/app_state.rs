@@ -180,7 +180,7 @@ impl TereAppState {
             cursor_pos: 0, // TODO: get last value from previous run
             scroll_pos: 0,
             header_msg: "".into(),
-            info_msg: "".into(), // TODO: initial help message, like 'tere vXXX, type "?" for help'
+            info_msg: "".into(),
             search_string: "".into(),
             //search_anywhere: false,
             settings: TereSettings::parse_cli_args(cli_args)?,
@@ -296,7 +296,6 @@ impl TereAppState {
     //////////////////////////////////////
 
     pub fn update_header(&mut self) {
-        //TODO: add another row to header (or footer?) with info, like 'tere - type ALT+? for help', and show status message when trying to open file etc
         self.header_msg = format!("{}", self.current_path.display());
     }
 
