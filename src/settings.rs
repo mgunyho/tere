@@ -57,9 +57,6 @@ impl fmt::Display for GapSearchMode {
 pub struct TereSettings {
     //TODO: options to show non-folders faintly, and skip over them with cursor (in ui settings) -- does this make sense?
     pub folders_only: bool,
-    //// if this is true, match anywhere, otherwise match only from the beginning
-    //search_anywhere: bool, // TODO
-    //case_insensitive: bool //TODO: case insensitive search
     /// If true, show only items matching the search in listing
     pub filter_search: bool,
 
@@ -69,6 +66,7 @@ pub struct TereSettings {
 
     pub history_file: Option<PathBuf>,
 
+    /// whether to allow matches with gaps in them, and if we have to match from beginning
     pub gap_search_mode: GapSearchMode,
 }
 

@@ -137,7 +137,6 @@ impl<'a> TereTui<'a> {
         let mut win = self.window;
         let mut extra_msg = String::new();
 
-        //TODO: think about statusbar formatting
         extra_msg.push_str(&format!("{} - ", self.app_state.settings.gap_search_mode));
         extra_msg.push_str(&format!("{} - ", self.app_state.settings.case_sensitive));
 

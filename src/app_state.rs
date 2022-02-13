@@ -589,7 +589,6 @@ impl TereAppState {
             self.search_string.to_lowercase()
         };
 
-        // TODO: make "omni-search" configurable using CLI args
         // TODO: construct regex pattern inside MatchesVec instead? - it relies now on capture
         // groups which are defined by the format!() parens here...
         let mut regex_str = "".to_string();
