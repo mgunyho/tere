@@ -25,16 +25,16 @@ pub const NO_MATCHES_MSG: &str = "No matches";
 
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
 /// both the vector of filtered items and the whole unfiltered vector.
-struct MatchesVec<T> {
-    all_items: Vec<T>,
+struct MatchesVec {
+    all_items: Vec<LsBufItem>,
     // This vec contains the indices of the items that have not been filtered out
     kept_indices: Vec<usize>,
 }
 
-impl<T> MatchesVec<T> {
+impl MatchesVec {
 
     /// Return a vector of all items that have been kept
-    pub fn kept_items(&self) -> Vec<&T> {
+    pub fn kept_items(&self) -> Vec<&LsBufItem> {
         self.kept_indices.iter().filter_map(|idx| self.all_items.get(*idx))
             .collect()
     }
@@ -43,7 +43,7 @@ impl<T> MatchesVec<T> {
     /// and applying a filter function
     pub fn apply_filter<F>(&mut self, filter: F)
     where
-        F: Fn(&T) -> bool
+        F: Fn(&LsBufItem) -> bool
     {
         self.kept_indices.clear();
         self.kept_indices = self.all_items.iter()
@@ -60,8 +60,8 @@ impl<T> MatchesVec<T> {
     }
 }
 
-impl<T> From<Vec<T>> for MatchesVec<T> {
-    fn from(vec: Vec<T>) -> Self {
+impl From<Vec<LsBufItem>> for MatchesVec {
+    fn from(vec: Vec<LsBufItem>) -> Self {
         let mut ret = Self {
             all_items: vec,
             kept_indices: vec![],
@@ -125,9 +125,10 @@ impl From<&std::path::Path> for CustomDirEntry
 }
 
 
+// TODO: remove this typedef; unnecessary
 type LsBufItem = CustomDirEntry;
 /// The type of the `ls_output_buf` buffer of the app state
-type LsBufType = MatchesVec<LsBufItem>;
+type LsBufType = MatchesVec;
 
 
 /// This struct represents the state of the application. Note that it has no
