@@ -596,7 +596,7 @@ impl TereAppState {
                 regex_str.push_str("^");
             }
             regex_str.push_str(&search_string.chars()
-                               .map(|c| regex::escape(&c.to_string()))
+                               .map(|c| format!("({})", regex::escape(&c.to_string())))
                                .collect::<Vec<String>>()
                                .join(".*?"));
         }
