@@ -585,6 +585,8 @@ impl TereAppState {
         };
 
         // TODO: make "omni-search" configurable using CLI args
+        // TODO: construct regex pattern inside MatchesVec instead? - it relies now on capture
+        // groups which are defined by the format!() parens here...
         let mut regex_str = "".to_string();
         if self.settings.gap_search_mode == GapSearchMode::NoGapSearch {
             regex_str.push_str(&format!("^({})", regex::escape(&search_string)));
