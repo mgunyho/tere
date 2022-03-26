@@ -567,7 +567,7 @@ impl TereAppState {
                     // check above.
                     .unwrap_or((0, &kept_indices[0]));
 
-                let i = if dir < 0 {
+                let new_row = if dir < 0 {
                     let i = cur_idx_in_kept.checked_sub(1).unwrap_or(kept_indices.len() - 1);
                     kept_indices[i]
                 } else if dir > 0 {
@@ -578,7 +578,7 @@ impl TereAppState {
                     *cur_idx_in_all
                 };
 
-                self.move_cursor_to(u32::try_from(i).unwrap_or(u32::MAX));
+                self.move_cursor_to(u32::try_from(new_row).unwrap_or(u32::MAX));
             }
         }
     }
