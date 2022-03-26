@@ -30,14 +30,33 @@ impl fmt::Display for CaseSensitiveMode {
     }
 }
 
+#[derive(PartialEq)]
+pub enum GapSearchMode {
+    GapSearchFromStart,
+    NoGapSearch,
+    GapSearchAnywere,
+}
+
+impl Default for GapSearchMode {
+    fn default() -> Self { Self::GapSearchFromStart }
+}
+
+impl fmt::Display for GapSearchMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>)  -> fmt::Result {
+        let text = match self {
+            GapSearchMode::GapSearchFromStart => "gap search from start",
+            GapSearchMode::NoGapSearch        => "normal search",
+            GapSearchMode::GapSearchAnywere   => "gap search anywhere",
+        };
+        write!(f, "{}", text)
+    }
+}
+
 
 #[derive(Default)]
 pub struct TereSettings {
     //TODO: options to show non-folders faintly, and skip over them with cursor (in ui settings) -- does this make sense?
     pub folders_only: bool,
-    //// if this is true, match anywhere, otherwise match only from the beginning
-    //search_anywhere: bool, // TODO
-    //case_insensitive: bool //TODO: case insensitive search
     /// If true, show only items matching the search in listing
     pub filter_search: bool,
 
@@ -46,6 +65,9 @@ pub struct TereSettings {
     pub autocd_timeout: Option<u64>,
 
     pub history_file: Option<PathBuf>,
+
+    /// whether to allow matches with gaps in them, and if we have to match from beginning
+    pub gap_search_mode: GapSearchMode,
 }
 
 impl TereSettings {
@@ -68,6 +90,13 @@ impl TereSettings {
             ret.case_sensitive = CaseSensitiveMode::SmartCase;
         }
 
+        if args.is_present("gap-search") {
+            ret.gap_search_mode = GapSearchMode::GapSearchFromStart;
+        } else if args.is_present("gap-search-anywhere") {
+            ret.gap_search_mode = GapSearchMode::GapSearchAnywere;
+        } else if args.is_present("no-gap-search") {
+            ret.gap_search_mode = GapSearchMode::NoGapSearch;
+        }
 
         ret.autocd_timeout = match args.values_of("autocd-timeout")
             // ok to unwrap because autocd-timeout has a default value which is always present

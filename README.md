@@ -66,6 +66,7 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 |Move cursor to the top   | <kbd>Home</kbd> or <kbd>Alt</kbd>+<kbd>g</kbd> |
 |Move cursor to the bottom| <kbd>End</kbd>  or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>g</kbd> |
 |Change case sensitivity mode| <kbd>Alt</kbd>+<kbd>c</kbd> |
+|Change gap search mode| <kbd>Ctrl</kbd>+<kbd>f</kbd> |
 |Show a help screen| <kbd>?</kbd> |
 
 Shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
@@ -82,6 +83,8 @@ To stop searching, press <kbd>Esc</kbd> or erase all search characters by pressi
 
 By default, the searching uses "smart case", meaning that if the query contains only lowercase letters, case is ignored, but if there are uppercase letters, the search is case sensitive. This can be changed with the `--ignore-case` and `--case-sensitive` options, or with the keyboard shortcut <kbd>Alt</kbd>+<kbd>c</kbd> while `tere` is running.
 
+In addition, in the default search mode, "gap search" is enabled. This means that the search query matches any folder or file name that contains the searched characters, even if there are other characters between them. For example, searching for `dt` would match both `DeskTop` and `DocumenTs`. This behavior can be changed with the `--gap-search-anywhere` and `--no-gap-search` options, or with the keyboard shortcut <kbd>Ctrl</kbd>+<kbd>f</kbd> while `tere` is running. See the output of the `--help` option for further details.
+
 ### CLI options
 
 You can adjust the behavior of `tere` by passing the following CLI options to it:
@@ -91,6 +94,7 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 - `--filter-search` or `-f` / `--no-filter-search` or `-F`: If this option is set, hide items in the output listing that don't match the current search query.
 - `--folders-only` or `-d` / `--no-folders-only` or `-D`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
 - `--smart-case` or `-S` / `--ignore-case` or `-i` / `--case-sensitive` or `-s`: Set the case sensitivity mode. The default mode is smart case.
+- `--gap-search` or `-g` / `--gap-search-anywhere` or `-G` / `--no-gap-search` or `-n`: Configure whether to allow matches with gaps in them (see above).
 - `--autocd-timeout` - If only one folder matches the current search query, automatically enter it after this many milliseconds. Can also be set to `off`, which disables this behaviour.
 - `--history-file`: To make browsing more convenient, `tere` saves a history of folders you have visited to this file in JSON format. It should be an absolute path. Defaults to `$CACHE_DIR/tere/history.json`, where `$CACHE_DIR` is `$XDG_CACHE_HOME` or `~/.cache`. Set to the empty string `''` to disable saving the history. Note that the history file may reveal parts of your filesystem hierarchy if it is possible to read by other users.
 

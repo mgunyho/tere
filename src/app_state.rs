@@ -7,11 +7,14 @@ use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::io::{Result as IOResult, Error as IOError, ErrorKind};
 use std::path::{Path, PathBuf, Component};
+use std::collections::BTreeMap;
+
+use regex::Regex;
 
 #[path = "settings.rs"]
 mod settings;
 use settings::TereSettings;
-pub use settings::CaseSensitiveMode;
+pub use settings::{CaseSensitiveMode, GapSearchMode};
 
 #[path = "history.rs"]
 mod history;
@@ -21,51 +24,68 @@ use crate::error::TereError;
 
 pub const NO_MATCHES_MSG: &str = "No matches";
 
+//TODO: docstring
+type MatchesLocType = Vec<(usize, usize)>;
+
+
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
 /// both the vector of filtered items and the whole unfiltered vector.
-struct FilteredVec<T> {
-    all_items: Vec<T>,
-    // This vec contains the indices of the items that have not been filtered out
-    kept_indices: Vec<usize>,
+struct MatchesVec {
+    all_items: Vec<LsBufItem>,
+    // Each key-value pair in this map corresponds to an item in `all_items` that matches the
+    // current search. The key is the item's index in `all_items`, while the value contains the
+    // regex match locations. We use a BTreeMap to always keep the matches sorted, so that they are
+    // in the same order relative to each other as they are in `all_items`.
+    matches: BTreeMap<usize, MatchesLocType>,
 }
 
-impl<T> FilteredVec<T> {
+impl MatchesVec {
+
+    /// Return a vector of the indices of the matches
+    fn kept_indices(&self) -> Vec<usize> {
+        self.matches.keys().map(|k| k.clone()).collect()
+    }
 
     /// Return a vector of all items that have been kept
-    pub fn kept_items(&self) -> Vec<&T> {
-        self.kept_indices.iter().filter_map(|idx| self.all_items.get(*idx))
+    pub fn kept_items(&self) -> Vec<&LsBufItem> {
+        self.kept_indices().iter().filter_map(|idx| self.all_items.get(*idx))
             .collect()
     }
 
-    /// Recreate the collection of filtered items by through all items in the unfiltered collection
-    /// and applying a filter function
-    pub fn apply_filter<F>(&mut self, filter: F)
-    where
-        F: Fn(&T) -> bool
-    {
-        self.kept_indices.clear();
-        self.kept_indices = self.all_items.iter()
+    /// Update the collection of matching items by through all items in the full collection
+    /// and testing a regex pattern against the filenames
+    pub fn update_matches(&mut self, search_ptn: &Regex, case_sensitive: bool) {
+        self.matches.clear();
+        self.matches = self.all_items.iter()
             .enumerate()
-            .filter(|(_, x)| filter(&x))
-            .map(|(i, _)| i)
+            .filter_map(|(i, item)| {
+                let target = if case_sensitive {
+                    item.file_name_checked()
+                } else {
+                    item.file_name_checked().to_lowercase()
+                };
+                let mut capture_locations = search_ptn.capture_locations();
+                if let Some(_) = search_ptn.captures_read(&mut capture_locations, &target) {
+                    // have to do it this way using range because capture_locations has no iter() method
+                    let locs = (1..capture_locations.len())
+                        .filter_map(|i| capture_locations.get(i))
+                        .collect();
+                    Some((i, locs))
+                } else {
+                    None
+                }
+            })
             .collect();
     }
 
-    /// Clear the filtered results, so that the kept items contain all items
-    pub fn clear_filter(&mut self) {
-        self.kept_indices.clear();
-        self.kept_indices = (0..self.all_items.len()).collect();
-    }
 }
 
-impl<T> From<Vec<T>> for FilteredVec<T> {
-    fn from(vec: Vec<T>) -> Self {
-        let mut ret = Self {
+impl From<Vec<LsBufItem>> for MatchesVec {
+    fn from(vec: Vec<LsBufItem>) -> Self {
+        Self {
             all_items: vec,
-            kept_indices: vec![],
-        };
-        ret.clear_filter();
-        ret
+            matches: BTreeMap::new(),
+        }
     }
 }
 
@@ -123,9 +143,10 @@ impl From<&std::path::Path> for CustomDirEntry
 }
 
 
+// TODO: remove this typedef; unnecessary
 type LsBufItem = CustomDirEntry;
 /// The type of the `ls_output_buf` buffer of the app state
-type LsBufType = FilteredVec<LsBufItem>;
+type LsBufType = MatchesVec;
 
 
 /// This struct represents the state of the application. Note that it has no
@@ -243,22 +264,22 @@ impl TereAppState {
 
     /// The number of items that match the current search.
     pub fn num_matching_items(&self) -> usize {
-        self.ls_output_buf.kept_indices.len()
+        self.ls_output_buf.matches.len()
     }
 
     /// Return a vector that contains the indices into the currently visible
     /// items that contain a match
     pub fn visible_match_indices(&self) -> Vec<usize> {
-        if self.settings.filter_search {
-            (0..self.ls_output_buf.kept_indices.len()).collect()
+        if self.is_searching() && self.settings.filter_search {
+            (0..self.ls_output_buf.matches.len()).collect()
         } else {
             // it's ok to clone here, the kept_indices will be usually quite short.
-            self.ls_output_buf.kept_indices.clone()
+            self.ls_output_buf.kept_indices()
         }
     }
 
     pub fn visible_items(&self) -> Vec<&LsBufItem> {
-        if self.settings.filter_search {
+        if self.is_searching() && self.settings.filter_search {
             self.ls_output_buf.kept_items()
         } else {
             self.ls_output_buf.all_items.iter().collect()
@@ -290,6 +311,17 @@ impl TereAppState {
                 AsRef::<OsStr>::as_ref(&x.file_name_checked()) == fname.as_ref()
             })
     }
+
+    pub fn get_match_locations_at_cursor_pos(&self, cursor_pos: u32) -> Option<&MatchesLocType> {
+        let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
+        if self.settings.filter_search {
+            // NOTE: we assume that the matches is a sorted map
+            self.ls_output_buf.matches.values().nth(idx)
+        } else {
+            self.ls_output_buf.matches.get(&idx)
+        }
+    }
+
 
     //////////////////////////////////////
     // Functions for updating the state //
@@ -512,7 +544,7 @@ impl TereAppState {
             } else {
 
                 let cur_idx = self.cursor_pos_to_visible_item_index(self.cursor_pos);
-                let kept_indices = &self.ls_output_buf.kept_indices;
+                let kept_indices = &self.ls_output_buf.kept_indices();
                 let (cur_idx_in_kept, cur_idx_in_all) = kept_indices.iter()
                     .enumerate()
                     .skip_while(|(_, i_in_all)| **i_in_all < cur_idx)
@@ -556,27 +588,39 @@ impl TereAppState {
         } else {
             self.search_string.to_lowercase()
         };
-        self.ls_output_buf.apply_filter(|itm| {
-            let target = if is_case_sensitive {
-                itm.file_name_checked()
-            } else {
-                itm.file_name_checked().to_lowercase()
-            };
-            target.starts_with(&search_string)
-        });
+
+        // TODO: construct regex pattern inside MatchesVec instead? - it relies now on capture
+        // groups which are defined by the format!() parens here...
+        let mut regex_str = "".to_string();
+        if self.settings.gap_search_mode == GapSearchMode::NoGapSearch {
+            regex_str.push_str(&format!("^({})", regex::escape(&search_string)));
+        } else {
+            // enable gap search. Add '^' to the regex to match only from the start if applicable.
+            if self.settings.gap_search_mode == GapSearchMode::GapSearchFromStart {
+                regex_str.push_str("^");
+            }
+            regex_str.push_str(&search_string.chars()
+                               .map(|c| format!("({})", regex::escape(&c.to_string())))
+                               .collect::<Vec<String>>()
+                               .join(".*?"));
+        }
+
+        // ok to unwrap, we have escaped the regex above
+        let search_ptn = Regex::new(&regex_str).unwrap();
+        self.ls_output_buf.update_matches(&search_ptn, is_case_sensitive);
     }
 
     pub fn clear_search(&mut self) {
         let previous_item_under_cursor = self.get_item_under_cursor().cloned();
         self.search_string.clear();
-        self.ls_output_buf.clear_filter();
         previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
     }
 
     pub fn advance_search(&mut self, query: &str) {
-        self.search_string.push_str(query);
 
         let previous_item_under_cursor = self.get_item_under_cursor().cloned();
+
+        self.search_string.push_str(query);
 
         self.update_search_matches();
 
@@ -592,10 +636,10 @@ impl TereAppState {
     }
 
     pub fn erase_search_char(&mut self) {
+        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
+
         if let Some(_) = self.search_string.pop() {
             //TODO: keep cursor position when there were no matches? should somehow push cursor position onto some stack when advancing search.
-
-            let previous_item_under_cursor = self.get_item_under_cursor().cloned();
 
             self.update_search_matches();
 
@@ -611,29 +655,6 @@ impl TereAppState {
         };
     }
 
-}
-
-#[cfg(test)]
-mod tests_for_filtered_vec {
-    use super::FilteredVec;
-
-    #[test]
-    fn test_filter_basic() {
-        let mut v = FilteredVec::from(vec![1, 2, 3]);
-        v.apply_filter(|n| (n % 2) == 0);
-        assert_eq!(v.all_items, vec![1, 2, 3]);
-        assert_eq!(v.kept_items(), vec![&2]);
-        assert_eq!(v.kept_indices, vec![1]);
-    }
-
-    #[test]
-    fn test_clear_filter() {
-        let mut v = FilteredVec::from(vec![1, 2, 3]);
-        v.apply_filter(|_| false);
-        assert_eq!(v.kept_items(), Vec::<&usize>::new());
-        v.clear_filter();
-        assert_eq!(v.kept_items(), vec![&1, &2, &3]);
-    }
 }
 
 #[cfg(test)]

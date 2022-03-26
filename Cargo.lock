@@ -362,14 +362,16 @@ checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
 name = "tere"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "clap",
  "crossterm",
  "dirs",
+ "regex",
  "serde",
  "serde_json",
  "textwrap",
+ "unicode-segmentation",
 ]
 
 [[package]]
@@ -411,6 +413,12 @@ checksum = "3a52dcaab0c48d931f7cc8ef826fa51690a08e1ea55117ef26f89864f532383f"
 dependencies = [
  "regex",
 ]
+
+[[package]]
+name = "unicode-segmentation"
+version = "1.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8895849a949e7845e06bd6dc1aa51731a103c42707010a5b591c0038fb73385b"
 
 [[package]]
 name = "unicode-width"

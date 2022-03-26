@@ -14,6 +14,7 @@ use crossterm::{
     Result as CTResult,
 };
 use dirs::home_dir;
+use unicode_segmentation::UnicodeSegmentation;
 
 use clap::{App, Arg, ArgMatches};
 
@@ -25,7 +26,7 @@ const FOOTER_SIZE: u16 = 1;
 //TODO: clippy
 
 mod app_state;
-use app_state::{TereAppState, CaseSensitiveMode};
+use app_state::{TereAppState, CaseSensitiveMode, GapSearchMode};
 
 mod ui;
 use ui::help_window::get_formatted_help_text;
@@ -136,7 +137,8 @@ impl<'a> TereTui<'a> {
         let mut win = self.window;
         let mut extra_msg = String::new();
 
-        extra_msg.push_str(&format!("{} ", self.app_state.settings.case_sensitive));
+        extra_msg.push_str(&format!("{} - ", self.app_state.settings.gap_search_mode));
+        extra_msg.push_str(&format!("{} - ", self.app_state.settings.case_sensitive));
 
         queue!(
             win,
@@ -187,7 +189,6 @@ impl<'a> TereTui<'a> {
             ("".to_string(), false, false),
             |itm| (itm.file_name_checked(), itm.is_dir(), itm.is_symlink)
         );
-        let item_size = item.len();
 
         let attr = if bold {
             Attribute::Bold
@@ -210,33 +211,71 @@ impl<'a> TereTui<'a> {
         let idx = self.app_state.cursor_pos_to_visible_item_index(row.into());
         if self.app_state.is_searching()
             && self.app_state.visible_match_indices().contains(&idx) {
-            // print matching part
-            let n = self.app_state.search_string().len();
-            let item_matching = item.get(..n).unwrap_or(&item);
-            let item_not_matching = item.get(n..).unwrap_or("");
-            queue!(
-                self.window,
-                style::SetAttribute(Attribute::Underlined),
-                style::SetBackgroundColor(style::Color::DarkGrey),
-                style::Print(item_matching.get(..w).unwrap_or(&item_matching)),
-                style::SetAttribute(Attribute::NoUnderline),
-                style::SetBackgroundColor(style::Color::Reset),
-            )?;
+            // All *byte offsets* that should be underlined
+            let underline_locs: Vec<usize> = self.app_state
+                .get_match_locations_at_cursor_pos(row as u32)
+                .unwrap_or(&vec![])
+                .iter()
+                .map(|(start, end)| (*start..*end).collect::<Vec<usize>>())
+                .flatten()
+                .collect();
+
+            // Use unicode_segmentation to find out the grapheme clusters corresponding to the
+            // above byte offsets, and determine whether they should be underlined.
+            let letters_underlining: Vec<(&str, bool)> = UnicodeSegmentation::grapheme_indices(item.as_str(), true)
+                // this contains() could probably be optimized, but shouldn't be too bad.
+                .map(|(i, c)| (c, underline_locs.contains(&i)))
+                .collect();
+
+            for (c, underline) in letters_underlining {
+
+                let (underline, fg, bg)  = match (underline, highlight) {
+                    (true,      _) => (
+                        Attribute::Underlined,
+                        style::Color::Reset,
+                        style::Color::DarkGrey,
+                        ),
+                    (false,  true) => (
+                        Attribute::NoUnderline,
+                        style::Color::Black,
+                        style::Color::Grey,
+                        ),
+                    (false, false) => (
+                        Attribute::NoUnderline,
+                        style::Color::Reset,
+                        style::Color::Reset,
+                        ),
+                };
+
+                queue!(
+                    self.window,
+                    style::SetAttribute(underline),
+                    style::SetBackgroundColor(bg),
+                    style::SetForegroundColor(fg),
+                    style::Print(c.to_string()),
+                )?;
+
+            }
+
+            // color the rest of the line if applicable
             if highlight {
                 queue!(
                     self.window,
                     style::SetBackgroundColor(style::Color::Grey),
-                    style::SetForegroundColor(style::Color::Black),
+                    terminal::Clear(terminal::ClearType::UntilNewLine),
                 )?;
             }
+
             queue!(
                 self.window,
-                style::Print(item_not_matching.get(..w.checked_sub(n).unwrap_or(0)).unwrap_or(&item_not_matching)),
-                style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
+                style::SetBackgroundColor(style::Color::Reset),
             )?;
 
         } else {
             if highlight {
+                // figure out how much padding we need after the item
+                let item_size = UnicodeSegmentation::graphemes(item.as_str(), true).count();
+
                 queue!(
                     self.window,
                     style::SetBackgroundColor(style::Color::Grey),
@@ -466,6 +505,19 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    fn cycle_gap_search_mode(&mut self) -> CTResult<()> {
+        self.app_state.settings.gap_search_mode = match self.app_state.settings.gap_search_mode {
+            GapSearchMode::GapSearchFromStart => GapSearchMode::NoGapSearch,
+            GapSearchMode::NoGapSearch => GapSearchMode::GapSearchAnywere,
+            GapSearchMode::GapSearchAnywere => GapSearchMode::GapSearchFromStart,
+        };
+        //TODO: do the other stuff that self.on_search_char_does, notably, change dir if only one match. or should it?
+        self.app_state.advance_search("");
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
+    }
+
     pub fn main_event_loop(&mut self) -> CTResult<()> {
         #[allow(non_snake_case)]
         let ALT = KeyModifiers::ALT;
@@ -551,6 +603,10 @@ impl<'a> TereTui<'a> {
 
                         KeyCode::Char('c') if k.modifiers == ALT => {
                             self.cycle_case_sensitive_mode()?;
+                        }
+
+                        KeyCode::Char('f') if k.modifiers == CONTROL => {
+                            self.cycle_gap_search_mode()?;
                         }
 
                         KeyCode::Char(c) => self.on_search_char(c)?,
@@ -677,6 +733,12 @@ macro_rules! case_sensitive_template {
     }
 }
 
+macro_rules! gap_search_mode_template {
+    ($x:tt, $y:tt) => {
+        format!("This overrides the --{} and --{} options. You can also change the search mode while the program is running with the keyboard shortcut CTRL+F.", $x, $y)
+    }
+}
+
 fn main() -> Result<(), TereError> {
 
     let cli_args = App::new(env!("CARGO_PKG_NAME"))
@@ -740,6 +802,29 @@ fn main() -> Result<(), TereError> {
                         case_sensitive_template!("case-sensitive", "ignore-case")).as_str())
              .overrides_with("smart-case")
             )
+        .arg(Arg::new("gap-search")
+             .long("gap-search")
+             .short('g')
+             .help("Match the search from the beginning, but allow gaps (default)")
+             .long_help(format!("When searching, match items that start with the same character as the search query, but allow gaps between the search characters. For example, searching for \"do\" would match \"DesktOp\", \"DOcuments\", and \"DOwnloads\", while searching for \"dt\" would match \"DeskTop\" and \"DocumenTs\" but not \"downloads\", and searching for \"es\" would match none of the above. This is the default behavior.\n\n{}", gap_search_mode_template!("gap-search", "no-gap-search")).as_str())
+             .overrides_with_all(&["gap-search", "gap-search-anywhere", "no-gap-search"])
+             )
+        .arg(Arg::new("gap-search-anywhere")
+             .long("gap-search-anywhere")
+             .short('G')
+             .help("Match the search anywhere, and allow gaps")
+             .long_help(format!("When searching, allow the search characters to appear anywhere in a file/folder name, possibly with gaps between them. For example, searching for \"do\" would match \"DesktOp\", \"DOcuments\", and \"DOwnloads\", while searching for \"es\" would match \"dESktop\" and \"documEntS\", but not \"downloads\".\n\n{}",
+                        gap_search_mode_template!("gap-search-from-start", "no-gap-search")).as_str())
+             .overrides_with_all(&["gap-search-anywhere", "no-gap-search"])
+             )
+        .arg(Arg::new("no-gap-search")
+             .long("no-gap-search")
+             .short('n')
+             .help("Match the search from the beginning, and do not allow gaps")
+             .long_help(format!("Disable gap-search. Match only consecutive characters from the beginning of the search query. For example, searching for \"do\" would match \"DOcuments\" and \"DOwnloads\", but not \"desktop\".\n\n{}", gap_search_mode_template!("gap-search", "gap-search-from-start")).as_str())
+             .overrides_with("no-gap-search")
+             )
+        //TODO: if somebody wants this: '-N', '--no-gap-search-anywhere - don't allow gaps, but can start anywhere. maybe have to come up with a better long name.
         .arg(Arg::new("autocd-timeout")
              .long("autocd-timeout")
              .help("Timeout for auto-cd when there's only one match, in milliseconds. Use 'off' to disable auto-cd.")
