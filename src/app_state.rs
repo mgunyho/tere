@@ -605,7 +605,8 @@ impl TereAppState {
                                .join(".*?"));
         }
 
-        let search_ptn = Regex::new(&regex_str).unwrap(); //TODO: error handling...
+        // ok to unwrap, we have escaped the regex above
+        let search_ptn = Regex::new(&regex_str).unwrap();
         self.ls_output_buf.update_matches(&search_ptn, is_case_sensitive);
     }
 
