@@ -46,13 +46,13 @@ impl MatchesVec {
         self.matches.keys().map(|k| k.clone()).collect()
     }
 
-    /// Return a vector of all items that have been kept
+    /// Return a vector of all items that have not been filtered out
     pub fn kept_items(&self) -> Vec<&LsBufItem> {
         self.matches.keys().filter_map(|idx| self.all_items.get(*idx))
             .collect()
     }
 
-    /// Update the collection of matching items by through all items in the full collection
+    /// Update the collection of matching items by going through all items in the full collection
     /// and testing a regex pattern against the filenames
     pub fn update_matches(&mut self, search_ptn: &Regex, case_sensitive: bool) {
         self.matches.clear();
@@ -282,6 +282,8 @@ impl TereAppState {
         }
     }
 
+    /// All items that are visible with the current settings in the current search state. This
+    /// includes items that might fall outside the window.
     pub fn visible_items(&self) -> Vec<&LsBufItem> {
         if self.is_searching() && self.settings.filter_search {
             self.ls_output_buf.kept_items()
@@ -563,7 +565,7 @@ impl TereAppState {
                     .next()
                     // if we skipped everything, wrap around and return the first
                     // item in the kept indices. shouldn't panic, kept_indices
-                    // shouldn't be empty based on the visible_items().len()
+                    // shouldn't be empty based on the num_matching_items()
                     // check above.
                     .unwrap_or((0, &kept_indices[0]));
 
