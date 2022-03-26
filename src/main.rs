@@ -185,6 +185,9 @@ impl<'a> TereTui<'a> {
         let w: usize = main_window_size()?.0.into();
 
         //TODO: make customizable...
+        let highlight_fg = style::Color::Black;
+        let highlight_bg = style::Color::Grey;
+        let matching_letter_bg = style::Color::DarkGrey;
         let symlink_color = style::Color::Cyan;
 
         let (item, is_dir, is_symlink) = self.app_state.get_item_at_cursor_pos(row.into()).map_or(
@@ -236,12 +239,12 @@ impl<'a> TereTui<'a> {
                     (true,      _) => (
                         Attribute::Underlined,
                         style::Color::Reset,
-                        style::Color::DarkGrey,
+                        matching_letter_bg,
                         ),
                     (false,  true) => (
                         Attribute::NoUnderline,
-                        style::Color::Black,
-                        style::Color::Grey,
+                        highlight_fg,
+                        highlight_bg,
                         ),
                     (false, false) => (
                         Attribute::NoUnderline,
@@ -264,7 +267,7 @@ impl<'a> TereTui<'a> {
             if highlight {
                 queue!(
                     self.window,
-                    style::SetBackgroundColor(style::Color::Grey),
+                    style::SetBackgroundColor(highlight_bg),
                     terminal::Clear(terminal::ClearType::UntilNewLine),
                 )?;
             }
@@ -281,9 +284,9 @@ impl<'a> TereTui<'a> {
 
                 queue!(
                     self.window,
-                    style::SetBackgroundColor(style::Color::Grey),
+                    style::SetBackgroundColor(highlight_bg),
                     //NOTE: not using symlink_color here because cyan looks bad on grey background
-                    style::SetForegroundColor(style::Color::Black),
+                    style::SetForegroundColor(highlight_fg),
                     style::Print(item.get(..w).unwrap_or(&item)),
                     style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
                 )?;
