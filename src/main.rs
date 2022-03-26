@@ -166,7 +166,7 @@ impl<'a> TereTui<'a> {
             //TODO: show no. of files/folders separately? like 'n folders, n files'
             extra_msg.push_str(&format!("{} / {}",
                                cursor_idx + 1,
-                               self.app_state.visible_items().len()));
+                               self.app_state.num_visible_items()));
         }
         execute!(
             win,
@@ -332,7 +332,7 @@ impl<'a> TereTui<'a> {
 
         // are there any matches?
         let any_matches = self.app_state.num_matching_items() > 0;
-        let any_visible_items = self.app_state.visible_items().len() > 0; //TODO: ~O(n) calculation of 'n'
+        let any_visible_items = self.app_state.num_visible_items() > 0;
         let is_search = self.app_state.is_searching();
 
         // Draw entries. No need to clear the whole main window, because draw_main_window_row takes
@@ -485,7 +485,7 @@ impl<'a> TereTui<'a> {
             let target = if home {
                 0
             } else {
-                self.app_state.visible_items().len() as u32
+                self.app_state.num_visible_items() as u32
             };
             self.app_state.move_cursor_to(target);
             self.redraw_main_window()?;

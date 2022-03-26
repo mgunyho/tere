@@ -290,6 +290,15 @@ impl TereAppState {
         }
     }
 
+    /// Shorthand to get the number of items without having to clone / iterate over all of them
+    pub fn num_visible_items(&self) -> usize {
+        if self.is_searching() && self.settings.filter_search {
+            self.num_matching_items()
+        } else {
+            self.num_total_items()
+        }
+    }
+
     /// Convert a cursor position (in the range 0..window_height) to an index
     /// into the currently visible items.
     pub fn cursor_pos_to_visible_item_index(&self, cursor_pos: u32) -> usize {
