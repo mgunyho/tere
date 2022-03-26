@@ -184,13 +184,19 @@ impl<'a> TereTui<'a> {
         let row_abs = row  + HEADER_SIZE;
         let w: usize = main_window_size()?.0.into();
 
-        let (item, bold, italic) = self.app_state.get_item_at_cursor_pos(row.into()).map_or(
+        //TODO: make customizable...
+        let highlight_fg = style::Color::Black;
+        let highlight_bg = style::Color::Grey;
+        let matching_letter_bg = style::Color::DarkGrey;
+        let symlink_color = style::Color::Cyan;
+
+        let (item, is_dir, is_symlink) = self.app_state.get_item_at_cursor_pos(row.into()).map_or(
             // Draw empty text at the rows that are outside the listing buffer.
             ("".to_string(), false, false),
             |itm| (itm.file_name_checked(), itm.is_dir(), itm.is_symlink)
         );
 
-        let attr = if bold {
+        let attr = if is_dir {
             Attribute::Bold
         } else {
             Attribute::Dim
@@ -204,8 +210,8 @@ impl<'a> TereTui<'a> {
             style::SetAttribute(attr),
         )?;
 
-        if italic {
-            queue!(self.window, style::SetAttribute(Attribute::Italic))?;
+        if is_symlink {
+            queue!(self.window, style::SetForegroundColor(symlink_color))?;
         }
 
         let idx = self.app_state.cursor_pos_to_visible_item_index(row.into());
@@ -233,16 +239,16 @@ impl<'a> TereTui<'a> {
                     (true,      _) => (
                         Attribute::Underlined,
                         style::Color::Reset,
-                        style::Color::DarkGrey,
+                        matching_letter_bg,
                         ),
                     (false,  true) => (
                         Attribute::NoUnderline,
-                        style::Color::Black,
-                        style::Color::Grey,
+                        highlight_fg,
+                        highlight_bg,
                         ),
                     (false, false) => (
                         Attribute::NoUnderline,
-                        style::Color::Reset,
+                        if is_symlink { symlink_color } else { style::Color::Reset },
                         style::Color::Reset,
                         ),
                 };
@@ -259,10 +265,12 @@ impl<'a> TereTui<'a> {
 
             // color the rest of the line if applicable
             if highlight {
+                let item_size = UnicodeSegmentation::graphemes(item.as_str(), true).count();
                 queue!(
                     self.window,
-                    style::SetBackgroundColor(style::Color::Grey),
-                    terminal::Clear(terminal::ClearType::UntilNewLine),
+                    style::SetAttribute(Attribute::Reset), // so that the rest of the line isn't underlined
+                    style::SetBackgroundColor(highlight_bg),
+                    style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
                 )?;
             }
 
@@ -278,8 +286,9 @@ impl<'a> TereTui<'a> {
 
                 queue!(
                     self.window,
-                    style::SetBackgroundColor(style::Color::Grey),
-                    style::SetForegroundColor(style::Color::Black),
+                    style::SetBackgroundColor(highlight_bg),
+                    //NOTE: not using symlink_color here because cyan looks bad on grey background
+                    style::SetForegroundColor(highlight_fg),
                     style::Print(item.get(..w).unwrap_or(&item)),
                     style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
                 )?;
