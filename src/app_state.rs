@@ -48,7 +48,7 @@ impl MatchesVec {
 
     /// Return a vector of all items that have been kept
     pub fn kept_items(&self) -> Vec<&LsBufItem> {
-        self.kept_indices().iter().filter_map(|idx| self.all_items.get(*idx))
+        self.matches.keys().filter_map(|idx| self.all_items.get(*idx))
             .collect()
     }
 
