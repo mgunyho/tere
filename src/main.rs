@@ -265,10 +265,12 @@ impl<'a> TereTui<'a> {
 
             // color the rest of the line if applicable
             if highlight {
+                let item_size = UnicodeSegmentation::graphemes(item.as_str(), true).count();
                 queue!(
                     self.window,
+                    style::SetAttribute(Attribute::Reset), // so that the rest of the line isn't underlined
                     style::SetBackgroundColor(highlight_bg),
-                    terminal::Clear(terminal::ClearType::UntilNewLine),
+                    style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
                 )?;
             }
 
