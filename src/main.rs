@@ -184,13 +184,16 @@ impl<'a> TereTui<'a> {
         let row_abs = row  + HEADER_SIZE;
         let w: usize = main_window_size()?.0.into();
 
-        let (item, bold, italic) = self.app_state.get_item_at_cursor_pos(row.into()).map_or(
+        //TODO: make customizable...
+        let symlink_color = style::Color::Cyan;
+
+        let (item, is_dir, is_symlink) = self.app_state.get_item_at_cursor_pos(row.into()).map_or(
             // Draw empty text at the rows that are outside the listing buffer.
             ("".to_string(), false, false),
             |itm| (itm.file_name_checked(), itm.is_dir(), itm.is_symlink)
         );
 
-        let attr = if bold {
+        let attr = if is_dir {
             Attribute::Bold
         } else {
             Attribute::Dim
@@ -204,8 +207,8 @@ impl<'a> TereTui<'a> {
             style::SetAttribute(attr),
         )?;
 
-        if italic {
-            queue!(self.window, style::SetAttribute(Attribute::Italic))?;
+        if is_symlink {
+            queue!(self.window, style::SetForegroundColor(symlink_color))?;
         }
 
         let idx = self.app_state.cursor_pos_to_visible_item_index(row.into());
@@ -242,7 +245,7 @@ impl<'a> TereTui<'a> {
                         ),
                     (false, false) => (
                         Attribute::NoUnderline,
-                        style::Color::Reset,
+                        if is_symlink { symlink_color } else { style::Color::Reset },
                         style::Color::Reset,
                         ),
                 };
@@ -279,6 +282,7 @@ impl<'a> TereTui<'a> {
                 queue!(
                     self.window,
                     style::SetBackgroundColor(style::Color::Grey),
+                    //NOTE: not using symlink_color here because cyan looks bad on grey background
                     style::SetForegroundColor(style::Color::Black),
                     style::Print(item.get(..w).unwrap_or(&item)),
                     style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
