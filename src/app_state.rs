@@ -370,11 +370,10 @@ impl TereAppState {
             );
 
             new_output_buf.sort_by(|a, b| {
-                //NOTE: partial_cmp for strings always returns Some, so unwrap is ok here
-                //a.file_name_checked().partial_cmp(&b.file_name_checked()).unwrap()
                 match (a.is_dir(), b.is_dir()) {
                     (true, true) | (false, false) => {
-                        // both are dirs or files, compare by name
+                        // both are dirs or files, compare by name.
+                        // partial_cmp for strings always returns Some, so unwrap is ok here
                         a.file_name_checked().partial_cmp(&b.file_name_checked()).unwrap()
                     },
                     // Otherwise, put folders first
