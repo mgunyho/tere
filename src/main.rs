@@ -883,6 +883,17 @@ fn main() -> Result<(), TereError> {
              .takes_value(true)
              .value_name("FILE or ''")
             )
+        .arg(Arg::new("mouse")
+             .long("mouse")
+             .help("Enable mouse navigation")
+             .long_help("Enable mouse navigation. If enabled, you can browse by clicking around with the mouse.")
+             .takes_value(true)
+             .value_name("'on' or 'off'")
+             .possible_values(&["on", "off"])
+             .hide_possible_values(true)
+             .default_value("off")
+             .multiple_occurrences(true)
+             )
         //TODO: CLI option to enable mouse
         .try_get_matches()
         .unwrap_or_else(|err| {
@@ -895,13 +906,20 @@ fn main() -> Result<(), TereError> {
 
     let mut stderr = std::io::stderr();
 
+    // TODO: move mouse option parsing somewhere else...
+    // Ok to unwrap, because mouse has a default value which is always present
+    let enable_mouse_opt = cli_args.values_of("mouse").unwrap().last().unwrap();
+    let enable_mouse = enable_mouse_opt == "on";
+
     execute!(
         stderr,
         terminal::EnterAlternateScreen,
         cursor::Hide,
-        //TODO: only do this if mouse is enabled
-        EnableMouseCapture,
     )?;
+
+    if enable_mouse {
+        execute!(stderr, EnableMouseCapture)?;
+    }
 
     // we are now inside the alternate screen, so collect all errors and attempt
     // to leave the alt screen in case of an error
@@ -919,9 +937,12 @@ fn main() -> Result<(), TereError> {
     // this 'and' has to be in this order to keep the path if both results are ok.
     let res = raw_mode_success.and(res);
 
+    if enable_mouse {
+        execute!(stderr, DisableMouseCapture)?;
+    }
+
     execute!(
         stderr,
-        DisableMouseCapture,
         terminal::LeaveAlternateScreen,
         cursor::Show,
         )?;
