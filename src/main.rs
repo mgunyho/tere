@@ -8,6 +8,11 @@ use crossterm::{
     event::{
         read as read_event,
         Event,
+        EnableMouseCapture,
+        DisableMouseCapture,
+        MouseEvent,
+        MouseEventKind,
+        MouseButton,
         KeyCode,
         KeyModifiers,
     },
@@ -849,6 +854,7 @@ fn main() -> Result<(), TereError> {
              .takes_value(true)
              .value_name("FILE or ''")
             )
+        //TODO: CLI option to enable mouse
         .try_get_matches()
         .unwrap_or_else(|err| {
             // custom error handling: clap writes '--help' and '--version'
@@ -864,6 +870,8 @@ fn main() -> Result<(), TereError> {
         stderr,
         terminal::EnterAlternateScreen,
         cursor::Hide,
+        //TODO: only do this if mouse is enabled
+        EnableMouseCapture,
     )?;
 
     // we are now inside the alternate screen, so collect all errors and attempt
@@ -884,8 +892,9 @@ fn main() -> Result<(), TereError> {
 
     execute!(
         stderr,
+        DisableMouseCapture,
         terminal::LeaveAlternateScreen,
-        cursor::Show
+        cursor::Show,
         )?;
 
     // Check if there was an error
