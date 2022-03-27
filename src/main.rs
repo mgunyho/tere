@@ -561,6 +561,11 @@ impl<'a> TereTui<'a> {
                 Event::Key(k) => {
                     match k.code {
                         KeyCode::Right | KeyCode::Enter => self.change_dir("")?,
+                        KeyCode::Char(' ') if !self.app_state.is_searching() => {
+                            // If the first key is space, treat it like enter. It's probably pretty
+                            // rare to have a folder name starting with space.
+                            self.change_dir("")?;
+                        },
                         KeyCode::Left => self.change_dir("..")?, //TODO: use std::path::Component::ParentDir
                         KeyCode::Up if k.modifiers == ALT => {
                             self.change_dir("..")?;
@@ -641,9 +646,20 @@ impl<'a> TereTui<'a> {
                             self.cycle_gap_search_mode()?;
                         }
 
+                        KeyCode::Char('-') if !self.app_state.is_searching() => {
+                            // go up with '-', like vim does
+                            self.change_dir("..")?;
+                        }
+
                         KeyCode::Char(c) => self.on_search_char(c)?,
 
-                        KeyCode::Backspace => self.erase_search_char()?,
+                        KeyCode::Backspace => {
+                            if self.app_state.is_searching() {
+                                self.erase_search_char()?;
+                            } else {
+                                self.change_dir("..")?;
+                            }
+                        },
 
                         _ => self.info_message(&format!("{:?}", k))?,
                     }
