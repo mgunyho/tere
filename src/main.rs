@@ -680,11 +680,11 @@ impl<'a> TereTui<'a> {
                     //TODO: add configuration to jump multiple items on scroll
                     MouseEventKind::ScrollUp   => self.on_arrow_key(true)?,
                     MouseEventKind::ScrollDown => self.on_arrow_key(false)?,
+
+                    //e => self.info_message(&format!("{:?}", e))?, // for debugging
                     _ => (),
                 },
 
-                //TODO don't show this in release
-                e => self.info_message(&format!("{:?}", e))?,
             }
         }
 
