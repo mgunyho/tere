@@ -626,6 +626,10 @@ impl<'a> TereTui<'a> {
                         KeyCode::Char('q') if k.modifiers == ALT => {
                             break;
                         }
+                        KeyCode::Char('c') if k.modifiers == CONTROL => {
+                            // exit on ctl+c
+                            break;
+                        }
                         KeyCode::Char('u') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
                             self.on_page_up_down(true)?;
                         }
