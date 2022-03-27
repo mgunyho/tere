@@ -85,6 +85,10 @@ By default, the searching uses "smart case", meaning that if the query contains 
 
 In addition, in the default search mode, "gap search" is enabled. This means that the search query matches any folder or file name that contains the searched characters, even if there are other characters between them. For example, searching for `dt` would match both `DeskTop` and `DocumenTs`. This behavior can be changed with the `--gap-search-anywhere` and `--no-gap-search` options, or with the keyboard shortcut <kbd>Ctrl</kbd>+<kbd>f</kbd> while `tere` is running. See the output of the `--help` option for further details.
 
+### Mouse navigation
+
+Although `tere` is mainly keyboard-focused, it is also possible to navigate using the mouse. To maximize compatibility, mouse support is off by default, and has to be enabled with the option `--mouse=on`. With the mouse enabled, you can change to a folder by clicking on it, and move to the parent folder by right-clicking.
+
 ### CLI options
 
 You can adjust the behavior of `tere` by passing the following CLI options to it:
@@ -97,6 +101,7 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 - `--gap-search` or `-g` / `--gap-search-anywhere` or `-G` / `--no-gap-search` or `-n`: Configure whether to allow matches with gaps in them (see above).
 - `--autocd-timeout` - If only one folder matches the current search query, automatically enter it after this many milliseconds. Can also be set to `off`, which disables this behaviour.
 - `--history-file`: To make browsing more convenient, `tere` saves a history of folders you have visited to this file in JSON format. It should be an absolute path. Defaults to `$CACHE_DIR/tere/history.json`, where `$CACHE_DIR` is `$XDG_CACHE_HOME` or `~/.cache`. Set to the empty string `''` to disable saving the history. Note that the history file may reveal parts of your filesystem hierarchy if it is possible to read by other users.
+- `--mouse`: Enable navigating with the mouse. Off by default.
 
 Some options have two or more versions that override each other (for example `--folders-only` and `--no-folders-only`). For such options, whichever is passed last wins. This way, you can have one option as the default in your shell's `rc` file, but you can sometimes manually override that option when running `tere`.
 
