@@ -145,17 +145,6 @@ impl<'a> TereTui<'a> {
         extra_msg.push_str(&format!("{} - ", self.app_state.settings.gap_search_mode));
         extra_msg.push_str(&format!("{} - ", self.app_state.settings.case_sensitive));
 
-        queue!(
-            win,
-            cursor::MoveTo(0, footer_win_row),
-            style::SetAttribute(Attribute::Reset),
-            //TODO: prevent line wrap here
-            style::Print(&format!("{}: {}",
-                                  if self.app_state.settings.filter_search { "filter" } else { "search" },
-                                  self.app_state.search_string()
-                                  ).bold()),
-        )?;
-
         let cursor_idx = self.app_state.cursor_pos_to_visible_item_index(self.app_state.cursor_pos);
         if self.app_state.is_searching() {
             let index_in_matches = self.app_state
@@ -173,12 +162,25 @@ impl<'a> TereTui<'a> {
                                cursor_idx + 1,
                                self.app_state.num_visible_items()));
         }
+
+        // draw extra message first, so that it gets overwritten by the more important search query
+        // if there is not enough space
+        queue!(
+            win,
+            cursor::MoveTo(w.checked_sub(extra_msg.len() as u16).unwrap_or(0), footer_win_row),
+            style::SetAttribute(Attribute::Reset),
+            style::Print(extra_msg.chars().take(w as usize).collect::<String>().bold()),
+        )?;
+
         execute!(
             win,
-            //TODO: this subtraction can overflow if the window is extremely narrow
-            cursor::MoveTo(w - extra_msg.len() as u16, footer_win_row),
+            cursor::MoveTo(0, footer_win_row),
             style::SetAttribute(Attribute::Reset),
-            style::Print(extra_msg.bold()),
+            //TODO: prevent line wrap here
+            style::Print(&format!("{}: {}",
+                                  if self.app_state.settings.filter_search { "filter" } else { "search" },
+                                  self.app_state.search_string()
+                                  ).bold()),
         )
     }
 
