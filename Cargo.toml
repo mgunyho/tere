@@ -20,7 +20,8 @@ unicode-segmentation = "1.7"
 
 [dependencies.clap]
 version = "3"
-features = ["wrap_help"]  # TODO: consider color?
+default-features = false
+features = ["wrap_help", "suggestions", "std"]
 
 [profile.release]
 lto = true
