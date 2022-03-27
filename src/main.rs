@@ -561,6 +561,11 @@ impl<'a> TereTui<'a> {
                 Event::Key(k) => {
                     match k.code {
                         KeyCode::Right | KeyCode::Enter => self.change_dir("")?,
+                        KeyCode::Char(' ') if !self.app_state.is_searching() => {
+                            // If the first key is space, treat it like enter. It's probably pretty
+                            // rare to have a folder name starting with space.
+                            self.change_dir("")?;
+                        },
                         KeyCode::Left => self.change_dir("..")?, //TODO: use std::path::Component::ParentDir
                         KeyCode::Up if k.modifiers == ALT => {
                             self.change_dir("..")?;
