@@ -56,8 +56,8 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 |:---:|:---:|
 |Move cursor up  | <kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>k</kbd> |
 |Move cursor down| <kbd>↓</kbd> or <kbd>Alt</kbd>+<kbd>j</kbd> |
-|Enter directory | <kbd>Enter</kbd> or <kbd>→</kbd> or <kbd>Alt</kbd>+<kbd>l</kbd> or <kbd>Space</kbd> (if not searching)|
-|Go to parent directory| <kbd>←</kbd> or <kbd>Alt</kbd>+<kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>h</kbd> or <kbd>Backspace</kbd> or <kbd>-</kbd> (The last two apply only if not searching) |
+|Enter directory | <kbd>Enter</kbd> or <kbd>→</kbd> or <kbd>Alt</kbd>+<kbd>l</kbd> or if not searching, <kbd>Space</kbd> |
+|Go to parent directory| <kbd>←</kbd> or <kbd>Alt</kbd>+<kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>h</kbd> or if not searching, <kbd>Backspace</kbd> or <kbd>-</kbd> |
 |Exit `tere`| <kbd>Esc</kbd> or <kbd>Alt</kbd>+<kbd>q</kbd> |
 |Go to home directory| <kbd>Ctrl</kbd>+<kbd>Home</kbd> or <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>h</kbd>|
 |Go to root directory| <kbd>Ctrl</kbd>+<kbd>r</kbd>|
