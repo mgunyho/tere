@@ -659,6 +659,8 @@ impl<'a> TereTui<'a> {
                         | MouseEventKind::Drag(MouseButton::Left)
                         | MouseEventKind::Up(MouseButton::Left)
                         => self.handle_mouse_event(event)?,
+                    MouseEventKind::Up(MouseButton::Right) => self.change_dir("..")?,
+
                     //TODO: add configuration to jump multiple items on scroll
                     MouseEventKind::ScrollUp   => self.on_arrow_key(true)?,
                     MouseEventKind::ScrollDown => self.on_arrow_key(false)?,
