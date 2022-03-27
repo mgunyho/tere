@@ -8,6 +8,11 @@ use crossterm::{
     event::{
         read as read_event,
         Event,
+        EnableMouseCapture,
+        DisableMouseCapture,
+        MouseEvent,
+        MouseEventKind,
+        MouseButton,
         KeyCode,
         KeyModifiers,
     },
@@ -502,6 +507,24 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    fn handle_mouse_event(&mut self, event: MouseEvent) -> CTResult<()> {
+        if event.row == 0 {
+            //TODO: change to folder by clicking on path component in header
+            return Ok(());
+        }
+
+        if let Some(entry) = self.app_state.get_item_at_cursor_pos((event.row - 1) as u32) {
+            let fname = entry.file_name_checked();
+            if event.kind == MouseEventKind::Up(MouseButton::Left) {
+                self.change_dir(&fname)?;
+            } else {
+                self.app_state.move_cursor_to_filename(&fname);
+                self.redraw_main_window()?;
+            }
+        }
+        Ok(())
+    }
+
     fn cycle_case_sensitive_mode(&mut self) -> CTResult<()> {
         self.app_state.settings.case_sensitive = match self.app_state.settings.case_sensitive {
             CaseSensitiveMode::IgnoreCase => CaseSensitiveMode::CaseSensitive,
@@ -629,7 +652,20 @@ impl<'a> TereTui<'a> {
                 Event::Resize(_, _) => {
                     self.update_main_window_dimensions()?;
                     self.redraw_all_windows()?;
-                }
+                },
+
+                Event::Mouse(event) => match event.kind {
+                    MouseEventKind::Down(MouseButton::Left)
+                        | MouseEventKind::Drag(MouseButton::Left)
+                        | MouseEventKind::Up(MouseButton::Left)
+                        => self.handle_mouse_event(event)?,
+                    MouseEventKind::Up(MouseButton::Right) => self.change_dir("..")?,
+
+                    //TODO: add configuration to jump multiple items on scroll
+                    MouseEventKind::ScrollUp   => self.on_arrow_key(true)?,
+                    MouseEventKind::ScrollDown => self.on_arrow_key(false)?,
+                    _ => (),
+                },
 
                 //TODO don't show this in release
                 e => self.info_message(&format!("{:?}", e))?,
@@ -849,6 +885,18 @@ fn main() -> Result<(), TereError> {
              .takes_value(true)
              .value_name("FILE or ''")
             )
+        .arg(Arg::new("mouse")
+             .long("mouse")
+             .help("Enable mouse navigation")
+             .long_help("Enable mouse navigation. If enabled, you can browse by clicking around with the mouse.")
+             .takes_value(true)
+             .value_name("'on' or 'off'")
+             .possible_values(&["on", "off"])
+             .hide_possible_values(true)
+             .default_value("off")
+             .multiple_occurrences(true)
+             )
+        //TODO: CLI option to enable mouse
         .try_get_matches()
         .unwrap_or_else(|err| {
             // custom error handling: clap writes '--help' and '--version'
@@ -860,11 +908,20 @@ fn main() -> Result<(), TereError> {
 
     let mut stderr = std::io::stderr();
 
+    // TODO: move mouse option parsing somewhere else...
+    // Ok to unwrap, because mouse has a default value which is always present
+    let enable_mouse_opt = cli_args.values_of("mouse").unwrap().last().unwrap();
+    let enable_mouse = enable_mouse_opt == "on";
+
     execute!(
         stderr,
         terminal::EnterAlternateScreen,
         cursor::Hide,
     )?;
+
+    if enable_mouse {
+        execute!(stderr, EnableMouseCapture)?;
+    }
 
     // we are now inside the alternate screen, so collect all errors and attempt
     // to leave the alt screen in case of an error
@@ -882,10 +939,14 @@ fn main() -> Result<(), TereError> {
     // this 'and' has to be in this order to keep the path if both results are ok.
     let res = raw_mode_success.and(res);
 
+    if enable_mouse {
+        execute!(stderr, DisableMouseCapture)?;
+    }
+
     execute!(
         stderr,
         terminal::LeaveAlternateScreen,
-        cursor::Show
+        cursor::Show,
         )?;
 
     // Check if there was an error
