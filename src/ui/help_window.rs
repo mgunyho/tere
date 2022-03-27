@@ -210,6 +210,12 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_user_guide_found() {
+        // this should panic if the README is incorrectly formatted
+        get_formatted_help_text(100);
+    }
+
+    #[test]
     fn test_strip_markup() {
         let input = "## foo bar\n\nlorem ipsum `dolor` sit amet";
         let (output, locs) = strip_markup_and_extract_bold_positions(input);
