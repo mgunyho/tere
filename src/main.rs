@@ -507,6 +507,24 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    fn handle_mouse_event(&mut self, event: MouseEvent) -> CTResult<()> {
+        if event.row == 0 {
+            //TODO: change to folder by clicking on path component in header
+            return Ok(());
+        }
+
+        if let Some(entry) = self.app_state.get_item_at_cursor_pos((event.row - 1) as u32) {
+            let fname = entry.file_name_checked();
+            if event.kind == MouseEventKind::Up(MouseButton::Left) {
+                self.change_dir(&fname)?;
+            } else {
+                self.app_state.move_cursor_to_filename(&fname);
+                self.redraw_main_window()?;
+            }
+        }
+        Ok(())
+    }
+
     fn cycle_case_sensitive_mode(&mut self) -> CTResult<()> {
         self.app_state.settings.case_sensitive = match self.app_state.settings.case_sensitive {
             CaseSensitiveMode::IgnoreCase => CaseSensitiveMode::CaseSensitive,
@@ -634,7 +652,18 @@ impl<'a> TereTui<'a> {
                 Event::Resize(_, _) => {
                     self.update_main_window_dimensions()?;
                     self.redraw_all_windows()?;
-                }
+                },
+
+                Event::Mouse(event) => match event.kind {
+                    MouseEventKind::Down(MouseButton::Left)
+                        | MouseEventKind::Drag(MouseButton::Left)
+                        | MouseEventKind::Up(MouseButton::Left)
+                        => self.handle_mouse_event(event)?,
+                    //TODO: add configuration to jump multiple items on scroll
+                    MouseEventKind::ScrollUp   => self.on_arrow_key(true)?,
+                    MouseEventKind::ScrollDown => self.on_arrow_key(false)?,
+                    _ => (),
+                },
 
                 //TODO don't show this in release
                 e => self.info_message(&format!("{:?}", e))?,
