@@ -39,34 +39,16 @@ pub fn get_formatted_help_text<'a>(width: u16) -> Vec<Vec<StyledContent<String>>
         .replace("<kbd>", "`")
         .replace("</kbd>", "`");
 
+    // Strip out markup and extract the locations where we need to toggle bold on/off.
+    let (help_str, bold_toggle_locs) = strip_markup_and_extract_bold_positions(&help_str);
+
     // apply text wrapping
     let opts = Options::with_word_splitter(width as usize, NoHyphenation);
-    let mut help_str = textwrap::wrap(&help_str, opts);
+    let help_str = textwrap::wrap(&help_str, opts);
 
-    let mut res = vec![];
-    for line in help_str.drain(..) {
-        if line.starts_with("#") {
-            let styled = line
-                .replace("# ", "")
-                .replace("#", "")
-                .to_string()
-                .bold();
-            res.push(vec![styled]);
-        } else {
-            // Make items inside backticks bold. Assuming that there are no newlines inside
-            // backticks.
-            let styled = line
-                .split('`')
-                .fold((false, vec![]), |(bold, mut acc), word| {
-                    let word = word.to_string();
-                    acc.push(if bold { word.bold() } else { word.stylize() });
-                    (!bold, acc)
-                }).1;
-            res.push(styled);
-        }
-    }
+    // apply bold at the toggle locations and return
+    return stylize_wrapped_lines(help_str, bold_toggle_locs);
 
-    res
 }
 
 
