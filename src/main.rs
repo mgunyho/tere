@@ -648,7 +648,13 @@ impl<'a> TereTui<'a> {
 
                         KeyCode::Char(c) => self.on_search_char(c)?,
 
-                        KeyCode::Backspace => self.erase_search_char()?,
+                        KeyCode::Backspace => {
+                            if self.app_state.is_searching() {
+                                self.erase_search_char()?;
+                            } else {
+                                self.change_dir("..")?;
+                            }
+                        },
 
                         _ => self.info_message(&format!("{:?}", k))?,
                     }
