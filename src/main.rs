@@ -646,6 +646,11 @@ impl<'a> TereTui<'a> {
                             self.cycle_gap_search_mode()?;
                         }
 
+                        KeyCode::Char('-') if !self.app_state.is_searching() => {
+                            // go up with '-', like vim does
+                            self.change_dir("..")?;
+                        }
+
                         KeyCode::Char(c) => self.on_search_char(c)?,
 
                         KeyCode::Backspace => {
