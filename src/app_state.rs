@@ -1,5 +1,5 @@
 /// This module contains structs related to handling the application state,
-/// independent of a "graphical" front-end, such as `ncurses`.
+/// independent of a "graphical" front-end, such as crossterm.
 
 use clap::ArgMatches;
 
@@ -153,8 +153,7 @@ type LsBufItem = CustomDirEntry;
 type LsBufType = MatchesVec;
 
 
-/// This struct represents the state of the application. Note that it has no
-/// notion of curses windows.
+/// This struct represents the state of the application.
 pub struct TereAppState {
 
     // Width and height of the main window. These values have to be updated by

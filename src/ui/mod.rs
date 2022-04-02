@@ -41,8 +41,9 @@ const INFO_WIN_SIZE: u16 = 1;
 const FOOTER_SIZE: u16 = 1;
 
 
-/// This struct groups together ncurses windows for the main content, header and
-/// footer, and an application state object
+/// This struct is responsible for drawing an app state object to a stderr stream (confusingly
+/// called 'window' for historical reasons) that the UI is written to. Currently it somewhat
+/// conflates application logic with the UI.
 pub struct TereTui<'a> {
     window: &'a Stderr,
     app_state: TereAppState,
@@ -564,7 +565,7 @@ impl<'a> TereTui<'a> {
         let ALT = KeyModifiers::ALT;
         #[allow(non_snake_case)]
         let CONTROL = KeyModifiers::CONTROL;
-        // root_win is the window created by initscr()
+
         loop {
             match read_event()? {
                 Event::Key(k) => {
