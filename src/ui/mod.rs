@@ -214,7 +214,15 @@ impl<'a> TereTui<'a> {
         let (item, is_dir, is_symlink) = self.app_state.get_item_at_cursor_pos(row.into()).map_or(
             // Draw empty text at the rows that are outside the listing buffer.
             ("".to_string(), false, false),
-            |itm| (itm.file_name_checked(), itm.is_dir(), itm.is_symlink)
+            |itm| {
+                let display_name = if let Some(target) = &itm.symlink_target {
+                    //TODO: different color for symlink source & target (and arrow)
+                    format!("{} -> {}", itm.file_name_checked(), target.as_os_str().to_str().unwrap_or(""))
+                } else {
+                    itm.file_name_checked()
+                };
+                (display_name, itm.is_dir(), itm.is_symlink())
+            }
         );
 
         let attr = if is_dir {
