@@ -154,6 +154,8 @@ fn main() -> Result<(), TereError> {
 
     let mut stderr = std::io::stderr();
 
+    //TODO: should this alternate screen etc initialization (and teardown) be done by the UI?
+    //Now the mouse capture enabling (which is kind of similar) is handled there.
     execute!(
         stderr,
         terminal::EnterAlternateScreen,
