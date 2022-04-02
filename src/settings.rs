@@ -68,6 +68,8 @@ pub struct TereSettings {
 
     /// whether to allow matches with gaps in them, and if we have to match from beginning
     pub gap_search_mode: GapSearchMode,
+
+    pub mouse_enabled: bool,
 }
 
 impl TereSettings {
@@ -126,6 +128,12 @@ impl TereSettings {
                                                      .join(env!("CARGO_PKG_NAME"))
                                                      .join("history.json"));
         }
+
+        // ok to unwrap, because mouse has the default value of 'off'
+        if args.values_of("mouse").unwrap().last().unwrap() == "on" {
+            ret.mouse_enabled = true;
+        }
+
 
         Ok(ret)
     }

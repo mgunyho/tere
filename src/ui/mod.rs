@@ -27,6 +27,8 @@ use crossterm::{
         MouseButton,
         KeyCode,
         KeyModifiers,
+        EnableMouseCapture,
+        DisableMouseCapture,
     },
     Result as CTResult,
 };
@@ -69,6 +71,10 @@ impl<'a> TereTui<'a> {
             window: window,
             app_state: state,
         };
+
+        if ret.app_state.settings.mouse_enabled {
+            execute!(ret.window, EnableMouseCapture)?;
+        }
 
         ret.update_header()?;
         ret.redraw_all_windows()?;
@@ -702,6 +708,9 @@ impl<'a> TereTui<'a> {
             }
         }
 
+        if self.app_state.settings.mouse_enabled {
+            execute!(self.window, DisableMouseCapture)?;
+        }
         self.app_state.on_exit()
     }
 

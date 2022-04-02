@@ -3,7 +3,6 @@ use crossterm::{
     execute,
     terminal,
     cursor,
-    event::{EnableMouseCapture, DisableMouseCapture},
 };
 
 use clap::{App, Arg};
@@ -144,7 +143,6 @@ fn main() -> Result<(), TereError> {
              .default_value("off")
              .multiple_occurrences(true)
              )
-        //TODO: CLI option to enable mouse
         .try_get_matches()
         .unwrap_or_else(|err| {
             // custom error handling: clap writes '--help' and '--version'
@@ -156,20 +154,11 @@ fn main() -> Result<(), TereError> {
 
     let mut stderr = std::io::stderr();
 
-    // TODO: move mouse option parsing somewhere else...
-    // Ok to unwrap, because mouse has a default value which is always present
-    let enable_mouse_opt = cli_args.values_of("mouse").unwrap().last().unwrap();
-    let enable_mouse = enable_mouse_opt == "on";
-
     execute!(
         stderr,
         terminal::EnterAlternateScreen,
         cursor::Hide,
     )?;
-
-    if enable_mouse {
-        execute!(stderr, EnableMouseCapture)?;
-    }
 
     // we are now inside the alternate screen, so collect all errors and attempt
     // to leave the alt screen in case of an error
@@ -186,10 +175,6 @@ fn main() -> Result<(), TereError> {
     let raw_mode_success = terminal::disable_raw_mode().map_err(TereError::from);
     // this 'and' has to be in this order to keep the path if both results are ok.
     let res = raw_mode_success.and(res);
-
-    if enable_mouse {
-        execute!(stderr, DisableMouseCapture)?;
-    }
 
     execute!(
         stderr,
