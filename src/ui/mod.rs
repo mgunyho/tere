@@ -4,6 +4,7 @@ pub mod help_window;
 
 use std::convert::TryFrom;
 use std::io::{Stderr, Write};
+use std::path::PathBuf;
 
 use crate::error::TereError;
 use crate::app_state::{
@@ -76,6 +77,11 @@ impl<'a> TereTui<'a> {
                                  env!("CARGO_PKG_NAME"),
                                  env!("CARGO_PKG_VERSION")).as_str())?;
         Ok(ret)
+    }
+
+    /// Get the current (logical) path to be printed on exit.
+    pub fn current_path(&self) -> PathBuf {
+        self.app_state.current_path.clone()
     }
 
     /// Queue up a command to clear a given row (starting from 0). Must be executed/flushed

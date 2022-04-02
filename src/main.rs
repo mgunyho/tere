@@ -179,7 +179,7 @@ fn main() -> Result<(), TereError> {
         .and_then(|_| TereTui::init(&cli_args, &mut stderr))
         .and_then(|mut ui| {
             ui.main_event_loop().map_err(TereError::from)
-                .map(|_| ui.app_state.current_path)
+                .map(|_| ui.current_path())
         });
 
     // Always disable raw mode
