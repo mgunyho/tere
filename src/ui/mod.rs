@@ -247,6 +247,7 @@ impl<'a> TereTui<'a> {
             // we're actually drawing an item
 
             let symlink_target = &item.symlink_target;
+            let is_symlink = symlink_target.is_some();
             let fname = item.file_name_checked();
 
             // Find out the grapheme clusters corresponding to the
@@ -273,7 +274,7 @@ impl<'a> TereTui<'a> {
                     ),
                     (false, false) => (
                         Attribute::NoUnderline,
-                        if symlink_target.is_some() { symlink_color } else { style::Color::Reset },
+                        if is_symlink { symlink_color } else { style::Color::Reset },
                         style::Color::Reset,
                     ),
                 };
