@@ -203,7 +203,6 @@ impl<'a> TereTui<'a> {
                             highlight: bool,
                             ) -> CTResult<()> {
         let row_abs = row  + HEADER_SIZE;
-        let w: usize = main_window_size()?.0.into();
 
         //TODO: make customizable...
         let highlight_fg = style::Color::Black;
@@ -305,12 +304,13 @@ impl<'a> TereTui<'a> {
         };
 
         // color the rest of the line if applicable
-        if highlight {
+        let width: usize = main_window_size()?.0.into();
+        if highlight && width > item_size {
             queue!(
                 self.window,
                 style::SetAttribute(Attribute::Reset), // so that the rest of the line isn't underlined
                 style::SetBackgroundColor(highlight_bg),
-                style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
+                style::Print(" ".repeat(width.checked_sub(item_size).unwrap_or(0))),
                 )?;
         }
 
