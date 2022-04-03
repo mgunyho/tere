@@ -203,7 +203,6 @@ impl<'a> TereTui<'a> {
                             highlight: bool,
                             ) -> CTResult<()> {
         let row_abs = row  + HEADER_SIZE;
-        let w: usize = main_window_size()?.0.into();
 
         //TODO: make customizable...
         let highlight_fg = style::Color::Black;
@@ -211,13 +210,9 @@ impl<'a> TereTui<'a> {
         let matching_letter_bg = style::Color::DarkGrey;
         let symlink_color = style::Color::Cyan;
 
-        let (item, is_dir, is_symlink) = self.app_state.get_item_at_cursor_pos(row.into()).map_or(
-            // Draw empty text at the rows that are outside the listing buffer.
-            ("".to_string(), false, false),
-            |itm| (itm.file_name_checked(), itm.is_dir(), itm.is_symlink)
-        );
+        let item = self.app_state.get_item_at_cursor_pos(row.into());
 
-        let attr = if is_dir {
+        let text_attr = if item.map(|itm| itm.is_dir()).unwrap_or(false) {
             Attribute::Bold
         } else {
             Attribute::Dim
@@ -228,50 +223,60 @@ impl<'a> TereTui<'a> {
             cursor::MoveTo(0, row_abs),
             style::SetAttribute(Attribute::Reset),
             style::ResetColor,
-            style::SetAttribute(attr),
+            style::SetAttribute(text_attr),
         )?;
 
-        if is_symlink {
-            queue!(self.window, style::SetForegroundColor(symlink_color))?;
-        }
-
         let idx = self.app_state.cursor_pos_to_visible_item_index(row.into());
-        if self.app_state.is_searching()
-            && self.app_state.visible_match_indices().contains(&idx) {
-            // All *byte offsets* that should be underlined
-            let underline_locs: Vec<usize> = self.app_state
-                .get_match_locations_at_cursor_pos(row as u32)
-                .unwrap_or(&vec![])
-                .iter()
-                .map(|(start, end)| (*start..*end).collect::<Vec<usize>>())
-                .flatten()
-                .collect();
 
-            // Use unicode_segmentation to find out the grapheme clusters corresponding to the
+        // All *byte offsets* that should be underlined
+        let underline_locs = if self.app_state.is_searching()
+            && self.app_state.visible_match_indices().contains(&idx)
+            {
+                self.app_state
+                    .get_match_locations_at_cursor_pos(row as u32)
+                    .unwrap_or(&vec![])
+                    .iter()
+                    .map(|(start, end)| (*start..*end).collect::<Vec<usize>>())
+                    .flatten()
+                    .collect()
+            } else {
+                vec![]
+            };
+
+        let item_size = if let Some(item) = item {
+            // we're actually drawing an item
+
+            let symlink_target = &item.symlink_target;
+            let is_symlink = symlink_target.is_some();
+            let fname = item.file_name_checked();
+
+            // Find out the grapheme clusters corresponding to the
             // above byte offsets, and determine whether they should be underlined.
-            let letters_underlining: Vec<(&str, bool)> = UnicodeSegmentation::grapheme_indices(item.as_str(), true)
+            let letters_underlining: Vec<(&str, bool)> =
+                UnicodeSegmentation::grapheme_indices(fname.as_str(), true)
                 // this contains() could probably be optimized, but shouldn't be too bad.
                 .map(|(i, c)| (c, underline_locs.contains(&i)))
                 .collect();
 
-            for (c, underline) in letters_underlining {
+            // queue draw actions for each (non-)underlined segment
+            for (c, underline) in &letters_underlining {
 
                 let (underline, fg, bg)  = match (underline, highlight) {
                     (true,      _) => (
                         Attribute::Underlined,
                         style::Color::Reset,
                         matching_letter_bg,
-                        ),
+                    ),
                     (false,  true) => (
                         Attribute::NoUnderline,
                         highlight_fg,
                         highlight_bg,
-                        ),
+                    ),
                     (false, false) => (
                         Attribute::NoUnderline,
                         if is_symlink { symlink_color } else { style::Color::Reset },
                         style::Color::Reset,
-                        ),
+                    ),
                 };
 
                 queue!(
@@ -280,46 +285,36 @@ impl<'a> TereTui<'a> {
                     style::SetBackgroundColor(bg),
                     style::SetForegroundColor(fg),
                     style::Print(c.to_string()),
-                )?;
+                    )?;
 
             }
 
-            // color the rest of the line if applicable
-            if highlight {
-                let item_size = UnicodeSegmentation::graphemes(item.as_str(), true).count();
-                queue!(
-                    self.window,
-                    style::SetAttribute(Attribute::Reset), // so that the rest of the line isn't underlined
-                    style::SetBackgroundColor(highlight_bg),
-                    style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
-                )?;
-            }
+            if let Some(target) = symlink_target {
+                let target = target.as_os_str().to_str().unwrap_or(""); // TODO: what to do if this conversion fails?
+                //TODO: different color for target?
+                let target_text = format!(" -> {}", target);
+                queue!(self.window, style::Print(&target_text))?;
 
-            queue!(
-                self.window,
-                style::SetBackgroundColor(style::Color::Reset),
-            )?;
+                letters_underlining.len() + UnicodeSegmentation::graphemes(target_text.as_str(), true).count()
+            } else {
+                letters_underlining.len()
+            }
 
         } else {
-            if highlight {
-                // figure out how much padding we need after the item
-                let item_size = UnicodeSegmentation::graphemes(item.as_str(), true).count();
+            0
+        };
 
-                queue!(
-                    self.window,
-                    style::SetBackgroundColor(highlight_bg),
-                    //NOTE: not using symlink_color here because cyan looks bad on grey background
-                    style::SetForegroundColor(highlight_fg),
-                    style::Print(item.get(..w).unwrap_or(&item)),
-                    style::Print(" ".repeat(w.checked_sub(item_size).unwrap_or(0))),
+        // color the rest of the line if applicable
+        let width: usize = main_window_size()?.0.into();
+        if highlight && width > item_size {
+            queue!(
+                self.window,
+                style::SetAttribute(Attribute::Reset), // so that the rest of the line isn't underlined
+                style::SetBackgroundColor(highlight_bg),
+                style::Print(" ".repeat(width.checked_sub(item_size).unwrap_or(0))),
                 )?;
-            } else {
-                queue!(
-                    self.window,
-                    style::Print(item.get(..w).unwrap_or(&item)),
-                )?;
-            }
         }
+
         execute!(
             self.window,
             style::ResetColor,
