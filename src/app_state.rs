@@ -115,10 +115,6 @@ impl CustomDirEntry {
             None => false,
         }
     }
-
-    pub fn is_symlink(&self) -> bool {
-        self.symlink_target.is_some()
-    }
 }
 
 impl From<std::fs::DirEntry> for CustomDirEntry
