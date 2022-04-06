@@ -23,3 +23,4 @@ features = ["wrap_help", "suggestions", "std"]
 
 [profile.release]
 lto = true
+strip = "debuginfo"
