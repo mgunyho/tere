@@ -32,7 +32,7 @@ pub type MatchesLocType = Vec<(usize, usize)>;
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
 /// both the vector of filtered items and the whole unfiltered vector.
 struct MatchesVec {
-    all_items: Vec<LsBufItem>,
+    all_items: Vec<CustomDirEntry>,
     // Each key-value pair in this map corresponds to an item in `all_items` that matches the
     // current search. The key is the item's index in `all_items`, while the value contains the
     // regex match locations. We use a BTreeMap to always keep the matches sorted, so that they are
@@ -48,7 +48,7 @@ impl MatchesVec {
     }
 
     /// Return a vector of all items that have not been filtered out
-    pub fn kept_items(&self) -> Vec<&LsBufItem> {
+    pub fn kept_items(&self) -> Vec<&CustomDirEntry> {
         self.matches.keys().filter_map(|idx| self.all_items.get(*idx))
             .collect()
     }
@@ -81,8 +81,8 @@ impl MatchesVec {
 
 }
 
-impl From<Vec<LsBufItem>> for MatchesVec {
-    fn from(vec: Vec<LsBufItem>) -> Self {
+impl From<Vec<CustomDirEntry>> for MatchesVec {
+    fn from(vec: Vec<CustomDirEntry>) -> Self {
         Self {
             all_items: vec,
             matches: BTreeMap::new(),
@@ -144,8 +144,6 @@ impl From<&std::path::Path> for CustomDirEntry
 }
 
 
-// TODO: remove this typedef; unnecessary
-type LsBufItem = CustomDirEntry;
 /// The type of the `ls_output_buf` buffer of the app state
 type LsBufType = MatchesVec;
 
@@ -280,7 +278,7 @@ impl TereAppState {
 
     /// All items that are visible with the current settings in the current search state. This
     /// includes items that might fall outside the window.
-    pub fn visible_items(&self) -> Vec<&LsBufItem> {
+    pub fn visible_items(&self) -> Vec<&CustomDirEntry> {
         if self.is_searching() && self.settings.filter_search {
             self.ls_output_buf.kept_items()
         } else {
@@ -303,14 +301,14 @@ impl TereAppState {
         (cursor_pos + self.scroll_pos) as usize
     }
 
-    pub fn get_item_at_cursor_pos(&self, cursor_pos: u32) -> Option<&LsBufItem> {
+    pub fn get_item_at_cursor_pos(&self, cursor_pos: u32) -> Option<&CustomDirEntry> {
         let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
         self.visible_items().get(idx).map(|x| *x)
     }
 
     /// Returns None if the visible items is empty, or if the state is
     /// inconsistent and the cursor is outside the currently visible items.
-    fn get_item_under_cursor(&self) -> Option<&LsBufItem> {
+    fn get_item_under_cursor(&self) -> Option<&CustomDirEntry> {
         self.get_item_at_cursor_pos(self.cursor_pos)
     }
 
@@ -358,9 +356,9 @@ impl TereAppState {
     pub fn update_ls_output_buf(&mut self) {
         if let Ok(entries) = std::fs::read_dir(".") {
             let pardir = std::path::Path::new(&std::path::Component::ParentDir);
-            let mut new_output_buf: Vec<LsBufItem> = vec![CustomDirEntry::from(pardir).into()].into();
+            let mut new_output_buf: Vec<CustomDirEntry> = vec![CustomDirEntry::from(pardir).into()].into();
 
-            let mut entries: Box<dyn Iterator<Item = LsBufItem>> =
+            let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> =
                 Box::new(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 //TODO: case-insensitive sort???
