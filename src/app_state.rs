@@ -24,8 +24,9 @@ use crate::error::TereError;
 
 pub const NO_MATCHES_MSG: &str = "No matches";
 
-//TODO: docstring
-type MatchesLocType = Vec<(usize, usize)>;
+/// The match locations of a given item. A list of *byte offsets* into the item's name that match
+/// the current search pattern.
+pub type MatchesLocType = Vec<(usize, usize)>;
 
 
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
