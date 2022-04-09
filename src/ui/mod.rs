@@ -54,7 +54,7 @@ pub struct TereTui<'a> {
 // Dimensions (width, height) of main window
 fn main_window_size() -> CTResult<(u16, u16)> {
     let (w, h) = terminal::size()?;
-    Ok((w, h.checked_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE).unwrap_or(0)))
+    Ok((w, h.saturating_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE)))
 }
 
 
@@ -181,7 +181,7 @@ impl<'a> TereTui<'a> {
         // if there is not enough space
         queue!(
             win,
-            cursor::MoveTo(w.checked_sub(extra_msg.len() as u16).unwrap_or(0), footer_win_row),
+            cursor::MoveTo(w.saturating_sub(extra_msg.len() as u16), footer_win_row),
             style::SetAttribute(Attribute::Reset),
             style::Print(extra_msg.chars().take(w as usize).collect::<String>().bold()),
         )?;
@@ -312,7 +312,7 @@ impl<'a> TereTui<'a> {
                 self.window,
                 style::SetAttribute(Attribute::Reset), // so that the rest of the line isn't underlined
                 style::SetBackgroundColor(highlight_bg),
-                style::Print(" ".repeat(width.checked_sub(item_size).unwrap_or(0))),
+                style::Print(" ".repeat(width.saturating_sub(item_size))),
                 )?;
         }
 
@@ -737,7 +737,7 @@ impl<'a> TereTui<'a> {
                         }
 
                         KeyCode::Up | KeyCode::Char('k') => {
-                            help_view_scroll = help_view_scroll.checked_sub(1).unwrap_or(0);
+                            help_view_scroll = help_view_scroll.saturating_sub(1);
                             self.draw_help_view(help_view_scroll)?;
                         }
 

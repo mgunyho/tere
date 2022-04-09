@@ -340,14 +340,14 @@ impl TereAppState {
     }
 
     pub fn update_main_window_dimensions(&mut self, w: u32, h: u32) {
-        let delta_h = h.checked_sub(self.main_win_h).unwrap_or(0);
+        let delta_h = h.saturating_sub(self.main_win_h);
         self.main_win_w = w;
         self.main_win_h = h;
         self.move_cursor(0, false); // make sure that cursor is within view
         if delta_h > 0 {
             // height is increasing, scroll backwards as much as possible
             let old_scroll_pos = self.scroll_pos;
-            self.scroll_pos = self.scroll_pos.checked_sub(delta_h).unwrap_or(0);
+            self.scroll_pos = self.scroll_pos.saturating_sub(delta_h);
             self.cursor_pos += old_scroll_pos - self.scroll_pos;
         }
     }
@@ -492,24 +492,22 @@ impl TereAppState {
 
         if new_cursor_pos < 0 {
             // attempting to go above the current view, scroll up
-            self.scroll_pos = self.scroll_pos
-                .checked_sub(new_cursor_pos.abs() as u32).unwrap_or(0);
+            self.scroll_pos = self.scroll_pos.saturating_sub(new_cursor_pos.abs() as u32);
             self.cursor_pos = 0;
         } else if new_cursor_pos as u32 + old_scroll_pos >= n_visible_items {
             // attempting to go below content
             //TODO: wrap, but only if cursor is starting off at the last row
             // i.e. if pressing pgdown before the end, jump only to the end,
             // but if pressing pgdown at the very end, wrap and start from top
-            self.scroll_pos = n_visible_items.checked_sub(max_y).unwrap_or(0);
-            self.cursor_pos = n_visible_items.checked_sub(self.scroll_pos + 1)
-                .unwrap_or(0);
+            self.scroll_pos = n_visible_items.saturating_sub(max_y);
+            self.cursor_pos = n_visible_items.saturating_sub(self.scroll_pos + 1);
         } else if new_cursor_pos as u32 >= max_y {
             // Attempting to go below current view, scroll down.
             self.cursor_pos = max_y - 1;
             self.scroll_pos = std::cmp::min(
                 n_visible_items,
                 old_scroll_pos + new_cursor_pos as u32
-            ).checked_sub(self.cursor_pos).unwrap_or(0);
+            ).saturating_sub(self.cursor_pos);
         } else {
             // scrolling within view
             self.cursor_pos = new_cursor_pos as u32;
