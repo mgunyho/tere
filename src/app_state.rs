@@ -355,40 +355,40 @@ impl TereAppState {
 
     pub fn update_ls_output_buf(&mut self) -> IOResult<()> {
         let entries = std::fs::read_dir(".")?;
-            let pardir = std::path::Path::new(&std::path::Component::ParentDir);
-            let mut new_output_buf: Vec<CustomDirEntry> = vec![CustomDirEntry::from(pardir).into()].into();
+        let pardir = std::path::Path::new(&std::path::Component::ParentDir);
+        let mut new_output_buf: Vec<CustomDirEntry> = vec![CustomDirEntry::from(pardir).into()].into();
 
-            let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> =
-                Box::new(
+        let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> =
+            Box::new(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 entries.filter_map(|e| e.ok()).map(|e| CustomDirEntry::from(e).into())
                 );
 
-            if self.settings.folders_only {
-                entries = Box::new(entries.filter(|e| e.path().is_dir()));
-            }
+        if self.settings.folders_only {
+            entries = Box::new(entries.filter(|e| e.path().is_dir()));
+        }
 
-            new_output_buf.extend(
-                entries
+        new_output_buf.extend(
+            entries
             );
 
-            new_output_buf.sort_by(|a, b| {
-                match (a.is_dir(), b.is_dir()) {
-                    (true, true) | (false, false) => {
-                        // both are dirs or files, compare by name.
-                        // partial_cmp for strings always returns Some, so unwrap is ok here
-                        a.file_name_checked().to_lowercase().partial_cmp(
-                            &b.file_name_checked().to_lowercase()
-                        ).unwrap()
-                    },
-                    // Otherwise, put folders first
-                    (true, false) => std::cmp::Ordering::Less,
-                    (false, true) => std::cmp::Ordering::Greater,
-                }
-            });
+        new_output_buf.sort_by(|a, b| {
+            match (a.is_dir(), b.is_dir()) {
+                (true, true) | (false, false) => {
+                    // both are dirs or files, compare by name.
+                    // partial_cmp for strings always returns Some, so unwrap is ok here
+                    a.file_name_checked().to_lowercase().partial_cmp(
+                        &b.file_name_checked().to_lowercase()
+                    ).unwrap()
+                },
+                // Otherwise, put folders first
+                (true, false) => std::cmp::Ordering::Less,
+                (false, true) => std::cmp::Ordering::Greater,
+            }
+        });
 
-            self.ls_output_buf = new_output_buf.into();
-            Ok(())
+        self.ls_output_buf = new_output_buf.into();
+        Ok(())
     }
 
     pub fn change_dir(&mut self, path: &str) -> IOResult<()> {
