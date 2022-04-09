@@ -556,6 +556,7 @@ impl TereAppState {
                     // check above.
                     .unwrap_or((0, &kept_indices[0]));
 
+                #[allow(clippy::comparison_chain)] // I think this is easier to understand this way
                 let new_row = if dir < 0 {
                     let i = cur_idx_in_kept.checked_sub(1).unwrap_or(kept_indices.len() - 1);
                     kept_indices[i]
