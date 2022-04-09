@@ -64,7 +64,7 @@ impl HistoryTree {
 
     pub fn visit(&mut self, fname: &str) {
         let found_child = self.current_entry.children.borrow().iter()
-            .find(|child| child.label == fname).map(|c| c.clone());
+            .find(|child| child.label == fname).cloned();
 
         let child = found_child.unwrap_or_else(|| {
             // no existing child with this name found, create a new one

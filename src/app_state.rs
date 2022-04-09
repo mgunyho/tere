@@ -44,7 +44,7 @@ impl MatchesVec {
 
     /// Return a vector of the indices of the matches
     fn kept_indices(&self) -> Vec<usize> {
-        self.matches.keys().map(|k| k.clone()).collect()
+        self.matches.keys().copied().collect()
     }
 
     /// Return a vector of all items that have not been filtered out
@@ -302,7 +302,7 @@ impl TereAppState {
 
     pub fn get_item_at_cursor_pos(&self, cursor_pos: u32) -> Option<&CustomDirEntry> {
         let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
-        self.visible_items().get(idx).map(|x| *x)
+        self.visible_items().get(idx).copied()
     }
 
     /// Returns None if the visible items is empty, or if the state is
