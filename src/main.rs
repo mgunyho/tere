@@ -189,7 +189,7 @@ fn main() -> Result<(), TereError> {
         Err(err) => {
             match err {
                 // Print pretty error message if the error was in arg parsing
-                TereError::ClapError(e) => e.exit(),
+                TereError::Clap(e) => e.exit(),
 
                 // exit in case of any other error
                 e => return Err(e),

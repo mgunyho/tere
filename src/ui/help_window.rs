@@ -11,7 +11,7 @@ const README_STR: &str = include_str!("../../README.md");
 /// Returns a vector of vectors, where the outer vector represents lines, and the inner vector
 /// contains either a single string for the whole line, or multiple strings, if the style varies
 /// within the line.
-pub fn get_formatted_help_text<'a>(width: u16) -> Vec<Vec<StyledContent<String>>> {
+pub fn get_formatted_help_text(width: u16) -> Vec<Vec<StyledContent<String>>> {
     let help_str = &README_STR[
         README_STR.find("## User guide").expect("Could not find user guide in README")
             ..
@@ -29,7 +29,7 @@ pub fn get_formatted_help_text<'a>(width: u16) -> Vec<Vec<StyledContent<String>>
 
     // Add justified keyboard shortcuts table to help string
     let mut help_str = help_str.to_string();
-    help_str.push_str(&"\n\n"); // add back newlines eaten by split_once
+    help_str.push_str("\n\n"); // add back newlines eaten by split_once
     help_str.push_str(&get_justified_keyboard_shortcuts_table());
     help_str.push_str(rest);
 
@@ -47,7 +47,7 @@ pub fn get_formatted_help_text<'a>(width: u16) -> Vec<Vec<StyledContent<String>>
     let help_str = textwrap::wrap(&help_str, opts);
 
     // apply bold at the toggle locations and return
-    return stylize_wrapped_lines(help_str, bold_toggle_locs);
+    stylize_wrapped_lines(help_str, bold_toggle_locs)
 
 }
 
@@ -65,14 +65,14 @@ pub fn get_justified_keyboard_shortcuts_table() -> String {
         .0;
 
     let first_column_width = keyboard_shortcuts.lines()
-        .map(|line| line.split("|").skip(1).next().unwrap_or("").len())
+        .map(|line| line.split('|').nth(1).unwrap_or("").len())
         .max()
         .unwrap_or(10);
 
     let mut justified = String::new();
 
     for (i, line) in keyboard_shortcuts.lines().enumerate() {
-        let cols: Vec<&str> = line.split("|").collect();
+        let cols: Vec<&str> = line.split('|').collect();
         // cols[0] is empty, because the lines start with '|'.
         let mut action = cols[1].trim().to_string();
         let mut shortcut = cols[2].trim().to_string();
