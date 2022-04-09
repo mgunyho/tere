@@ -290,9 +290,10 @@ impl<'a> TereTui<'a> {
             }
 
             if let Some(target) = symlink_target {
-                let target = target.as_os_str().to_str().unwrap_or(""); // TODO: what to do if this conversion fails?
+                // target is OsStr, so use display() here. This is fine because we're not going to
+                // use it for anything else.
                 //TODO: different color for target?
-                let target_text = format!(" -> {}", target);
+                let target_text = format!(" -> {}", target.display());
                 queue!(self.window, style::Print(&target_text))?;
 
                 letters_underlining.len() + UnicodeSegmentation::graphemes(target_text.as_str(), true).count()
