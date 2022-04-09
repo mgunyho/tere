@@ -354,7 +354,7 @@ impl TereAppState {
     }
 
     pub fn update_ls_output_buf(&mut self) -> IOResult<()> {
-        let entries = std::fs::read_dir(".")?;
+        let entries = std::fs::read_dir(std::path::Component::CurDir)?;
         let pardir = std::path::Path::new(&std::path::Component::ParentDir);
         let mut new_output_buf: Vec<CustomDirEntry> = vec![CustomDirEntry::from(pardir).into()].into();
 
