@@ -11,7 +11,7 @@ const README_STR: &str = include_str!("../../README.md");
 /// Returns a vector of vectors, where the outer vector represents lines, and the inner vector
 /// contains either a single string for the whole line, or multiple strings, if the style varies
 /// within the line.
-pub fn get_formatted_help_text<'a>(width: u16) -> Vec<Vec<StyledContent<String>>> {
+pub fn get_formatted_help_text(width: u16) -> Vec<Vec<StyledContent<String>>> {
     let help_str = &README_STR[
         README_STR.find("## User guide").expect("Could not find user guide in README")
             ..
