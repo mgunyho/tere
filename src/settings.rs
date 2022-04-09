@@ -5,9 +5,7 @@ use std::str::FromStr;
 use std::path::PathBuf;
 use clap::ArgMatches;
 
-//TODO: config file
-
-//TODO: separate struct for "UI settings" which is accessible by the TereTui struct
+//TODO: config file?
 
 pub enum CaseSensitiveMode {
     IgnoreCase,
@@ -55,7 +53,7 @@ impl fmt::Display for GapSearchMode {
 
 #[derive(Default)]
 pub struct TereSettings {
-    //TODO: options to show non-folders faintly, and skip over them with cursor (in ui settings) -- does this make sense?
+    /// If true, show only folders, not files in the listing
     pub folders_only: bool,
     /// If true, show only items matching the search in listing
     pub filter_search: bool,

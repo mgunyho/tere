@@ -196,7 +196,7 @@ impl TereAppState {
             main_win_h: window_h,
             ls_output_buf: vec![].into(),
             current_path: cwd.clone(),
-            cursor_pos: 0, // TODO: get last value from previous run
+            cursor_pos: 0,
             scroll_pos: 0,
             header_msg: "".into(),
             info_msg: "".into(),
@@ -362,7 +362,6 @@ impl TereAppState {
                 Box::new(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
                 //TODO: case-insensitive sort???
-                //TODO: cache file metadata already here when reloading it
                 entries.filter_map(|e| e.ok()).map(|e| CustomDirEntry::from(e).into())
                 );
 
@@ -448,7 +447,7 @@ impl TereAppState {
 
         self.clear_search();
         std::env::set_current_dir(&final_path)?;
-        self.current_path = PathBuf::from(&final_path); //TODO: make this absolute...
+        self.current_path = PathBuf::from(&final_path);
         self.update_ls_output_buf();
 
         self.cursor_pos = 0;
@@ -478,8 +477,6 @@ impl TereAppState {
     /// Move the cursor up (positive amount) or down (negative amount) in the
     /// currently visible items, and update the scroll position as necessary
     pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
-        //TOOD: wrap around (when starting from the last row)
-
         let old_cursor_pos = self.cursor_pos;
         let old_scroll_pos = self.scroll_pos;
         let visible_items = self.visible_items();
@@ -781,7 +778,6 @@ mod tests {
 
     }
 
-    //TODO: use rstest? https://stackoverflow.com/a/52843365
     // (using dev-dependencies, https://doc.rust-lang.org/rust-by-example/testing/dev_dependencies.html)
     fn test_scrolling_bufsize_larger_than_window_size_helper(win_h: u32,
                                                              n_files: u32) {
