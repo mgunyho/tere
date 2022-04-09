@@ -65,7 +65,7 @@ pub fn get_justified_keyboard_shortcuts_table() -> String {
         .0;
 
     let first_column_width = keyboard_shortcuts.lines()
-        .map(|line| line.split('|').skip(1).next().unwrap_or("").len())
+        .map(|line| line.split('|').nth(1).unwrap_or("").len())
         .max()
         .unwrap_or(10);
 

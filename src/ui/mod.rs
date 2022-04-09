@@ -236,8 +236,7 @@ impl<'a> TereTui<'a> {
                     .get_match_locations_at_cursor_pos(row as u32)
                     .unwrap_or(&vec![])
                     .iter()
-                    .map(|(start, end)| (*start..*end).collect::<Vec<usize>>())
-                    .flatten()
+                    .flat_map(|(start, end)| (*start..*end).collect::<Vec<usize>>())
                     .collect()
             } else {
                 vec![]
