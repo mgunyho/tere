@@ -549,8 +549,7 @@ impl TereAppState {
                 let kept_indices = &self.ls_output_buf.kept_indices();
                 let (cur_idx_in_kept, cur_idx_in_all) = kept_indices.iter()
                     .enumerate()
-                    .skip_while(|(_, i_in_all)| **i_in_all < cur_idx)
-                    .next()
+                    .find(|(_, i_in_all)| **i_in_all >= cur_idx)
                     // if we skipped everything, wrap around and return the first
                     // item in the kept indices. shouldn't panic, kept_indices
                     // shouldn't be empty based on the num_matching_items()
