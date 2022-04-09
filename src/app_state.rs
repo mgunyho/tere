@@ -598,7 +598,7 @@ impl TereAppState {
         } else {
             // enable gap search. Add '^' to the regex to match only from the start if applicable.
             if self.settings.gap_search_mode == GapSearchMode::GapSearchFromStart {
-                regex_str.push_str("^");
+                regex_str.push('^');
             }
             regex_str.push_str(&search_string.chars()
                                .map(|c| format!("({})", regex::escape(&c.to_string())))
