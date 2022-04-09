@@ -80,6 +80,7 @@ impl HistoryTree {
         self.current_entry = child;
     }
 
+    #[allow(dead_code)] // This method is useful for tests
     pub fn go_up(&mut self) {
         let maybe_parent = self.current_entry.parent.borrow().upgrade();
         if let Some(parent) = maybe_parent {
