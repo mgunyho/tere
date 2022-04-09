@@ -201,7 +201,6 @@ impl TereAppState {
             header_msg: "".into(),
             info_msg: "".into(),
             search_string: "".into(),
-            //search_anywhere: false,
             settings: TereSettings::parse_cli_args(cli_args)?,
             history: HistoryTree::from_abs_path(cwd.clone()),
         };
