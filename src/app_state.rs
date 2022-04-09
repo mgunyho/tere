@@ -353,8 +353,8 @@ impl TereAppState {
         }
     }
 
-    pub fn update_ls_output_buf(&mut self) {
-        if let Ok(entries) = std::fs::read_dir(".") {
+    pub fn update_ls_output_buf(&mut self) -> IOResult<()> {
+        let entries = std::fs::read_dir(".")?;
             let pardir = std::path::Path::new(&std::path::Component::ParentDir);
             let mut new_output_buf: Vec<CustomDirEntry> = vec![CustomDirEntry::from(pardir).into()].into();
 
@@ -388,8 +388,7 @@ impl TereAppState {
             });
 
             self.ls_output_buf = new_output_buf.into();
-        }
-        //TODO: show error message (add separate msg box)
+            Ok(())
     }
 
     pub fn change_dir(&mut self, path: &str) -> IOResult<()> {
@@ -449,7 +448,7 @@ impl TereAppState {
         self.clear_search();
         std::env::set_current_dir(&final_path)?;
         self.current_path = PathBuf::from(&final_path);
-        self.update_ls_output_buf();
+        self.update_ls_output_buf()?;
 
         self.cursor_pos = 0;
         self.scroll_pos = 0;
