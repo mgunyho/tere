@@ -222,7 +222,7 @@ impl TereAppState {
         }
 
         ret.update_header();
-        ret.update_ls_output_buf();
+        ret.update_ls_output_buf()?;
 
         ret.move_cursor(1, false); // start out from second entry, because first entry is '..'.
         if let Some(prev_dir) = ret.history.current_entry().last_visited_child_label() {
