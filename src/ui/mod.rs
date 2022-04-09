@@ -327,7 +327,7 @@ impl<'a> TereTui<'a> {
 
     // redraw row 'row' (relative to the top of the main window) without highlighting
     pub fn unhighlight_row(&mut self, row: u16) -> CTResult<()> {
-        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), false)
+        self.draw_main_window_row(row, false)
     }
 
     pub fn highlight_row(&mut self, row: u32) -> CTResult<()> { //TODO: change row to u16
