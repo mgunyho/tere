@@ -455,10 +455,10 @@ impl TereAppState {
 
         // final_path is always the absolute logical path, so we can just cd to it. This causes a
         // bit of extra work (the history tree has to go all the way from the root to the path
-        // every time), but that's not too bad. The alernative option of manually navigating the
-        // tree upwards or using visit() and handling the special cases where target_path is '..'
-        // or a relative path or so on, would be much more complicated and would risk having the
-        // history tree and logical path out of sync.
+        // every time), but that's not too bad. The alernative option of using history_tree.go_up()
+        // / visit() and handling the special cases where target_path is '..' or a relative path or
+        // so on, would be much more complicated and would risk having the history tree and logical
+        // path out of sync.
         self.history.change_dir(&final_path);
 
         // move cursor one position down, so we're not at '..' if we've entered a folder with no history
