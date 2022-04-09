@@ -80,13 +80,6 @@ impl HistoryTree {
         self.current_entry = child;
     }
 
-    pub fn go_up(&mut self) {
-        let maybe_parent = self.current_entry.parent.borrow().upgrade();
-        if let Some(parent) = maybe_parent {
-            self.current_entry = Rc::clone(&parent);
-        } // if the parent is None, we're at the root, so no need to do anything
-    }
-
     pub fn go_to_root(&mut self) {
         self.current_entry = Rc::clone(&self.root);
     }
