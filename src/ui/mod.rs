@@ -68,7 +68,7 @@ impl<'a> TereTui<'a> {
             w.into(), h.into()
         )?; //.map_err(|e| Error::new(ErrorKind::Other, e))?;
         let mut ret = Self {
-            window: window,
+            window,
             app_state: state,
         };
 

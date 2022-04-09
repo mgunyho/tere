@@ -209,7 +209,7 @@ impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
                     .flatten();
 
                 let ret = HistoryTreeEntry {
-                    label: label,
+                    label,
                     last_visited_child: RefCell::new(last_visited_child),
                     parent: RefCell::new(Weak::new()), //TODO
                     children: RefCell::new(children),
