@@ -47,7 +47,7 @@ pub fn get_formatted_help_text<'a>(width: u16) -> Vec<Vec<StyledContent<String>>
     let help_str = textwrap::wrap(&help_str, opts);
 
     // apply bold at the toggle locations and return
-    return stylize_wrapped_lines(help_str, bold_toggle_locs);
+    stylize_wrapped_lines(help_str, bold_toggle_locs)
 
 }
 
