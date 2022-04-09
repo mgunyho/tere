@@ -29,7 +29,7 @@ pub fn get_formatted_help_text<'a>(width: u16) -> Vec<Vec<StyledContent<String>>
 
     // Add justified keyboard shortcuts table to help string
     let mut help_str = help_str.to_string();
-    help_str.push_str(&"\n\n"); // add back newlines eaten by split_once
+    help_str.push_str("\n\n"); // add back newlines eaten by split_once
     help_str.push_str(&get_justified_keyboard_shortcuts_table());
     help_str.push_str(rest);
 
@@ -65,14 +65,14 @@ pub fn get_justified_keyboard_shortcuts_table() -> String {
         .0;
 
     let first_column_width = keyboard_shortcuts.lines()
-        .map(|line| line.split("|").skip(1).next().unwrap_or("").len())
+        .map(|line| line.split('|').skip(1).next().unwrap_or("").len())
         .max()
         .unwrap_or(10);
 
     let mut justified = String::new();
 
     for (i, line) in keyboard_shortcuts.lines().enumerate() {
-        let cols: Vec<&str> = line.split("|").collect();
+        let cols: Vec<&str> = line.split('|').collect();
         // cols[0] is empty, because the lines start with '|'.
         let mut action = cols[1].trim().to_string();
         let mut shortcut = cols[2].trim().to_string();
