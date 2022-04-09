@@ -205,8 +205,7 @@ impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
 
                 let last_visited_child = last_visited_child
                     .ok_or_else(|| deError::missing_field("last_visited_child"))?
-                    .map(|label| children.iter().find(|c| c.label == label).map(Rc::downgrade))
-                    .flatten();
+                    .and_then(|label| children.iter().find(|c| c.label == label).map(Rc::downgrade));
 
                 let ret = HistoryTreeEntry {
                     label,
