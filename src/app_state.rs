@@ -66,7 +66,7 @@ impl MatchesVec {
                     item.file_name_checked().to_lowercase()
                 };
                 let mut capture_locations = search_ptn.capture_locations();
-                if let Some(_) = search_ptn.captures_read(&mut capture_locations, &target) {
+                if search_ptn.captures_read(&mut capture_locations, &target).is_some() {
                     // have to do it this way using range because capture_locations has no iter() method
                     let locs = (1..capture_locations.len())
                         .filter_map(|i| capture_locations.get(i))
@@ -639,7 +639,7 @@ impl TereAppState {
     pub fn erase_search_char(&mut self) {
         let previous_item_under_cursor = self.get_item_under_cursor().cloned();
 
-        if let Some(_) = self.search_string.pop() {
+        if self.search_string.pop().is_some() {
             //TODO: keep cursor position when there were no matches? should somehow push cursor position onto some stack when advancing search.
 
             self.update_search_matches();
