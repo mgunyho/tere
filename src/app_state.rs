@@ -189,7 +189,7 @@ impl TereAppState {
         // Try to read the current folder from the PWD environment variable, since it doesn't
         // have symlinks resolved (which is what we want). If this fails for some reason (on
         // windows?), default to std::env::current_dir, which has resolved symlinks.
-        let cwd = std::env::var("PWD").map(|p| PathBuf::from(p))
+        let cwd = std::env::var("PWD").map(PathBuf::from)
             .or_else(|_| std::env::current_dir())?;
         let mut ret = Self {
             main_win_w: window_w,
@@ -360,7 +360,7 @@ impl TereAppState {
         let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> =
             Box::new(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
-                entries.filter_map(|e| e.ok()).map(|e| CustomDirEntry::from(e))
+                entries.filter_map(|e| e.ok()).map(CustomDirEntry::from)
                 );
 
         if self.settings.folders_only {
