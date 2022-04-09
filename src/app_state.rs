@@ -361,7 +361,6 @@ impl TereAppState {
             let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> =
                 Box::new(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
-                //TODO: case-insensitive sort???
                 entries.filter_map(|e| e.ok()).map(|e| CustomDirEntry::from(e).into())
                 );
 
@@ -378,7 +377,9 @@ impl TereAppState {
                     (true, true) | (false, false) => {
                         // both are dirs or files, compare by name.
                         // partial_cmp for strings always returns Some, so unwrap is ok here
-                        a.file_name_checked().partial_cmp(&b.file_name_checked()).unwrap()
+                        a.file_name_checked().to_lowercase().partial_cmp(
+                            &b.file_name_checked().to_lowercase()
+                        ).unwrap()
                     },
                     // Otherwise, put folders first
                     (true, false) => std::cmp::Ordering::Less,
