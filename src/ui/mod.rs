@@ -617,6 +617,7 @@ impl<'a> TereTui<'a> {
                         KeyCode::Esc => {
                             if self.app_state.is_searching() {
                                 self.app_state.clear_search();
+                                self.info_message("")?; // clear possible 'no matches' message
                                 self.redraw_main_window()?;
                                 self.redraw_footer()?;
                             } else {
