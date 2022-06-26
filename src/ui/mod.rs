@@ -104,6 +104,17 @@ impl<'a> TereTui<'a> {
         // add "..." to beginning? or collapse folder names? make configurable?
         // at least, truncate towards the left instead of to the right
 
+        let (max_x, _) = main_window_size()?;
+
+        let header_graphemes: Vec<String> = UnicodeSegmentation::graphemes(
+            self.app_state.header_msg.as_str(),
+            true
+            )
+            .map(|s| String::from(s))
+            .collect();
+        let n_skip = header_graphemes.len().saturating_sub(max_x as usize);
+        let header_msg = header_graphemes[n_skip..].join("");
+
         // must use variable here b/c can't borrow 'self' twice in execute!() below
         let mut win = self.window;
         self.queue_clear_row(0)?;
@@ -111,7 +122,7 @@ impl<'a> TereTui<'a> {
             win,
             cursor::MoveTo(0, 0),
             style::SetAttribute(Attribute::Reset),
-            style::Print(&self.app_state.header_msg.clone().bold().underlined()),
+            style::Print(&header_msg.bold().underlined()),
         )
     }
 
