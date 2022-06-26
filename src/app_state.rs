@@ -545,7 +545,13 @@ impl TereAppState {
     /// move to the previous match, and if it's zero, move to the cursor to the
     /// current match.
     pub fn move_cursor_to_adjacent_match(&mut self, dir: i32) {
-        if self.num_matching_items() > 0 && self.is_searching() {
+
+        if self.is_searching() {
+            if self.num_matching_items() == 0 {
+                // if there are no matches, just move the cursor by one step
+                self.move_cursor(dir.signum(), true);
+                return;
+            }
 
             if self.settings.filter_search {
                 // the only visible items are the matches, so we can just move the cursor
