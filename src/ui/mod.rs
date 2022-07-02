@@ -94,7 +94,7 @@ impl<'a> TereTui<'a> {
     fn queue_clear_row(&mut self, row: usize) -> CTResult<()> {
         queue!(
             self.window,
-            cursor::MoveTo(0, row),
+            cursor::MoveTo(0, u16::try_from(row).unwrap_or(u16::MAX)),
             terminal::Clear(terminal::ClearType::CurrentLine),
         )
     }
@@ -231,7 +231,7 @@ impl<'a> TereTui<'a> {
 
         queue!(
             self.window,
-            cursor::MoveTo(0, row_abs),
+            cursor::MoveTo(0, u16::try_from(row_abs).unwrap_or(u16::MAX)),
             style::SetAttribute(Attribute::Reset),
             style::ResetColor,
             style::SetAttribute(text_attr),
@@ -781,7 +781,7 @@ impl<'a> TereTui<'a> {
 
         queue!(
             self.window,
-            cursor::MoveTo(0, HEADER_SIZE),
+            cursor::MoveTo(0, u16::try_from(HEADER_SIZE).unwrap_or(u16::MAX)),
             style::SetAttribute(Attribute::Reset),
             style::ResetColor,
         )?;
