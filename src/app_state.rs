@@ -676,7 +676,8 @@ mod tests {
     }
 
     fn strings_to_ls_buf<S: AsRef<std::ffi::OsStr>>(strings: Vec<S>) -> LsBufType {
-        strings.iter()
+        strings
+            .iter()
             .map(|s| CustomDirEntry::from(std::path::PathBuf::from(&s).as_ref()))
             .collect::<Vec<CustomDirEntry>>()
             .into()
@@ -686,8 +687,7 @@ mod tests {
         create_test_state_with_buf(win_h, create_test_filenames(n_filenames))
     }
 
-    fn create_test_state_with_buf(win_h: usize,
-                                  buf: LsBufType) -> TereAppState {
+    fn create_test_state_with_buf(win_h: usize, buf: LsBufType) -> TereAppState {
         TereAppState {
             cursor_pos: 0,
             scroll_pos: 0,
@@ -768,7 +768,7 @@ mod tests {
 
         for i in 1..=3 {
             state.move_cursor(-1, false);
-            assert_eq!(state.cursor_pos, 3-i);
+            assert_eq!(state.cursor_pos, 3 - i);
             assert_eq!(state.scroll_pos, 0);
         }
 
@@ -779,14 +779,10 @@ mod tests {
         state.move_cursor(-100, false);
         assert_eq!(state.cursor_pos, 0);
         assert_eq!(state.scroll_pos, 0);
-
     }
 
     // (using dev-dependencies, https://doc.rust-lang.org/rust-by-example/testing/dev_dependencies.html)
-    fn test_scrolling_bufsize_larger_than_window_size_helper(
-        win_h: usize,
-        n_files: usize
-    ) {
+    fn test_scrolling_bufsize_larger_than_window_size_helper(win_h: usize, n_files: usize) {
         let mut state = create_test_state(win_h, n_files);
         let max_cursor = win_h - 1;
         let max_scroll = n_files - win_h;
@@ -800,11 +796,15 @@ mod tests {
 
         // scroll to the end of the list
         for i in 1..=max_scroll {
-            println!("scrolling beyond screen {}, cursor at {}, scroll {}",
-                     i, state.cursor_pos, state.scroll_pos);
+            println!(
+                "scrolling beyond screen {}, cursor at {}, scroll {}",
+                i, state.cursor_pos, state.scroll_pos
+            );
             state.move_cursor(1, false);
-            println!("after move: cursor at {}, scroll {}",
-                     state.cursor_pos, state.scroll_pos);
+            println!(
+                "after move: cursor at {}, scroll {}",
+                state.cursor_pos, state.scroll_pos
+            );
             assert_eq!(state.cursor_pos, max_cursor);
             assert_eq!(state.scroll_pos, i);
         }
@@ -824,7 +824,7 @@ mod tests {
         // scroll back to the top of the window
         for i in 1..=max_cursor {
             state.move_cursor(-1, false);
-            assert_eq!(state.cursor_pos, max_cursor-i);
+            assert_eq!(state.cursor_pos, max_cursor - i);
             assert_eq!(state.scroll_pos, max_scroll);
         }
         assert_eq!(state.cursor_pos, 0);
@@ -834,7 +834,7 @@ mod tests {
         for i in 1..=max_scroll {
             state.move_cursor(-1, false);
             assert_eq!(state.cursor_pos, 0);
-            assert_eq!(state.scroll_pos, max_scroll-i);
+            assert_eq!(state.scroll_pos, max_scroll - i);
         }
 
         // check that nothing changes when trying to scroll further
@@ -885,14 +885,9 @@ mod tests {
 
     #[test]
     fn test_basic_advance_search() {
-        let mut s = create_test_state_with_buf(5, strings_to_ls_buf(
-            vec![
-                "..",
-                "foo",
-                "frob",
-                "bar",
-                "baz",
-            ])
+        let mut s = create_test_state_with_buf(
+            5,
+            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
         s.move_cursor_to(2);
 
@@ -916,14 +911,9 @@ mod tests {
 
     #[test]
     fn test_advance_search_wrap() {
-        let mut s = create_test_state_with_buf(3, strings_to_ls_buf(
-            vec![
-                "..",
-                "foo",
-                "frob",
-                "bar",
-                "baz",
-            ])
+        let mut s = create_test_state_with_buf(
+            3,
+            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
         s.move_cursor_to(4);
 
@@ -957,14 +947,9 @@ mod tests {
 
     #[test]
     fn test_advance_and_erase_search_with_cursor_on_match() {
-        let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
-            vec![
-                "..",
-                "foo",
-                "frob",
-                "bar",
-                "baz",
-            ])
+        let mut s = create_test_state_with_buf(
+            6,
+            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
         s.move_cursor_to(3);
 
@@ -996,19 +981,13 @@ mod tests {
         // erase the search char. should still stay at baz.
         s.erase_search_char();
         assert_eq!(s.cursor_pos, 4);
-
     }
 
     #[test]
     fn test_advance_and_erase_with_filter_search() {
-        let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
-            vec![
-                "..",
-                "bar",
-                "baz",
-                "foo",
-                "frob",
-            ])
+        let mut s = create_test_state_with_buf(
+            6,
+            strings_to_ls_buf(vec!["..", "bar", "baz", "foo", "frob"]),
         );
         s.settings.filter_search = true;
 
@@ -1053,14 +1032,9 @@ mod tests {
 
     #[test]
     fn test_advance_and_clear_with_filter_search() {
-        let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
-            vec![
-                "..",
-                "bar",
-                "baz",
-                "foo",
-                "forb",
-            ])
+        let mut s = create_test_state_with_buf(
+            6,
+            strings_to_ls_buf(vec!["..", "bar", "baz", "foo", "forb"]),
         );
         s.settings.filter_search = true;
 
@@ -1083,7 +1057,11 @@ mod tests {
 
         assert_eq!(s.cursor_pos, 0);
         assert_eq!(s.scroll_pos, 0);
-        let visible: Vec<_> = s.visible_items().iter().map(|x| x.file_name_checked()).collect();
+        let visible: Vec<_> = s
+            .visible_items()
+            .iter()
+            .map(|x| x.file_name_checked())
+            .collect();
         assert_eq!(visible, vec!["foo", "forb"]);
 
         s.move_cursor_to_adjacent_match(1);
@@ -1108,14 +1086,9 @@ mod tests {
 
     #[test]
     fn test_advance_search_with_filter_search_and_scrolling() {
-        let mut s = create_test_state_with_buf(3, strings_to_ls_buf(
-            vec![
-                "..",
-                "foo",
-                "frob",
-                "bar",
-                "baz",
-            ])
+        let mut s = create_test_state_with_buf(
+            3,
+            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
         s.settings.filter_search = true;
 
@@ -1150,14 +1123,9 @@ mod tests {
 
     #[test]
     fn test_advance_and_erase_search_with_filter_and_cursor_on_match() {
-        let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
-            vec![
-                "..",
-                "foo",
-                "frob",
-                "bar",
-                "baz",
-            ])
+        let mut s = create_test_state_with_buf(
+            6,
+            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
         s.settings.filter_search = true;
         s.move_cursor_to(2);
@@ -1178,7 +1146,11 @@ mod tests {
         //   foo
         // > frob
 
-        let visible: Vec<_> = s.visible_items().iter().map(|x| x.file_name_checked()).collect();
+        let visible: Vec<_> = s
+            .visible_items()
+            .iter()
+            .map(|x| x.file_name_checked())
+            .collect();
         assert_eq!(visible, vec!["foo", "frob"]);
         assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
@@ -1198,21 +1170,19 @@ mod tests {
         s.erase_search_char();
         assert_eq!(s.cursor_pos, 2);
 
-        let visible: Vec<_> = s.visible_items().iter().map(|x| x.file_name_checked()).collect();
+        let visible: Vec<_> = s
+            .visible_items()
+            .iter()
+            .map(|x| x.file_name_checked())
+            .collect();
         assert_eq!(visible, vec!["..", "foo", "frob", "bar", "baz"]);
-
     }
 
     #[test]
     fn test_advance_and_erase_search_with_filter_and_cursor_on_match2() {
-        let mut s = create_test_state_with_buf(6, strings_to_ls_buf(
-            vec![
-                "..",
-                "foo",
-                "frob",
-                "bar",
-                "baz",
-            ])
+        let mut s = create_test_state_with_buf(
+            6,
+            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
         s.settings.filter_search = true;
         s.move_cursor_to(4);
@@ -1251,19 +1221,13 @@ mod tests {
 
         s.erase_search_char();
         assert_eq!(s.cursor_pos, 4);
-
     }
 
     #[test]
     fn test_advance_and_erase_search_with_filter_and_scrolling() {
-        let mut s = create_test_state_with_buf(2, strings_to_ls_buf(
-            vec![
-                "..",
-                "foo",
-                "frob",
-                "bar",
-                "baz",
-            ])
+        let mut s = create_test_state_with_buf(
+            2,
+            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
         s.settings.filter_search = true;
 
@@ -1302,19 +1266,13 @@ mod tests {
         s.erase_search_char();
         assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 2);
-
     }
 
     #[test]
     fn test_advance_search_with_filter_search_and_scrolling2() {
-        let mut s = create_test_state_with_buf(3, strings_to_ls_buf(
-            vec![
-                "..",
-                "foo",
-                "frob",
-                "bar",
-                "baz",
-            ])
+        let mut s = create_test_state_with_buf(
+            3,
+            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
         s.settings.filter_search = true;
         s.move_cursor_to(4);
@@ -1339,5 +1297,4 @@ mod tests {
         assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
     }
-
 }
