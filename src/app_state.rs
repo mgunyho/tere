@@ -519,9 +519,9 @@ impl TereAppState {
     /// Move the cursor so that it is at the location `row` in the
     /// currently visible items, and update the scroll position as necessary
     pub fn move_cursor_to(&mut self, row: usize) {
-        self.move_cursor(row as i32
-                         - self.cursor_pos as i32
-                         - self.scroll_pos as i32,
+        self.move_cursor(row as isize
+                         - self.cursor_pos as isize
+                         - self.scroll_pos as isize,
                          false);
     }
 
