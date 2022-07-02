@@ -64,7 +64,7 @@ impl HistoryTree {
 
     pub fn visit(&mut self, fname: &str) {
         let found_child = self.current_entry.children.borrow().iter()
-            .find(|child| child.label == fname).map(|c| c.clone());
+            .find(|child| child.label == fname).cloned();
 
         let child = found_child.unwrap_or_else(|| {
             // no existing child with this name found, create a new one
@@ -80,6 +80,7 @@ impl HistoryTree {
         self.current_entry = child;
     }
 
+    #[allow(dead_code)] // This method is useful for tests
     pub fn go_up(&mut self) {
         let maybe_parent = self.current_entry.parent.borrow().upgrade();
         if let Some(parent) = maybe_parent {
@@ -104,9 +105,9 @@ impl HistoryTree {
 impl std::fmt::Debug for HistoryTreeEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         f.debug_map()
-            .entry(&"parent", &self.parent.borrow().upgrade().map(|p| p.label.clone()).unwrap_or("".to_string()))
+            .entry(&"parent", &self.parent.borrow().upgrade().map(|p| p.label.clone()).unwrap_or_default())
             .entry(&"label", &self.label)
-            .entry(&"last_visited_child", &self.last_visited_child_label().unwrap_or("".to_string()))
+            .entry(&"last_visited_child", &self.last_visited_child_label().unwrap_or_default())
             .entry(&"children", &self.children.borrow())
             .finish()
     }
@@ -205,11 +206,10 @@ impl<'de> Deserialize<'de> for HistoryTreeEntryPtr {
 
                 let last_visited_child = last_visited_child
                     .ok_or_else(|| deError::missing_field("last_visited_child"))?
-                    .map(|label| children.iter().find(|c| c.label == label).map(|found| Rc::downgrade(found)))
-                    .flatten();
+                    .and_then(|label| children.iter().find(|c| c.label == label).map(Rc::downgrade));
 
                 let ret = HistoryTreeEntry {
-                    label: label,
+                    label,
                     last_visited_child: RefCell::new(last_visited_child),
                     parent: RefCell::new(Weak::new()), //TODO
                     children: RefCell::new(children),

@@ -24,14 +24,15 @@ use crate::error::TereError;
 
 pub const NO_MATCHES_MSG: &str = "No matches";
 
-//TODO: docstring
-type MatchesLocType = Vec<(usize, usize)>;
+/// The match locations of a given item. A list of *byte offsets* into the item's name that match
+/// the current search pattern.
+pub type MatchesLocType = Vec<(usize, usize)>;
 
 
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
 /// both the vector of filtered items and the whole unfiltered vector.
 struct MatchesVec {
-    all_items: Vec<LsBufItem>,
+    all_items: Vec<CustomDirEntry>,
     // Each key-value pair in this map corresponds to an item in `all_items` that matches the
     // current search. The key is the item's index in `all_items`, while the value contains the
     // regex match locations. We use a BTreeMap to always keep the matches sorted, so that they are
@@ -43,11 +44,11 @@ impl MatchesVec {
 
     /// Return a vector of the indices of the matches
     fn kept_indices(&self) -> Vec<usize> {
-        self.matches.keys().map(|k| k.clone()).collect()
+        self.matches.keys().copied().collect()
     }
 
     /// Return a vector of all items that have not been filtered out
-    pub fn kept_items(&self) -> Vec<&LsBufItem> {
+    pub fn kept_items(&self) -> Vec<&CustomDirEntry> {
         self.matches.keys().filter_map(|idx| self.all_items.get(*idx))
             .collect()
     }
@@ -65,7 +66,7 @@ impl MatchesVec {
                     item.file_name_checked().to_lowercase()
                 };
                 let mut capture_locations = search_ptn.capture_locations();
-                if let Some(_) = search_ptn.captures_read(&mut capture_locations, &target) {
+                if search_ptn.captures_read(&mut capture_locations, &target).is_some() {
                     // have to do it this way using range because capture_locations has no iter() method
                     let locs = (1..capture_locations.len())
                         .filter_map(|i| capture_locations.get(i))
@@ -80,8 +81,8 @@ impl MatchesVec {
 
 }
 
-impl From<Vec<LsBufItem>> for MatchesVec {
-    fn from(vec: Vec<LsBufItem>) -> Self {
+impl From<Vec<CustomDirEntry>> for MatchesVec {
+    fn from(vec: Vec<CustomDirEntry>) -> Self {
         Self {
             all_items: vec,
             matches: BTreeMap::new(),
@@ -105,7 +106,7 @@ impl CustomDirEntry {
     /// which may not be possible to convert to a String. In this case, this
     /// function returns an empty string.
     pub fn file_name_checked(&self) -> String {
-        self._file_name.clone().into_string().unwrap_or("".to_string())
+        self._file_name.clone().into_string().unwrap_or_default()
     }
     pub fn path(&self) -> &std::path::PathBuf { &self._path }
 
@@ -143,8 +144,6 @@ impl From<&std::path::Path> for CustomDirEntry
 }
 
 
-// TODO: remove this typedef; unnecessary
-type LsBufItem = CustomDirEntry;
 /// The type of the `ls_output_buf` buffer of the app state
 type LsBufType = MatchesVec;
 
@@ -190,19 +189,18 @@ impl TereAppState {
         // Try to read the current folder from the PWD environment variable, since it doesn't
         // have symlinks resolved (which is what we want). If this fails for some reason (on
         // windows?), default to std::env::current_dir, which has resolved symlinks.
-        let cwd = std::env::var("PWD").map(|p| PathBuf::from(p))
+        let cwd = std::env::var("PWD").map(PathBuf::from)
             .or_else(|_| std::env::current_dir())?;
         let mut ret = Self {
             main_win_w: window_w,
             main_win_h: window_h,
             ls_output_buf: vec![].into(),
             current_path: cwd.clone(),
-            cursor_pos: 0, // TODO: get last value from previous run
+            cursor_pos: 0,
             scroll_pos: 0,
             header_msg: "".into(),
             info_msg: "".into(),
             search_string: "".into(),
-            //search_anywhere: false,
             settings: TereSettings::parse_cli_args(cli_args)?,
             history: HistoryTree::from_abs_path(cwd.clone()),
         };
@@ -223,7 +221,7 @@ impl TereAppState {
         }
 
         ret.update_header();
-        ret.update_ls_output_buf();
+        ret.update_ls_output_buf()?;
 
         ret.move_cursor(1, false); // start out from second entry, because first entry is '..'.
         if let Some(prev_dir) = ret.history.current_entry().last_visited_child_label() {
@@ -236,8 +234,9 @@ impl TereAppState {
     /// Things to do when the app is about to exit.
     pub fn on_exit(&self) -> IOResult<()> {
         if let Some(hist_file) = &self.settings.history_file {
-            let parent_dir = hist_file.parent().ok_or(IOError::new(ErrorKind::NotFound,
-                                                                   "history file has no parent folder"))?;
+            let parent_dir = hist_file.parent().ok_or_else(||
+                IOError::new(ErrorKind::NotFound, "history file has no parent folder")
+            )?;
             std::fs::DirBuilder::new().recursive(true).create(parent_dir)?;
             std::fs::write(hist_file, serde_json::to_string(&self.history)?)?;
         }
@@ -279,7 +278,7 @@ impl TereAppState {
 
     /// All items that are visible with the current settings in the current search state. This
     /// includes items that might fall outside the window.
-    pub fn visible_items(&self) -> Vec<&LsBufItem> {
+    pub fn visible_items(&self) -> Vec<&CustomDirEntry> {
         if self.is_searching() && self.settings.filter_search {
             self.ls_output_buf.kept_items()
         } else {
@@ -302,14 +301,14 @@ impl TereAppState {
         (cursor_pos + self.scroll_pos) as usize
     }
 
-    pub fn get_item_at_cursor_pos(&self, cursor_pos: u32) -> Option<&LsBufItem> {
+    pub fn get_item_at_cursor_pos(&self, cursor_pos: u32) -> Option<&CustomDirEntry> {
         let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
-        self.visible_items().get(idx).map(|x| *x)
+        self.visible_items().get(idx).copied()
     }
 
     /// Returns None if the visible items is empty, or if the state is
     /// inconsistent and the cursor is outside the currently visible items.
-    fn get_item_under_cursor(&self) -> Option<&LsBufItem> {
+    fn get_item_under_cursor(&self) -> Option<&CustomDirEntry> {
         self.get_item_at_cursor_pos(self.cursor_pos)
     }
 
@@ -342,55 +341,54 @@ impl TereAppState {
     }
 
     pub fn update_main_window_dimensions(&mut self, w: u32, h: u32) {
-        let delta_h = h.checked_sub(self.main_win_h).unwrap_or(0);
+        let delta_h = h.saturating_sub(self.main_win_h);
         self.main_win_w = w;
         self.main_win_h = h;
         self.move_cursor(0, false); // make sure that cursor is within view
         if delta_h > 0 {
             // height is increasing, scroll backwards as much as possible
             let old_scroll_pos = self.scroll_pos;
-            self.scroll_pos = self.scroll_pos.checked_sub(delta_h).unwrap_or(0);
+            self.scroll_pos = self.scroll_pos.saturating_sub(delta_h);
             self.cursor_pos += old_scroll_pos - self.scroll_pos;
         }
     }
 
-    pub fn update_ls_output_buf(&mut self) {
-        if let Ok(entries) = std::fs::read_dir(".") {
-            let pardir = std::path::Path::new(&std::path::Component::ParentDir);
-            let mut new_output_buf: Vec<LsBufItem> = vec![CustomDirEntry::from(pardir).into()].into();
+    pub fn update_ls_output_buf(&mut self) -> IOResult<()> {
+        let entries = std::fs::read_dir(std::path::Component::CurDir)?;
+        let pardir = std::path::Path::new(&std::path::Component::ParentDir);
+        let mut new_output_buf: Vec<CustomDirEntry> = vec![CustomDirEntry::from(pardir)];
 
-            let mut entries: Box<dyn Iterator<Item = LsBufItem>> =
-                Box::new(
+        let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> =
+            Box::new(
                 //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
-                //TODO: case-insensitive sort???
-                //TODO: cache file metadata already here when reloading it
-                entries.filter_map(|e| e.ok()).map(|e| CustomDirEntry::from(e).into())
+                entries.filter_map(|e| e.ok()).map(CustomDirEntry::from)
                 );
 
-            if self.settings.folders_only {
-                entries = Box::new(entries.filter(|e| e.path().is_dir()));
-            }
+        if self.settings.folders_only {
+            entries = Box::new(entries.filter(|e| e.path().is_dir()));
+        }
 
-            new_output_buf.extend(
-                entries
+        new_output_buf.extend(
+            entries
             );
 
-            new_output_buf.sort_by(|a, b| {
-                match (a.is_dir(), b.is_dir()) {
-                    (true, true) | (false, false) => {
-                        // both are dirs or files, compare by name.
-                        // partial_cmp for strings always returns Some, so unwrap is ok here
-                        a.file_name_checked().partial_cmp(&b.file_name_checked()).unwrap()
-                    },
-                    // Otherwise, put folders first
-                    (true, false) => std::cmp::Ordering::Less,
-                    (false, true) => std::cmp::Ordering::Greater,
-                }
-            });
+        new_output_buf.sort_by(|a, b| {
+            match (a.is_dir(), b.is_dir()) {
+                (true, true) | (false, false) => {
+                    // both are dirs or files, compare by name.
+                    // partial_cmp for strings always returns Some, so unwrap is ok here
+                    a.file_name_checked().to_lowercase().partial_cmp(
+                        &b.file_name_checked().to_lowercase()
+                    ).unwrap()
+                },
+                // Otherwise, put folders first
+                (true, false) => std::cmp::Ordering::Less,
+                (false, true) => std::cmp::Ordering::Greater,
+            }
+        });
 
-            self.ls_output_buf = new_output_buf.into();
-        }
-        //TODO: show error message (add separate msg box)
+        self.ls_output_buf = new_output_buf.into();
+        Ok(())
     }
 
     pub fn change_dir(&mut self, path: &str) -> IOResult<()> {
@@ -449,8 +447,8 @@ impl TereAppState {
 
         self.clear_search();
         std::env::set_current_dir(&final_path)?;
-        self.current_path = PathBuf::from(&final_path); //TODO: make this absolute...
-        self.update_ls_output_buf();
+        self.current_path = PathBuf::from(&final_path);
+        self.update_ls_output_buf()?;
 
         self.cursor_pos = 0;
         self.scroll_pos = 0;
@@ -479,8 +477,6 @@ impl TereAppState {
     /// Move the cursor up (positive amount) or down (negative amount) in the
     /// currently visible items, and update the scroll position as necessary
     pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
-        //TOOD: wrap around (when starting from the last row)
-
         let old_cursor_pos = self.cursor_pos;
         let old_scroll_pos = self.scroll_pos;
         let visible_items = self.visible_items();
@@ -497,24 +493,22 @@ impl TereAppState {
 
         if new_cursor_pos < 0 {
             // attempting to go above the current view, scroll up
-            self.scroll_pos = self.scroll_pos
-                .checked_sub(new_cursor_pos.abs() as u32).unwrap_or(0);
+            self.scroll_pos = self.scroll_pos.saturating_sub(new_cursor_pos.abs() as u32);
             self.cursor_pos = 0;
         } else if new_cursor_pos as u32 + old_scroll_pos >= n_visible_items {
             // attempting to go below content
             //TODO: wrap, but only if cursor is starting off at the last row
             // i.e. if pressing pgdown before the end, jump only to the end,
             // but if pressing pgdown at the very end, wrap and start from top
-            self.scroll_pos = n_visible_items.checked_sub(max_y).unwrap_or(0);
-            self.cursor_pos = n_visible_items.checked_sub(self.scroll_pos + 1)
-                .unwrap_or(0);
+            self.scroll_pos = n_visible_items.saturating_sub(max_y);
+            self.cursor_pos = n_visible_items.saturating_sub(self.scroll_pos + 1);
         } else if new_cursor_pos as u32 >= max_y {
             // Attempting to go below current view, scroll down.
             self.cursor_pos = max_y - 1;
             self.scroll_pos = std::cmp::min(
                 n_visible_items,
                 old_scroll_pos + new_cursor_pos as u32
-            ).checked_sub(self.cursor_pos).unwrap_or(0);
+            ).saturating_sub(self.cursor_pos);
         } else {
             // scrolling within view
             self.cursor_pos = new_cursor_pos as u32;
@@ -562,14 +556,14 @@ impl TereAppState {
                 let kept_indices = &self.ls_output_buf.kept_indices();
                 let (cur_idx_in_kept, cur_idx_in_all) = kept_indices.iter()
                     .enumerate()
-                    .skip_while(|(_, i_in_all)| **i_in_all < cur_idx)
-                    .next()
+                    .find(|(_, i_in_all)| **i_in_all >= cur_idx)
                     // if we skipped everything, wrap around and return the first
                     // item in the kept indices. shouldn't panic, kept_indices
                     // shouldn't be empty based on the num_matching_items()
                     // check above.
                     .unwrap_or((0, &kept_indices[0]));
 
+                #[allow(clippy::comparison_chain)] // I think this is easier to understand this way
                 let new_row = if dir < 0 {
                     let i = cur_idx_in_kept.checked_sub(1).unwrap_or(kept_indices.len() - 1);
                     kept_indices[i]
@@ -612,7 +606,7 @@ impl TereAppState {
         } else {
             // enable gap search. Add '^' to the regex to match only from the start if applicable.
             if self.settings.gap_search_mode == GapSearchMode::GapSearchFromStart {
-                regex_str.push_str("^");
+                regex_str.push('^');
             }
             regex_str.push_str(&search_string.chars()
                                .map(|c| format!("({})", regex::escape(&c.to_string())))
@@ -653,7 +647,7 @@ impl TereAppState {
     pub fn erase_search_char(&mut self) {
         let previous_item_under_cursor = self.get_item_under_cursor().cloned();
 
-        if let Some(_) = self.search_string.pop() {
+        if self.search_string.pop().is_some() {
             //TODO: keep cursor position when there were no matches? should somehow push cursor position onto some stack when advancing search.
 
             self.update_search_matches();
@@ -788,7 +782,6 @@ mod tests {
 
     }
 
-    //TODO: use rstest? https://stackoverflow.com/a/52843365
     // (using dev-dependencies, https://doc.rust-lang.org/rust-by-example/testing/dev_dependencies.html)
     fn test_scrolling_bufsize_larger_than_window_size_helper(win_h: u32,
                                                              n_files: u32) {
