@@ -140,7 +140,7 @@ impl<'a> TereTui<'a> {
     }
 
     pub fn redraw_info_window(&mut self) -> CTResult<()> {
-        let (_, h) = crossterm::terminal::size()?;
+        let (_, h) = terminal_size_usize()?;
         let info_win_row = h - FOOTER_SIZE - INFO_WIN_SIZE;
 
         self.queue_clear_row(info_win_row)?;
@@ -167,7 +167,7 @@ impl<'a> TereTui<'a> {
     }
 
     pub fn redraw_footer(&mut self) -> CTResult<()> {
-        let (w, h) = crossterm::terminal::size()?;
+        let (w, h) = terminal_size_usize()?;
         let footer_win_row = h - FOOTER_SIZE;
         self.queue_clear_row(footer_win_row)?;
 
