@@ -643,6 +643,12 @@ impl<'a> TereTui<'a> {
                             self.change_dir("")?;
                         }
 
+                        KeyCode::Char('r') if k.modifiers == ALT => {
+                            // refresh the current folder
+                            self.change_dir(".")?;
+                            self.info_message("Refreshed directory listing")?;
+                        }
+
                         // other chars with modifiers
                         KeyCode::Char('q') if k.modifiers == ALT => {
                             break;

@@ -61,6 +61,7 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 |Exit `tere`| <kbd>Esc</kbd> or <kbd>Alt</kbd>+<kbd>q</kbd> or <kbd>Ctrl</kbd>+<kbd>c</kbd> |
 |Go to home directory| <kbd>Ctrl</kbd>+<kbd>Home</kbd> or <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>h</kbd>|
 |Go to root directory| <kbd>Ctrl</kbd>+<kbd>r</kbd>|
+|Refresh current directory| <kbd>Alt</kbd>+<kbd>r</kbd>|
 |Move cursor up   by one screen| <kbd>Page Up</kbd>   or <kbd>Ctrl</kbd>+<kbd>u</kbd> or <kbd>Alt</kbd>+<kbd>u</kbd> |
 |Move cursor down by one screen| <kbd>Page Down</kbd> or <kbd>Ctrl</kbd>+<kbd>d</kbd> or <kbd>Alt</kbd>+<kbd>d</kbd> |
 |Move cursor to the top   | <kbd>Home</kbd> or <kbd>Alt</kbd>+<kbd>g</kbd> |
@@ -69,7 +70,7 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 |Change gap search mode| <kbd>Ctrl</kbd>+<kbd>f</kbd> |
 |Show a help screen| <kbd>?</kbd> |
 
-Shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
+Some of the shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
 
 ### Searching
 
