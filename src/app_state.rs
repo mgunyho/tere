@@ -154,8 +154,8 @@ pub struct TereAppState {
     // Width and height of the main window. These values have to be updated by
     // calling using the update_main_window_dimensions function if the window
     // dimensions change.
-    main_win_w: u32,
-    main_win_h: u32,
+    main_win_w: usize,
+    main_win_h: usize,
 
     // This vector will hold the list of files/folders in the current directory,
     // including ".." (the parent folder).
@@ -169,10 +169,10 @@ pub struct TereAppState {
     // The row on which the cursor is currently on, counted starting from the
     // top of the screen (not from the start of `ls_output_buf`). Note that this
     // doesn't have anything to do with the crossterm cursor position.
-    pub cursor_pos: u32,
+    pub cursor_pos: usize,
 
     // The top of the screen corresponds to this row in the `ls_output_buf`.
-    pub scroll_pos: u32,
+    pub scroll_pos: usize,
 
     search_string: String,
 
@@ -185,7 +185,7 @@ pub struct TereAppState {
 }
 
 impl TereAppState {
-    pub fn init(cli_args: &ArgMatches, window_w: u32, window_h: u32) -> Result<Self, TereError> {
+    pub fn init(cli_args: &ArgMatches, window_w: usize, window_h: usize) -> Result<Self, TereError> {
         // Try to read the current folder from the PWD environment variable, since it doesn't
         // have symlinks resolved (which is what we want). If this fails for some reason (on
         // windows?), default to std::env::current_dir, which has resolved symlinks.
@@ -297,11 +297,11 @@ impl TereAppState {
 
     /// Convert a cursor position (in the range 0..window_height) to an index
     /// into the currently visible items.
-    pub fn cursor_pos_to_visible_item_index(&self, cursor_pos: u32) -> usize {
+    pub fn cursor_pos_to_visible_item_index(&self, cursor_pos: usize) -> usize {
         (cursor_pos + self.scroll_pos) as usize
     }
 
-    pub fn get_item_at_cursor_pos(&self, cursor_pos: u32) -> Option<&CustomDirEntry> {
+    pub fn get_item_at_cursor_pos(&self, cursor_pos: usize) -> Option<&CustomDirEntry> {
         let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
         self.visible_items().get(idx).copied()
     }
@@ -321,7 +321,7 @@ impl TereAppState {
             })
     }
 
-    pub fn get_match_locations_at_cursor_pos(&self, cursor_pos: u32) -> Option<&MatchesLocType> {
+    pub fn get_match_locations_at_cursor_pos(&self, cursor_pos: usize) -> Option<&MatchesLocType> {
         let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
         if self.settings.filter_search {
             // NOTE: we assume that the matches is a sorted map
@@ -340,7 +340,7 @@ impl TereAppState {
         self.header_msg = format!("{}", self.current_path.display());
     }
 
-    pub fn update_main_window_dimensions(&mut self, w: u32, h: u32) {
+    pub fn update_main_window_dimensions(&mut self, w: usize, h: usize) {
         let delta_h = h.saturating_sub(self.main_win_h);
         self.main_win_w = w;
         self.main_win_h = h;
@@ -476,52 +476,52 @@ impl TereAppState {
 
     /// Move the cursor up (positive amount) or down (negative amount) in the
     /// currently visible items, and update the scroll position as necessary
-    pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
+    pub fn move_cursor(&mut self, amount: isize, wrap: bool) {
         let old_cursor_pos = self.cursor_pos;
         let old_scroll_pos = self.scroll_pos;
         let visible_items = self.visible_items();
-        let n_visible_items = visible_items.len() as u32;
+        let n_visible_items = visible_items.len();
         let max_y = self.main_win_h;
 
-        let mut new_cursor_pos: i32 = old_cursor_pos as i32 + amount;
+        let mut new_cursor_pos: isize = (old_cursor_pos as isize).saturating_add(amount);
 
         if wrap && !visible_items.is_empty() {
-            let offset = self.scroll_pos as i32;
+            let offset = self.scroll_pos as isize;
             new_cursor_pos = (offset + new_cursor_pos)
-                .rem_euclid(n_visible_items as i32) - offset;
+                .rem_euclid(n_visible_items as isize) - offset;
         }
 
         if new_cursor_pos < 0 {
             // attempting to go above the current view, scroll up
-            self.scroll_pos = self.scroll_pos.saturating_sub(new_cursor_pos.abs() as u32);
+            self.scroll_pos = self.scroll_pos.saturating_sub(new_cursor_pos.abs() as usize);
             self.cursor_pos = 0;
-        } else if new_cursor_pos as u32 + old_scroll_pos >= n_visible_items {
+        } else if new_cursor_pos as usize + old_scroll_pos >= n_visible_items {
             // attempting to go below content
             //TODO: wrap, but only if cursor is starting off at the last row
             // i.e. if pressing pgdown before the end, jump only to the end,
             // but if pressing pgdown at the very end, wrap and start from top
             self.scroll_pos = n_visible_items.saturating_sub(max_y);
             self.cursor_pos = n_visible_items.saturating_sub(self.scroll_pos + 1);
-        } else if new_cursor_pos as u32 >= max_y {
+        } else if new_cursor_pos as usize >= max_y {
             // Attempting to go below current view, scroll down.
             self.cursor_pos = max_y - 1;
             self.scroll_pos = std::cmp::min(
                 n_visible_items,
-                old_scroll_pos + new_cursor_pos as u32
+                old_scroll_pos + new_cursor_pos as usize
             ).saturating_sub(self.cursor_pos);
         } else {
             // scrolling within view
-            self.cursor_pos = new_cursor_pos as u32;
+            self.cursor_pos = usize::try_from(new_cursor_pos).unwrap_or(0);
         }
 
     }
 
     /// Move the cursor so that it is at the location `row` in the
     /// currently visible items, and update the scroll position as necessary
-    pub fn move_cursor_to(&mut self, row: u32) {
-        self.move_cursor(row as i32
-                         - self.cursor_pos as i32
-                         - self.scroll_pos as i32,
+    pub fn move_cursor_to(&mut self, row: usize) {
+        self.move_cursor(row as isize
+                         - self.cursor_pos as isize
+                         - self.scroll_pos as isize,
                          false);
     }
 
@@ -529,7 +529,7 @@ impl TereAppState {
     /// not found, don't move the cursor and return false, otherwise return true.
     pub fn move_cursor_to_filename<S: AsRef<OsStr>>(&mut self, fname: S) -> bool {
         self.index_of_filename(fname)
-            .map(|idx| self.move_cursor_to(u32::try_from(idx).unwrap_or(u32::MAX)))
+            .map(|idx| self.move_cursor_to(idx))
             .is_some()
     }
 
@@ -538,7 +538,7 @@ impl TereAppState {
     /// matches. If dir is positive, move to the next match, if it's negative,
     /// move to the previous match, and if it's zero, move to the cursor to the
     /// current match.
-    pub fn move_cursor_to_adjacent_match(&mut self, dir: i32) {
+    pub fn move_cursor_to_adjacent_match(&mut self, dir: isize) {
 
         if self.is_searching() {
             if self.num_matching_items() == 0 {
@@ -575,7 +575,7 @@ impl TereAppState {
                     *cur_idx_in_all
                 };
 
-                self.move_cursor_to(u32::try_from(new_row).unwrap_or(u32::MAX));
+                self.move_cursor_to(new_row);
             }
         }
     }
@@ -670,7 +670,7 @@ impl TereAppState {
 mod tests {
     use super::*;
 
-    fn create_test_filenames(n: u32) -> LsBufType {
+    fn create_test_filenames(n: usize) -> LsBufType {
         let fnames: Vec<_> = (1..=n).map(|i| format!("file {}", i)).collect();
         strings_to_ls_buf(fnames)
     }
@@ -682,11 +682,11 @@ mod tests {
             .into()
     }
 
-    fn create_test_state(win_h: u32, n_filenames: u32) -> TereAppState {
+    fn create_test_state(win_h: usize, n_filenames: usize) -> TereAppState {
         create_test_state_with_buf(win_h, create_test_filenames(n_filenames))
     }
 
-    fn create_test_state_with_buf(win_h: u32,
+    fn create_test_state_with_buf(win_h: usize,
                                   buf: LsBufType) -> TereAppState {
         TereAppState {
             cursor_pos: 0,
@@ -783,8 +783,10 @@ mod tests {
     }
 
     // (using dev-dependencies, https://doc.rust-lang.org/rust-by-example/testing/dev_dependencies.html)
-    fn test_scrolling_bufsize_larger_than_window_size_helper(win_h: u32,
-                                                             n_files: u32) {
+    fn test_scrolling_bufsize_larger_than_window_size_helper(
+        win_h: usize,
+        n_files: usize
+    ) {
         let mut state = create_test_state(win_h, n_files);
         let max_cursor = win_h - 1;
         let max_scroll = n_files - win_h;
@@ -815,7 +817,7 @@ mod tests {
             assert_eq!(state.cursor_pos, max_cursor);
             assert_eq!(state.scroll_pos, max_scroll);
         }
-        state.move_cursor(win_h as i32 + 100, false);
+        state.move_cursor(win_h as isize + 100, false);
         assert_eq!(state.cursor_pos, max_cursor);
         assert_eq!(state.scroll_pos, max_scroll);
 
@@ -848,10 +850,10 @@ mod tests {
         assert_eq!(state.scroll_pos, 0);
 
         // test jumping all the way to the bottom and back
-        state.move_cursor(win_h as i32 + 100, false);
+        state.move_cursor(win_h as isize + 100, false);
         assert_eq!(state.cursor_pos, max_cursor);
         assert_eq!(state.scroll_pos, max_scroll);
-        state.move_cursor(-100 - win_h as i32, false);
+        state.move_cursor(-100 - win_h as isize, false);
         assert_eq!(state.cursor_pos, 0);
         assert_eq!(state.scroll_pos, 0);
     }

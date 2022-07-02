@@ -38,9 +38,9 @@ use dirs::home_dir;
 use unicode_segmentation::UnicodeSegmentation;
 
 
-const HEADER_SIZE: u16 = 1;
-const INFO_WIN_SIZE: u16 = 1;
-const FOOTER_SIZE: u16 = 1;
+const HEADER_SIZE: usize = 1;
+const INFO_WIN_SIZE: usize = 1;
+const FOOTER_SIZE: usize = 1;
 
 
 /// This struct is responsible for drawing an app state object to a stderr stream (confusingly
@@ -51,10 +51,17 @@ pub struct TereTui<'a> {
     app_state: TereAppState,
 }
 
+/// Return the current terminal size as a pair of `(usize, usize)` instead of `(u16, 16)` as
+/// is done by crossterm.
+fn terminal_size_usize() -> CTResult<(usize, usize)> {
+    let (w, h): (u16, u16) = terminal::size()?;
+    Ok((w as usize, h as usize))
+}
+
 // Dimensions (width, height) of main window
-fn main_window_size() -> CTResult<(u16, u16)> {
-    let (w, h) = terminal::size()?;
-    Ok((w, h.saturating_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE)))
+fn main_window_size() -> CTResult<(usize, usize)> {
+    let (w, h) = terminal_size_usize()?;
+    Ok((w as usize, (h as usize).saturating_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE)))
 }
 
 
@@ -64,8 +71,7 @@ impl<'a> TereTui<'a> {
         let (w, h) = main_window_size()?;
         let state = TereAppState::init(
             args,
-            // TODO: have to convert to u32 here. but correct solution would be to use u16 instead in app_state as well
-            w.into(), h.into()
+            w, h,
         )?; //.map_err(|e| Error::new(ErrorKind::Other, e))?;
         let mut ret = Self {
             window,
@@ -91,10 +97,10 @@ impl<'a> TereTui<'a> {
 
     /// Queue up a command to clear a given row (starting from 0). Must be executed/flushed
     /// separately.
-    fn queue_clear_row(&mut self, row: u16) -> CTResult<()> {
+    fn queue_clear_row(&mut self, row: usize) -> CTResult<()> {
         queue!(
             self.window,
-            cursor::MoveTo(0, row),
+            cursor::MoveTo(0, u16::try_from(row).unwrap_or(u16::MAX)),
             terminal::Clear(terminal::ClearType::CurrentLine),
         )
     }
@@ -133,14 +139,14 @@ impl<'a> TereTui<'a> {
     }
 
     pub fn redraw_info_window(&mut self) -> CTResult<()> {
-        let (_, h) = crossterm::terminal::size()?;
+        let (_, h) = terminal_size_usize()?;
         let info_win_row = h - FOOTER_SIZE - INFO_WIN_SIZE;
 
         self.queue_clear_row(info_win_row)?;
         let mut win = self.window;
         execute!(
             win,
-            cursor::MoveTo(0, info_win_row),
+            cursor::MoveTo(0, u16::try_from(info_win_row).unwrap_or(u16::MAX)),
             style::SetAttribute(Attribute::Reset),
             style::Print(&self.app_state.info_msg.clone().bold()),
         )
@@ -160,7 +166,7 @@ impl<'a> TereTui<'a> {
     }
 
     pub fn redraw_footer(&mut self) -> CTResult<()> {
-        let (w, h) = crossterm::terminal::size()?;
+        let (w, h) = terminal_size_usize()?;
         let footer_win_row = h - FOOTER_SIZE;
         self.queue_clear_row(footer_win_row)?;
 
@@ -192,14 +198,17 @@ impl<'a> TereTui<'a> {
         // if there is not enough space
         queue!(
             win,
-            cursor::MoveTo(w.saturating_sub(extra_msg.len() as u16), footer_win_row),
+            cursor::MoveTo(
+                u16::try_from(w.saturating_sub(extra_msg.len())).unwrap_or(u16::MAX),
+                u16::try_from(footer_win_row).unwrap_or(u16::MAX),
+            ),
             style::SetAttribute(Attribute::Reset),
             style::Print(extra_msg.chars().take(w as usize).collect::<String>().bold()),
         )?;
 
         execute!(
             win,
-            cursor::MoveTo(0, footer_win_row),
+            cursor::MoveTo(0, u16::try_from(footer_win_row).unwrap_or(u16::MAX)),
             style::SetAttribute(Attribute::Reset),
             //TODO: prevent line wrap here
             style::Print(&format!("{}: {}",
@@ -210,7 +219,7 @@ impl<'a> TereTui<'a> {
     }
 
     fn draw_main_window_row(&mut self,
-                            row: u16,
+                            row: usize,
                             highlight: bool,
                             ) -> CTResult<()> {
         let row_abs = row  + HEADER_SIZE;
@@ -221,7 +230,7 @@ impl<'a> TereTui<'a> {
         let matching_letter_bg = style::Color::DarkGrey;
         let symlink_color = style::Color::Cyan;
 
-        let item = self.app_state.get_item_at_cursor_pos(row.into());
+        let item = self.app_state.get_item_at_cursor_pos(row);
 
         let text_attr = if item.map(|itm| itm.is_dir()).unwrap_or(false) {
             Attribute::Bold
@@ -231,20 +240,20 @@ impl<'a> TereTui<'a> {
 
         queue!(
             self.window,
-            cursor::MoveTo(0, row_abs),
+            cursor::MoveTo(0, u16::try_from(row_abs).unwrap_or(u16::MAX)),
             style::SetAttribute(Attribute::Reset),
             style::ResetColor,
             style::SetAttribute(text_attr),
         )?;
 
-        let idx = self.app_state.cursor_pos_to_visible_item_index(row.into());
+        let idx = self.app_state.cursor_pos_to_visible_item_index(row);
 
         // All *byte offsets* that should be underlined
         let underline_locs = if self.app_state.is_searching()
             && self.app_state.visible_match_indices().contains(&idx)
             {
                 self.app_state
-                    .get_match_locations_at_cursor_pos(row as u32)
+                    .get_match_locations_at_cursor_pos(row)
                     .unwrap_or(&vec![])
                     .iter()
                     .flat_map(|(start, end)| (*start..*end).collect::<Vec<usize>>())
@@ -316,7 +325,7 @@ impl<'a> TereTui<'a> {
         };
 
         // color the rest of the line if applicable
-        let width: usize = main_window_size()?.0.into();
+        let width: usize = main_window_size()?.0;
         if highlight && width > item_size {
             queue!(
                 self.window,
@@ -336,14 +345,14 @@ impl<'a> TereTui<'a> {
     }
 
     // redraw row 'row' (relative to the top of the main window) without highlighting
-    pub fn unhighlight_row(&mut self, row: u16) -> CTResult<()> {
+    pub fn unhighlight_row(&mut self, row: usize) -> CTResult<()> {
         self.draw_main_window_row(row, false)
     }
 
-    pub fn highlight_row(&mut self, row: u32) -> CTResult<()> { //TODO: change row to u16
+    pub fn highlight_row(&mut self, row: usize) -> CTResult<()> {
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
-        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), true)
+        self.draw_main_window_row(row, true)
     }
 
     fn queue_clear_main_window(&mut self) -> CTResult<()> {
@@ -354,7 +363,7 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn highlight_row_exclusive(&mut self, row: u32) -> CTResult<()> { //TODO: make row u16
+    pub fn highlight_row_exclusive(&mut self, row: usize) -> CTResult<()> {
         // Highlight the row `row` exclusively, and hide all other rows.
         self.queue_clear_main_window()?;
         self.highlight_row(row)?;
@@ -375,7 +384,7 @@ impl<'a> TereTui<'a> {
         // care of clearing each row when applicable.
         for row in 0..max_y {
             // highlight the current row under the cursor when applicable
-            let highlight = self.app_state.cursor_pos == (row as u32)
+            let highlight = self.app_state.cursor_pos == row
                 && (!is_search || (any_matches || any_visible_items));
             self.draw_main_window_row(row, highlight)?;
         }
@@ -393,7 +402,7 @@ impl<'a> TereTui<'a> {
 
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
-    pub fn move_cursor(&mut self, amount: i32, wrap: bool) -> CTResult<()> {
+    pub fn move_cursor(&mut self, amount: isize, wrap: bool) -> CTResult<()> {
         let old_cursor_pos = self.app_state.cursor_pos;
         let old_scroll_pos = self.app_state.scroll_pos;
 
@@ -404,7 +413,7 @@ impl<'a> TereTui<'a> {
             // and refreshing
             self.redraw_main_window()?;
         } else {
-            self.unhighlight_row(u16::try_from(old_cursor_pos).unwrap_or(u16::MAX))?;
+            self.unhighlight_row(old_cursor_pos)?;
             self.highlight_row(self.app_state.cursor_pos)?;
         }
         Ok(())
@@ -474,7 +483,6 @@ impl<'a> TereTui<'a> {
 
     pub fn update_main_window_dimensions(&mut self) -> CTResult<()> {
         let (w, h) = main_window_size()?;
-        let (w, h) = (w as u32, h as u32);
         self.app_state.update_main_window_dimensions(w, h);
         Ok(())
     }
@@ -495,7 +503,7 @@ impl<'a> TereTui<'a> {
     pub fn on_page_up_down(&mut self, up: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
             let (_, h) = main_window_size()?;
-            let delta = ((h - 1) as i32) * if up { -1 } else { 1 };
+            let delta = ((h - 1) as isize) * if up { -1 } else { 1 };
             self.move_cursor(delta, false)?;
             self.redraw_footer()?;
         } //TODO: how to handle page up / page down while searching? jump to the next match below view?
@@ -521,7 +529,7 @@ impl<'a> TereTui<'a> {
             let target = if home {
                 0
             } else {
-                self.app_state.num_visible_items() as u32
+                self.app_state.num_visible_items()
             };
             self.app_state.move_cursor_to(target);
             self.redraw_main_window()?;
@@ -535,7 +543,7 @@ impl<'a> TereTui<'a> {
             return Ok(());
         }
 
-        if let Some(entry) = self.app_state.get_item_at_cursor_pos((event.row - 1) as u32) {
+        if let Some(entry) = self.app_state.get_item_at_cursor_pos((event.row - 1) as usize) {
             let fname = entry.file_name_checked();
             if event.kind == MouseEventKind::Up(MouseButton::Left) {
                 self.change_dir(&fname)?;
@@ -781,7 +789,7 @@ impl<'a> TereTui<'a> {
 
         queue!(
             self.window,
-            cursor::MoveTo(0, HEADER_SIZE),
+            cursor::MoveTo(0, u16::try_from(HEADER_SIZE).unwrap_or(u16::MAX)),
             style::SetAttribute(Attribute::Reset),
             style::ResetColor,
         )?;
