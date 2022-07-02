@@ -51,6 +51,13 @@ pub struct TereTui<'a> {
     app_state: TereAppState,
 }
 
+/// Return the current terminal size as a pair of `(usize, usize)` instead of `(u16, 16)` as
+/// is done by crossterm.
+fn terminal_size_usize() -> CTResult<(usize, usize)> {
+    let (w, h): (u16, u16) = terminal::size()?;
+    Ok((w as usize, h as usize))
+}
+
 // Dimensions (width, height) of main window
 fn main_window_size() -> CTResult<(usize, usize)> {
     let (w, h) = terminal::size()?;
