@@ -244,7 +244,7 @@ impl<'a> TereTui<'a> {
             && self.app_state.visible_match_indices().contains(&idx)
             {
                 self.app_state
-                    .get_match_locations_at_cursor_pos(row as u32)
+                    .get_match_locations_at_cursor_pos(row)
                     .unwrap_or(&vec![])
                     .iter()
                     .flat_map(|(start, end)| (*start..*end).collect::<Vec<usize>>())
@@ -343,7 +343,7 @@ impl<'a> TereTui<'a> {
     pub fn highlight_row(&mut self, row: usize) -> CTResult<()> { //TODO: change row to u16
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
-        self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), true)
+        self.draw_main_window_row(row, true)
     }
 
     fn queue_clear_main_window(&mut self) -> CTResult<()> {
@@ -375,7 +375,7 @@ impl<'a> TereTui<'a> {
         // care of clearing each row when applicable.
         for row in 0..max_y {
             // highlight the current row under the cursor when applicable
-            let highlight = self.app_state.cursor_pos == (row as u32)
+            let highlight = self.app_state.cursor_pos == row
                 && (!is_search || (any_matches || any_visible_items));
             self.draw_main_window_row(row, highlight)?;
         }
@@ -404,7 +404,7 @@ impl<'a> TereTui<'a> {
             // and refreshing
             self.redraw_main_window()?;
         } else {
-            self.unhighlight_row(u16::try_from(old_cursor_pos).unwrap_or(u16::MAX))?;
+            self.unhighlight_row(old_cursor_pos)?;
             self.highlight_row(self.app_state.cursor_pos)?;
         }
         Ok(())
@@ -474,7 +474,6 @@ impl<'a> TereTui<'a> {
 
     pub fn update_main_window_dimensions(&mut self) -> CTResult<()> {
         let (w, h) = main_window_size()?;
-        let (w, h) = (w as u32, h as u32);
         self.app_state.update_main_window_dimensions(w, h);
         Ok(())
     }
@@ -521,7 +520,7 @@ impl<'a> TereTui<'a> {
             let target = if home {
                 0
             } else {
-                self.app_state.num_visible_items() as u32
+                self.app_state.num_visible_items()
             };
             self.app_state.move_cursor_to(target);
             self.redraw_main_window()?;

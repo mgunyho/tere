@@ -480,7 +480,7 @@ impl TereAppState {
         let old_cursor_pos = self.cursor_pos;
         let old_scroll_pos = self.scroll_pos;
         let visible_items = self.visible_items();
-        let n_visible_items = visible_items.len() as u32;
+        let n_visible_items = visible_items.len();
         let max_y = self.main_win_h;
 
         let mut new_cursor_pos: i32 = old_cursor_pos as i32 + amount;
@@ -511,7 +511,7 @@ impl TereAppState {
             ).saturating_sub(self.cursor_pos);
         } else {
             // scrolling within view
-            self.cursor_pos = new_cursor_pos as u32;
+            self.cursor_pos = new_cursor_pos;
         }
 
     }
@@ -529,7 +529,7 @@ impl TereAppState {
     /// not found, don't move the cursor and return false, otherwise return true.
     pub fn move_cursor_to_filename<S: AsRef<OsStr>>(&mut self, fname: S) -> bool {
         self.index_of_filename(fname)
-            .map(|idx| self.move_cursor_to(u32::try_from(idx).unwrap_or(u32::MAX)))
+            .map(|idx| self.move_cursor_to(idx))
             .is_some()
     }
 
@@ -575,7 +575,7 @@ impl TereAppState {
                     *cur_idx_in_all
                 };
 
-                self.move_cursor_to(u32::try_from(new_row).unwrap_or(u32::MAX));
+                self.move_cursor_to(new_row);
             }
         }
     }
