@@ -11,7 +11,7 @@ const README_STR: &str = include_str!("../../README.md");
 /// Returns a vector of vectors, where the outer vector represents lines, and the inner vector
 /// contains either a single string for the whole line, or multiple strings, if the style varies
 /// within the line.
-pub fn get_formatted_help_text(width: u16) -> Vec<Vec<StyledContent<String>>> {
+pub fn get_formatted_help_text(width: usize) -> Vec<Vec<StyledContent<String>>> {
     let help_str = &README_STR[
         README_STR.find("## User guide").expect("Could not find user guide in README")
             ..
@@ -43,7 +43,7 @@ pub fn get_formatted_help_text(width: u16) -> Vec<Vec<StyledContent<String>>> {
     let (help_str, bold_toggle_locs) = strip_markup_and_extract_bold_positions(&help_str);
 
     // apply text wrapping
-    let opts = Options::with_word_splitter(width as usize, NoHyphenation);
+    let opts = Options::with_word_splitter(width, NoHyphenation);
     let help_str = textwrap::wrap(&help_str, opts);
 
     // apply bold at the toggle locations and return
