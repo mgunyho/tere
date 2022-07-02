@@ -349,7 +349,7 @@ impl<'a> TereTui<'a> {
         self.draw_main_window_row(row, false)
     }
 
-    pub fn highlight_row(&mut self, row: usize) -> CTResult<()> { //TODO: change row to u16
+    pub fn highlight_row(&mut self, row: usize) -> CTResult<()> {
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
         self.draw_main_window_row(row, true)
@@ -363,7 +363,7 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn highlight_row_exclusive(&mut self, row: usize) -> CTResult<()> { //TODO: make row u16
+    pub fn highlight_row_exclusive(&mut self, row: usize) -> CTResult<()> {
         // Highlight the row `row` exclusively, and hide all other rows.
         self.queue_clear_main_window()?;
         self.highlight_row(row)?;
