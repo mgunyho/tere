@@ -71,8 +71,7 @@ impl<'a> TereTui<'a> {
         let (w, h) = main_window_size()?;
         let state = TereAppState::init(
             args,
-            // TODO: have to convert to u32 here. but correct solution would be to use u16 instead in app_state as well
-            w.into(), h.into()
+            w, h,
         )?; //.map_err(|e| Error::new(ErrorKind::Other, e))?;
         let mut ret = Self {
             window,
@@ -231,7 +230,7 @@ impl<'a> TereTui<'a> {
         let matching_letter_bg = style::Color::DarkGrey;
         let symlink_color = style::Color::Cyan;
 
-        let item = self.app_state.get_item_at_cursor_pos(row.into());
+        let item = self.app_state.get_item_at_cursor_pos(row);
 
         let text_attr = if item.map(|itm| itm.is_dir()).unwrap_or(false) {
             Attribute::Bold
@@ -247,7 +246,7 @@ impl<'a> TereTui<'a> {
             style::SetAttribute(text_attr),
         )?;
 
-        let idx = self.app_state.cursor_pos_to_visible_item_index(row.into());
+        let idx = self.app_state.cursor_pos_to_visible_item_index(row);
 
         // All *byte offsets* that should be underlined
         let underline_locs = if self.app_state.is_searching()
@@ -326,7 +325,7 @@ impl<'a> TereTui<'a> {
         };
 
         // color the rest of the line if applicable
-        let width: usize = main_window_size()?.0.into();
+        let width: usize = main_window_size()?.0;
         if highlight && width > item_size {
             queue!(
                 self.window,
