@@ -110,7 +110,7 @@ impl<'a> TereTui<'a> {
             self.app_state.header_msg.as_str(),
             true
             )
-            .map(|s| String::from(s))
+            .map(String::from)
             .collect();
         let n_skip = header_graphemes.len().saturating_sub(max_x as usize);
         let header_msg = header_graphemes[n_skip..].join("");
