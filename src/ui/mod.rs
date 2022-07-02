@@ -577,7 +577,7 @@ impl<'a> TereTui<'a> {
                             // rare to have a folder name starting with space.
                             self.change_dir("")?;
                         },
-                        KeyCode::Left => self.change_dir("..")?, //TODO: use std::path::Component::ParentDir
+                        KeyCode::Left => self.change_dir("..")?,
                         KeyCode::Up if k.modifiers == ALT => {
                             self.change_dir("..")?;
                         },
