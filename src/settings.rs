@@ -1,8 +1,7 @@
 /// Module for managing the settings (command line arguments) of the app
-
 use std::fmt;
-use std::str::FromStr;
 use std::path::PathBuf;
+use std::str::FromStr;
 use clap::ArgMatches;
 
 //TODO: config file?
@@ -14,11 +13,13 @@ pub enum CaseSensitiveMode {
 }
 
 impl Default for CaseSensitiveMode {
-    fn default() -> Self { Self::SmartCase }
+    fn default() -> Self {
+        Self::SmartCase
+    }
 }
 
 impl fmt::Display for CaseSensitiveMode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>)  -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let text = match self {
             CaseSensitiveMode::IgnoreCase    => "ignore case",
             CaseSensitiveMode::CaseSensitive => "case sensitive",
@@ -36,11 +37,13 @@ pub enum GapSearchMode {
 }
 
 impl Default for GapSearchMode {
-    fn default() -> Self { Self::GapSearchFromStart }
+    fn default() -> Self {
+        Self::GapSearchFromStart
+    }
 }
 
 impl fmt::Display for GapSearchMode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>)  -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let text = match self {
             GapSearchMode::GapSearchFromStart => "gap search from start",
             GapSearchMode::NoGapSearch        => "normal search",
@@ -49,7 +52,6 @@ impl fmt::Display for GapSearchMode {
         write!(f, "{}", text)
     }
 }
-
 
 #[derive(Default)]
 pub struct TereSettings {
@@ -98,22 +100,26 @@ impl TereSettings {
             ret.gap_search_mode = GapSearchMode::NoGapSearch;
         }
 
-        ret.autocd_timeout = match args.values_of("autocd-timeout")
+        ret.autocd_timeout = match args
+            .values_of("autocd-timeout")
             // ok to unwrap because autocd-timeout has a default value which is always present
-            .unwrap().last().unwrap()
+            .unwrap()
+            .last()
+            .unwrap()
         {
             "off" => None,
-            x => u64::from_str(x).map_err(|_| {
-                // We don't want to pass the App all the way here, so create raw error
-                // NOTE: We don't call error.format(app) anywhere now, but it doesn't seem to
-                // make a difference for this error type.
-                clap::Error::raw(
-                    clap::ErrorKind::InvalidValue,
-                    format!("Invalid value for 'autocd-timeout': '{}'\n", x)
-                )
-            })?.into()
+            x => u64::from_str(x)
+                .map_err(|_| {
+                    // We don't want to pass the App all the way here, so create raw error
+                    // NOTE: We don't call error.format(app) anywhere now, but it doesn't seem to
+                    // make a difference for this error type.
+                    clap::Error::raw(
+                        clap::ErrorKind::InvalidValue,
+                        format!("Invalid value for 'autocd-timeout': '{}'\n", x),
+                    )
+                })?
+                .into(),
         };
-
 
         if let Some(hist_file) = args.value_of("history-file") {
             ret.history_file = if hist_file.is_empty() {
@@ -122,16 +128,14 @@ impl TereSettings {
                 Some(PathBuf::from(hist_file))
             }
         } else {
-            ret.history_file = dirs::cache_dir().map(|path| path
-                                                     .join(env!("CARGO_PKG_NAME"))
-                                                     .join("history.json"));
+            ret.history_file = dirs::cache_dir()
+                .map(|path| path.join(env!("CARGO_PKG_NAME")).join("history.json"));
         }
 
         // ok to unwrap, because mouse has the default value of 'off'
         if args.values_of("mouse").unwrap().last().unwrap() == "on" {
             ret.mouse_enabled = true;
         }
-
 
         Ok(ret)
     }
