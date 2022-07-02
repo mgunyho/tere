@@ -60,8 +60,8 @@ fn terminal_size_usize() -> CTResult<(usize, usize)> {
 
 // Dimensions (width, height) of main window
 fn main_window_size() -> CTResult<(usize, usize)> {
-    let (w, h) = terminal::size()?;
-    Ok((w, h.saturating_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE)))
+    let (w, h) = terminal_size_usize()?;
+    Ok((w as usize, (h as usize).saturating_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE)))
 }
 
 
