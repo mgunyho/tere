@@ -476,42 +476,42 @@ impl TereAppState {
 
     /// Move the cursor up (positive amount) or down (negative amount) in the
     /// currently visible items, and update the scroll position as necessary
-    pub fn move_cursor(&mut self, amount: i32, wrap: bool) {
+    pub fn move_cursor(&mut self, amount: isize, wrap: bool) {
         let old_cursor_pos = self.cursor_pos;
         let old_scroll_pos = self.scroll_pos;
         let visible_items = self.visible_items();
         let n_visible_items = visible_items.len();
         let max_y = self.main_win_h;
 
-        let mut new_cursor_pos: i32 = old_cursor_pos as i32 + amount;
+        let mut new_cursor_pos: isize = (old_cursor_pos as isize).saturating_add(amount);
 
         if wrap && !visible_items.is_empty() {
-            let offset = self.scroll_pos as i32;
+            let offset = self.scroll_pos as isize;
             new_cursor_pos = (offset + new_cursor_pos)
-                .rem_euclid(n_visible_items as i32) - offset;
+                .rem_euclid(n_visible_items as isize) - offset;
         }
 
         if new_cursor_pos < 0 {
             // attempting to go above the current view, scroll up
-            self.scroll_pos = self.scroll_pos.saturating_sub(new_cursor_pos.abs() as u32);
+            self.scroll_pos = self.scroll_pos.saturating_sub(new_cursor_pos.abs() as usize);
             self.cursor_pos = 0;
-        } else if new_cursor_pos as u32 + old_scroll_pos >= n_visible_items {
+        } else if new_cursor_pos as usize + old_scroll_pos >= n_visible_items {
             // attempting to go below content
             //TODO: wrap, but only if cursor is starting off at the last row
             // i.e. if pressing pgdown before the end, jump only to the end,
             // but if pressing pgdown at the very end, wrap and start from top
             self.scroll_pos = n_visible_items.saturating_sub(max_y);
             self.cursor_pos = n_visible_items.saturating_sub(self.scroll_pos + 1);
-        } else if new_cursor_pos as u32 >= max_y {
+        } else if new_cursor_pos as usize >= max_y {
             // Attempting to go below current view, scroll down.
             self.cursor_pos = max_y - 1;
             self.scroll_pos = std::cmp::min(
                 n_visible_items,
-                old_scroll_pos + new_cursor_pos as u32
+                old_scroll_pos + new_cursor_pos as usize
             ).saturating_sub(self.cursor_pos);
         } else {
             // scrolling within view
-            self.cursor_pos = new_cursor_pos;
+            self.cursor_pos = usize::try_from(new_cursor_pos).unwrap_or(0);
         }
 
     }
