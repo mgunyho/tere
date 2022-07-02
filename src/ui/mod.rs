@@ -199,14 +199,17 @@ impl<'a> TereTui<'a> {
         // if there is not enough space
         queue!(
             win,
-            cursor::MoveTo(w.saturating_sub(extra_msg.len() as u16), footer_win_row),
+            cursor::MoveTo(
+                u16::try_from(w.saturating_sub(extra_msg.len())).unwrap_or(u16::MAX),
+                u16::try_from(footer_win_row).unwrap_or(u16::MAX),
+            ),
             style::SetAttribute(Attribute::Reset),
             style::Print(extra_msg.chars().take(w as usize).collect::<String>().bold()),
         )?;
 
         execute!(
             win,
-            cursor::MoveTo(0, footer_win_row),
+            cursor::MoveTo(0, u16::try_from(footer_win_row).unwrap_or(u16::MAX)),
             style::SetAttribute(Attribute::Reset),
             //TODO: prevent line wrap here
             style::Print(&format!("{}: {}",
@@ -501,7 +504,7 @@ impl<'a> TereTui<'a> {
     pub fn on_page_up_down(&mut self, up: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
             let (_, h) = main_window_size()?;
-            let delta = ((h - 1) as i32) * if up { -1 } else { 1 };
+            let delta = ((h - 1) as isize) * if up { -1 } else { 1 };
             self.move_cursor(delta, false)?;
             self.redraw_footer()?;
         } //TODO: how to handle page up / page down while searching? jump to the next match below view?
@@ -541,7 +544,7 @@ impl<'a> TereTui<'a> {
             return Ok(());
         }
 
-        if let Some(entry) = self.app_state.get_item_at_cursor_pos((event.row - 1) as u32) {
+        if let Some(entry) = self.app_state.get_item_at_cursor_pos((event.row - 1) as usize) {
             let fname = entry.file_name_checked();
             if event.kind == MouseEventKind::Up(MouseButton::Left) {
                 self.change_dir(&fname)?;
