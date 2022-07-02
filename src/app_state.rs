@@ -670,7 +670,7 @@ impl TereAppState {
 mod tests {
     use super::*;
 
-    fn create_test_filenames(n: u32) -> LsBufType {
+    fn create_test_filenames(n: usize) -> LsBufType {
         let fnames: Vec<_> = (1..=n).map(|i| format!("file {}", i)).collect();
         strings_to_ls_buf(fnames)
     }
@@ -682,11 +682,11 @@ mod tests {
             .into()
     }
 
-    fn create_test_state(win_h: u32, n_filenames: u32) -> TereAppState {
+    fn create_test_state(win_h: usize, n_filenames: usize) -> TereAppState {
         create_test_state_with_buf(win_h, create_test_filenames(n_filenames))
     }
 
-    fn create_test_state_with_buf(win_h: u32,
+    fn create_test_state_with_buf(win_h: usize,
                                   buf: LsBufType) -> TereAppState {
         TereAppState {
             cursor_pos: 0,
@@ -783,8 +783,10 @@ mod tests {
     }
 
     // (using dev-dependencies, https://doc.rust-lang.org/rust-by-example/testing/dev_dependencies.html)
-    fn test_scrolling_bufsize_larger_than_window_size_helper(win_h: u32,
-                                                             n_files: u32) {
+    fn test_scrolling_bufsize_larger_than_window_size_helper(
+        win_h: usize,
+        n_files: usize
+    ) {
         let mut state = create_test_state(win_h, n_files);
         let max_cursor = win_h - 1;
         let max_scroll = n_files - win_h;
@@ -815,7 +817,7 @@ mod tests {
             assert_eq!(state.cursor_pos, max_cursor);
             assert_eq!(state.scroll_pos, max_scroll);
         }
-        state.move_cursor(win_h as i32 + 100, false);
+        state.move_cursor(win_h as isize + 100, false);
         assert_eq!(state.cursor_pos, max_cursor);
         assert_eq!(state.scroll_pos, max_scroll);
 
@@ -848,10 +850,10 @@ mod tests {
         assert_eq!(state.scroll_pos, 0);
 
         // test jumping all the way to the bottom and back
-        state.move_cursor(win_h as i32 + 100, false);
+        state.move_cursor(win_h as isize + 100, false);
         assert_eq!(state.cursor_pos, max_cursor);
         assert_eq!(state.scroll_pos, max_scroll);
-        state.move_cursor(-100 - win_h as i32, false);
+        state.move_cursor(-100 - win_h as isize, false);
         assert_eq!(state.cursor_pos, 0);
         assert_eq!(state.scroll_pos, 0);
     }
