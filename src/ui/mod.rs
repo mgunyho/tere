@@ -37,11 +37,9 @@ use clap::ArgMatches;
 use dirs::home_dir;
 use unicode_segmentation::UnicodeSegmentation;
 
-
 const HEADER_SIZE: usize = 1;
 const INFO_WIN_SIZE: usize = 1;
 const FOOTER_SIZE: usize = 1;
-
 
 /// This struct is responsible for drawing an app state object to a stderr stream (confusingly
 /// called 'window' for historical reasons) that the UI is written to. Currently it somewhat
@@ -61,18 +59,16 @@ fn terminal_size_usize() -> CTResult<(usize, usize)> {
 // Dimensions (width, height) of main window
 fn main_window_size() -> CTResult<(usize, usize)> {
     let (w, h) = terminal_size_usize()?;
-    Ok((w as usize, (h as usize).saturating_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE)))
+    Ok((
+        w as usize,
+        (h as usize).saturating_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE),
+    ))
 }
 
-
 impl<'a> TereTui<'a> {
-
     pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> Result<Self, TereError> {
         let (w, h) = main_window_size()?;
-        let state = TereAppState::init(
-            args,
-            w, h,
-        )?; //.map_err(|e| Error::new(ErrorKind::Other, e))?;
+        let state = TereAppState::init(args, w, h)?;
         let mut ret = Self {
             window,
             app_state: state,
@@ -84,9 +80,14 @@ impl<'a> TereTui<'a> {
 
         ret.update_header()?;
         ret.redraw_all_windows()?;
-        ret.info_message(format!("{} {} - Press '?' to view help or Esc to exit.",
-                                 env!("CARGO_PKG_NAME"),
-                                 env!("CARGO_PKG_VERSION")).as_str())?;
+        ret.info_message(
+            format!(
+                "{} {} - Press '?' to view help or Esc to exit.",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_VERSION")
+            )
+            .as_str(),
+        )?;
         Ok(ret)
     }
 
@@ -112,12 +113,10 @@ impl<'a> TereTui<'a> {
 
         let (max_x, _) = main_window_size()?;
 
-        let header_graphemes: Vec<String> = UnicodeSegmentation::graphemes(
-            self.app_state.header_msg.as_str(),
-            true
-            )
-            .map(String::from)
-            .collect();
+        let header_graphemes: Vec<String> =
+            UnicodeSegmentation::graphemes(self.app_state.header_msg.as_str(), true)
+                .map(String::from)
+                .collect();
         let n_skip = header_graphemes.len().saturating_sub(max_x as usize);
         let header_msg = header_graphemes[n_skip..].join("");
 
@@ -176,22 +175,31 @@ impl<'a> TereTui<'a> {
         extra_msg.push_str(&format!("{} - ", self.app_state.settings.gap_search_mode));
         extra_msg.push_str(&format!("{} - ", self.app_state.settings.case_sensitive));
 
-        let cursor_idx = self.app_state.cursor_pos_to_visible_item_index(self.app_state.cursor_pos);
+        let cursor_idx = self
+            .app_state
+            .cursor_pos_to_visible_item_index(self.app_state.cursor_pos);
+
         if self.app_state.is_searching() {
-            let index_in_matches = self.app_state
-                .visible_match_indices().iter()
+            let index_in_matches = self
+                .app_state
+                .visible_match_indices()
+                .iter()
                 .position(|x| *x == cursor_idx)
                 .unwrap_or(0);
 
-            extra_msg.push_str(&format!("{} / {} / {}",
-                               index_in_matches + 1,
-                               self.app_state.num_matching_items(),
-                               self.app_state.num_total_items()));
+            extra_msg.push_str(&format!(
+                "{} / {} / {}",
+                index_in_matches + 1,
+                self.app_state.num_matching_items(),
+                self.app_state.num_total_items()
+            ));
         } else {
             //TODO: show no. of files/folders separately? like 'n folders, n files'
-            extra_msg.push_str(&format!("{} / {}",
-                               cursor_idx + 1,
-                               self.app_state.num_visible_items()));
+            extra_msg.push_str(&format!(
+                "{} / {}",
+                cursor_idx + 1,
+                self.app_state.num_visible_items()
+            ));
         }
 
         // draw extra message first, so that it gets overwritten by the more important search query
@@ -203,7 +211,13 @@ impl<'a> TereTui<'a> {
                 u16::try_from(footer_win_row).unwrap_or(u16::MAX),
             ),
             style::SetAttribute(Attribute::Reset),
-            style::Print(extra_msg.chars().take(w as usize).collect::<String>().bold()),
+            style::Print(
+                extra_msg
+                    .chars()
+                    .take(w as usize)
+                    .collect::<String>()
+                    .bold()
+            ),
         )?;
 
         execute!(
@@ -211,18 +225,23 @@ impl<'a> TereTui<'a> {
             cursor::MoveTo(0, u16::try_from(footer_win_row).unwrap_or(u16::MAX)),
             style::SetAttribute(Attribute::Reset),
             //TODO: prevent line wrap here
-            style::Print(&format!("{}: {}",
-                                  if self.app_state.settings.filter_search { "filter" } else { "search" },
-                                  self.app_state.search_string()
-                                  ).bold()),
+            style::Print(
+                &format!(
+                    "{}: {}",
+                    if self.app_state.settings.filter_search {
+                        "filter"
+                    } else {
+                        "search"
+                    },
+                    self.app_state.search_string()
+                )
+                .bold()
+            ),
         )
     }
 
-    fn draw_main_window_row(&mut self,
-                            row: usize,
-                            highlight: bool,
-                            ) -> CTResult<()> {
-        let row_abs = row  + HEADER_SIZE;
+    fn draw_main_window_row(&mut self, row: usize, highlight: bool) -> CTResult<()> {
+        let row_abs = row + HEADER_SIZE;
 
         //TODO: make customizable...
         let highlight_fg = style::Color::Black;
@@ -251,16 +270,16 @@ impl<'a> TereTui<'a> {
         // All *byte offsets* that should be underlined
         let underline_locs = if self.app_state.is_searching()
             && self.app_state.visible_match_indices().contains(&idx)
-            {
-                self.app_state
-                    .get_match_locations_at_cursor_pos(row)
-                    .unwrap_or(&vec![])
-                    .iter()
-                    .flat_map(|(start, end)| (*start..*end).collect::<Vec<usize>>())
-                    .collect()
-            } else {
-                vec![]
-            };
+        {
+            self.app_state
+                .get_match_locations_at_cursor_pos(row)
+                .unwrap_or(&vec![])
+                .iter()
+                .flat_map(|(start, end)| (*start..*end).collect::<Vec<usize>>())
+                .collect()
+        } else {
+            vec![]
+        };
 
         let item_size = if let Some(item) = item {
             // we're actually drawing an item
@@ -273,15 +292,15 @@ impl<'a> TereTui<'a> {
             // above byte offsets, and determine whether they should be underlined.
             let letters_underlining: Vec<(&str, bool)> =
                 UnicodeSegmentation::grapheme_indices(fname.as_str(), true)
-                // this contains() could probably be optimized, but shouldn't be too bad.
-                .map(|(i, c)| (c, underline_locs.contains(&i)))
-                .collect();
+                    // this contains() could probably be optimized, but shouldn't be too bad.
+                    .map(|(i, c)| (c, underline_locs.contains(&i)))
+                    .collect();
 
             // queue draw actions for each (non-)underlined segment
             for (c, underline) in &letters_underlining {
 
-                let (underline, fg, bg)  = match (underline, highlight) {
-                    (true,      _) => (
+                let (underline, fg, bg) = match (underline, highlight) {
+                    (true, _) => (
                         Attribute::Underlined,
                         style::Color::Reset,
                         matching_letter_bg,
@@ -293,7 +312,11 @@ impl<'a> TereTui<'a> {
                     ),
                     (false, false) => (
                         Attribute::NoUnderline,
-                        if is_symlink { symlink_color } else { style::Color::Reset },
+                        if is_symlink {
+                            symlink_color
+                        } else {
+                            style::Color::Reset
+                        },
                         style::Color::Reset,
                     ),
                 };
@@ -304,7 +327,7 @@ impl<'a> TereTui<'a> {
                     style::SetBackgroundColor(bg),
                     style::SetForegroundColor(fg),
                     style::Print(c.to_string()),
-                    )?;
+                )?;
 
             }
 
@@ -319,7 +342,6 @@ impl<'a> TereTui<'a> {
             } else {
                 letters_underlining.len()
             }
-
         } else {
             0
         };
@@ -332,7 +354,7 @@ impl<'a> TereTui<'a> {
                 style::SetAttribute(Attribute::Reset), // so that the rest of the line isn't underlined
                 style::SetBackgroundColor(highlight_bg),
                 style::Print(" ".repeat(width.saturating_sub(item_size))),
-                )?;
+            )?;
         }
 
         execute!(
@@ -341,7 +363,6 @@ impl<'a> TereTui<'a> {
             style::SetAttribute(Attribute::Reset),
             terminal::Clear(terminal::ClearType::UntilNewLine),
         )
-
     }
 
     // redraw row 'row' (relative to the top of the main window) without highlighting
@@ -357,7 +378,7 @@ impl<'a> TereTui<'a> {
 
     fn queue_clear_main_window(&mut self) -> CTResult<()> {
         let (_, h) = main_window_size()?;
-        for row in HEADER_SIZE..h+HEADER_SIZE {
+        for row in HEADER_SIZE..(h + HEADER_SIZE) {
             self.queue_clear_row(row)?;
         }
         Ok(())
@@ -371,7 +392,6 @@ impl<'a> TereTui<'a> {
     }
 
     pub fn redraw_main_window(&mut self) -> CTResult<()> {
-
         let (_, max_y) = main_window_size()?;
         let mut win = self.window;
 
@@ -428,7 +448,7 @@ impl<'a> TereTui<'a> {
                 } else {
                     self.error_message(&format!("{}", e))?;
                 }
-            },
+            }
             Ok(()) => {
                 self.update_header()?;
                 self.info_message("")?;
@@ -450,10 +470,9 @@ impl<'a> TereTui<'a> {
                 std::thread::sleep(std::time::Duration::from_millis(timeout));
 
                 // ignore keys that were pressed during sleep
-                while crossterm::event::poll(std::time::Duration::from_secs(0))
-                    .unwrap_or(false) {
-                        read_event()?;
-                    }
+                while crossterm::event::poll(std::time::Duration::from_secs(0)).unwrap_or(false) {
+                    read_event()?;
+                }
 
                 self.change_dir("")?;
             }
@@ -543,7 +562,10 @@ impl<'a> TereTui<'a> {
             return Ok(());
         }
 
-        if let Some(entry) = self.app_state.get_item_at_cursor_pos((event.row - 1) as usize) {
+        if let Some(entry) = self
+            .app_state
+            .get_item_at_cursor_pos((event.row - 1) as usize)
+        {
             let fname = entry.file_name_checked();
             if event.kind == MouseEventKind::Up(MouseButton::Left) {
                 self.change_dir(&fname)?;
@@ -588,128 +610,126 @@ impl<'a> TereTui<'a> {
 
         loop {
             match read_event()? {
-                Event::Key(k) => {
-                    match k.code {
-                        KeyCode::Right | KeyCode::Enter => self.change_dir("")?,
-                        KeyCode::Char(' ') if !self.app_state.is_searching() => {
-                            // If the first key is space, treat it like enter. It's probably pretty
-                            // rare to have a folder name starting with space.
-                            self.change_dir("")?;
-                        },
-                        KeyCode::Left => self.change_dir("..")?,
-                        KeyCode::Up if k.modifiers == ALT => {
-                            self.change_dir("..")?;
-                        },
-                        KeyCode::Up => self.on_arrow_key(true)?,
-                        KeyCode::Down if k.modifiers == ALT => {
-                            self.change_dir("")?;
-                        },
-                        KeyCode::Down => self.on_arrow_key(false)?,
-
-                        KeyCode::PageUp => self.on_page_up_down(true)?,
-                        KeyCode::PageDown => self.on_page_up_down(false)?,
-
-                        KeyCode::Home if k.modifiers == CONTROL => {
-                            self.on_go_to_home()?;
-                        }
-                        KeyCode::Char('h') if k.modifiers == CONTROL | ALT => {
-                            self.on_go_to_home()?;
-                        }
-                        KeyCode::Char('r') if k.modifiers == CONTROL => {
-                            self.on_go_to_root()?;
-                        }
-
-                        KeyCode::Home => self.on_home_end(true)?,
-                        KeyCode::End => self.on_home_end(false)?,
-
-                        KeyCode::Esc => {
-                            if self.app_state.is_searching() {
-                                self.app_state.clear_search();
-                                self.info_message("")?; // clear possible 'no matches' message
-                                self.redraw_main_window()?;
-                                self.redraw_footer()?;
-                            } else {
-                                break;
-                            }
-                        },
-
-                        KeyCode::Char('?') => {
-                            self.help_view_loop()?;
-                        }
-
-                        // alt + hjkl
-                        KeyCode::Char('h') if k.modifiers == ALT => {
-                            self.change_dir("..")?;
-                        }
-                        KeyCode::Char('j') if k.modifiers == ALT => {
-                            self.on_arrow_key(false)?;
-                        }
-                        KeyCode::Char('k') if k.modifiers == ALT => {
-                            self.on_arrow_key(true)?;
-                        }
-                        KeyCode::Char('l') if k.modifiers == ALT => {
-                            self.change_dir("")?;
-                        }
-
-                        KeyCode::Char('r') if k.modifiers == ALT => {
-                            // refresh the current folder
-                            self.change_dir(".")?;
-                            self.info_message("Refreshed directory listing")?;
-                        }
-
-                        // other chars with modifiers
-                        KeyCode::Char('q') if k.modifiers == ALT => {
-                            break;
-                        }
-                        KeyCode::Char('c') if k.modifiers == CONTROL => {
-                            // exit on ctl+c
-                            break;
-                        }
-                        KeyCode::Char('u') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
-                            self.on_page_up_down(true)?;
-                        }
-                        KeyCode::Char('d') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
-                            self.on_page_up_down(false)?;
-                        }
-                        KeyCode::Char('g') if k.modifiers == ALT => {
-                            // like vim 'gg'
-                            self.on_home_end(true)?;
-                        }
-                        KeyCode::Char('G') if k.modifiers.contains(ALT) => {
-                            self.on_home_end(false)?;
-                        }
-
-                        KeyCode::Char('c') if k.modifiers == ALT => {
-                            self.cycle_case_sensitive_mode()?;
-                        }
-
-                        KeyCode::Char('f') if k.modifiers == CONTROL => {
-                            self.cycle_gap_search_mode()?;
-                        }
-
-                        KeyCode::Char('-') if !self.app_state.is_searching() => {
-                            // go up with '-', like vim does
-                            self.change_dir("..")?;
-                        }
-
-                        KeyCode::Char(c) => self.on_search_char(c)?,
-
-                        KeyCode::Backspace => {
-                            if self.app_state.is_searching() {
-                                self.erase_search_char()?;
-                            } else {
-                                self.change_dir("..")?;
-                            }
-                        },
-
-                        _ => self.info_message(&format!("{:?}", k))?,
+                Event::Key(k) => match k.code {
+                    KeyCode::Right | KeyCode::Enter => self.change_dir("")?,
+                    KeyCode::Char(' ') if !self.app_state.is_searching() => {
+                        // If the first key is space, treat it like enter. It's probably pretty
+                        // rare to have a folder name starting with space.
+                        self.change_dir("")?;
                     }
+                    KeyCode::Left => self.change_dir("..")?,
+                    KeyCode::Up if k.modifiers == ALT => {
+                        self.change_dir("..")?;
+                    }
+                    KeyCode::Up => self.on_arrow_key(true)?,
+                    KeyCode::Down if k.modifiers == ALT => {
+                        self.change_dir("")?;
+                    }
+                    KeyCode::Down => self.on_arrow_key(false)?,
+
+                    KeyCode::PageUp => self.on_page_up_down(true)?,
+                    KeyCode::PageDown => self.on_page_up_down(false)?,
+
+                    KeyCode::Home if k.modifiers == CONTROL => {
+                        self.on_go_to_home()?;
+                    }
+                    KeyCode::Char('h') if k.modifiers == CONTROL | ALT => {
+                        self.on_go_to_home()?;
+                    }
+                    KeyCode::Char('r') if k.modifiers == CONTROL => {
+                        self.on_go_to_root()?;
+                    }
+
+                    KeyCode::Home => self.on_home_end(true)?,
+                    KeyCode::End => self.on_home_end(false)?,
+
+                    KeyCode::Esc => {
+                        if self.app_state.is_searching() {
+                            self.app_state.clear_search();
+                            self.info_message("")?; // clear possible 'no matches' message
+                            self.redraw_main_window()?;
+                            self.redraw_footer()?;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    KeyCode::Char('?') => {
+                        self.help_view_loop()?;
+                    }
+
+                    // alt + hjkl
+                    KeyCode::Char('h') if k.modifiers == ALT => {
+                        self.change_dir("..")?;
+                    }
+                    KeyCode::Char('j') if k.modifiers == ALT => {
+                        self.on_arrow_key(false)?;
+                    }
+                    KeyCode::Char('k') if k.modifiers == ALT => {
+                        self.on_arrow_key(true)?;
+                    }
+                    KeyCode::Char('l') if k.modifiers == ALT => {
+                        self.change_dir("")?;
+                    }
+
+                    KeyCode::Char('r') if k.modifiers == ALT => {
+                        // refresh the current folder
+                        self.change_dir(".")?;
+                        self.info_message("Refreshed directory listing")?;
+                    }
+
+                    // other chars with modifiers
+                    KeyCode::Char('q') if k.modifiers == ALT => {
+                        break;
+                    }
+                    KeyCode::Char('c') if k.modifiers == CONTROL => {
+                        // exit on ctl+c
+                        break;
+                    }
+                    KeyCode::Char('u') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
+                        self.on_page_up_down(true)?;
+                    }
+                    KeyCode::Char('d') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
+                        self.on_page_up_down(false)?;
+                    }
+                    KeyCode::Char('g') if k.modifiers == ALT => {
+                        // like vim 'gg'
+                        self.on_home_end(true)?;
+                    }
+                    KeyCode::Char('G') if k.modifiers.contains(ALT) => {
+                        self.on_home_end(false)?;
+                    }
+
+                    KeyCode::Char('c') if k.modifiers == ALT => {
+                        self.cycle_case_sensitive_mode()?;
+                    }
+
+                    KeyCode::Char('f') if k.modifiers == CONTROL => {
+                        self.cycle_gap_search_mode()?;
+                    }
+
+                    KeyCode::Char('-') if !self.app_state.is_searching() => {
+                        // go up with '-', like vim does
+                        self.change_dir("..")?;
+                    }
+
+                    KeyCode::Char(c) => self.on_search_char(c)?,
+
+                    KeyCode::Backspace => {
+                        if self.app_state.is_searching() {
+                            self.erase_search_char()?;
+                        } else {
+                            self.change_dir("..")?;
+                        }
+                    }
+
+                    _ => self.info_message(&format!("{:?}", k))?,
                 },
 
                 Event::Resize(_, _) => {
                     self.update_main_window_dimensions()?;
                     self.redraw_all_windows()?;
-                },
+                }
 
                 Event::Mouse(event) => match event.kind {
                     MouseEventKind::Down(MouseButton::Left)
@@ -725,7 +745,6 @@ impl<'a> TereTui<'a> {
                     //e => self.info_message(&format!("{:?}", e))?, // for debugging
                     _ => (),
                 },
-
             }
         }
 
@@ -749,29 +768,26 @@ impl<'a> TereTui<'a> {
 
         loop {
             match read_event()? {
-                Event::Key(k) => {
-                    match k.code {
-                        KeyCode::Esc | KeyCode::Char('q') => {
-                            self.info_message("")?;
-                            return self.redraw_all_windows();
-                        },
-
-                        KeyCode::Down | KeyCode::Char('j') => {
-                            help_view_scroll += 1;
-                            self.draw_help_view(help_view_scroll)?;
-                        }
-
-                        KeyCode::Up | KeyCode::Char('k') => {
-                            help_view_scroll = help_view_scroll.saturating_sub(1);
-                            self.draw_help_view(help_view_scroll)?;
-                        }
-
-                        _ => {},
+                Event::Key(k) => match k.code {
+                    KeyCode::Esc | KeyCode::Char('q') => {
+                        self.info_message("")?;
+                        return self.redraw_all_windows();
                     }
-                }
+
+                    KeyCode::Down | KeyCode::Char('j') => {
+                        help_view_scroll += 1;
+                        self.draw_help_view(help_view_scroll)?;
+                    }
+
+                    KeyCode::Up | KeyCode::Char('k') => {
+                        help_view_scroll = help_view_scroll.saturating_sub(1);
+                        self.draw_help_view(help_view_scroll)?;
+                    }
+
+                    _ => {}
+                },
 
                 Event::Resize(_, _) => {
-
                     self.update_main_window_dimensions()?;
                     // Redraw all windows except for main window
                     self.redraw_header()?;
@@ -780,13 +796,12 @@ impl<'a> TereTui<'a> {
                     self.draw_help_view(help_view_scroll)?;
                 }
 
-                _ => {},
+                _ => {}
             }
         }
     }
 
     fn draw_help_view(&mut self, scroll: usize) -> CTResult<()> {
-
         queue!(
             self.window,
             cursor::MoveTo(0, u16::try_from(HEADER_SIZE).unwrap_or(u16::MAX)),
@@ -796,19 +811,20 @@ impl<'a> TereTui<'a> {
 
         let (w, h) = main_window_size()?;
         let help_text = get_formatted_help_text(w);
-        for (i, line) in help_text.iter()
-                .skip(scroll)
-                .chain(vec![vec![]].iter().cycle()) // add empty lines at the end
-                .take(h as usize)
-                .enumerate()
-            {
+        for (i, line) in help_text
+            .iter()
+            .skip(scroll)
+            .chain(vec![vec![]].iter().cycle()) // add empty lines at the end
+            .take(h as usize)
+            .enumerate()
+        {
             // Set up cursor position
             queue!(
                 self.window,
                 // have to do MoveToColumn(0) manually because we're in raw mode
                 cursor::MoveToColumn(0),
                 // don't print newline before first line
-                style::Print(if i == 0 { "" } else { "\n"}),
+                style::Print(if i == 0 { "" } else { "\n" }),
             )?;
 
             // Print the fragments (which can have different styles)
