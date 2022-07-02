@@ -6,15 +6,20 @@ pub enum TereError {
     SerdeJson(serde_json::error::Error),
 }
 
-
 impl From<std::io::Error> for TereError {
-    fn from(e: std::io::Error) -> Self { Self::Io(e) }
+    fn from(e: std::io::Error) -> Self {
+        Self::Io(e)
+    }
 }
 
 impl From<clap::Error> for TereError {
-    fn from(e: clap::Error) -> Self { Self::Clap(e) }
+    fn from(e: clap::Error) -> Self {
+        Self::Clap(e)
+    }
 }
 
 impl From<serde_json::error::Error> for TereError {
-    fn from(e: serde_json::error::Error) -> Self { Self::SerdeJson(e) }
+    fn from(e: serde_json::error::Error) -> Self {
+        Self::SerdeJson(e)
+    }
 }
