@@ -70,7 +70,7 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 |Change gap search mode| <kbd>Ctrl</kbd>+<kbd>f</kbd> |
 |Show a help screen| <kbd>?</kbd> |
 
-Shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
+Some of the shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
 
 ### Searching
 
