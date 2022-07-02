@@ -38,9 +38,9 @@ use dirs::home_dir;
 use unicode_segmentation::UnicodeSegmentation;
 
 
-const HEADER_SIZE: u16 = 1;
-const INFO_WIN_SIZE: u16 = 1;
-const FOOTER_SIZE: u16 = 1;
+const HEADER_SIZE: usize = 1;
+const INFO_WIN_SIZE: usize = 1;
+const FOOTER_SIZE: usize = 1;
 
 
 /// This struct is responsible for drawing an app state object to a stderr stream (confusingly
@@ -52,7 +52,7 @@ pub struct TereTui<'a> {
 }
 
 // Dimensions (width, height) of main window
-fn main_window_size() -> CTResult<(u16, u16)> {
+fn main_window_size() -> CTResult<(usize, usize)> {
     let (w, h) = terminal::size()?;
     Ok((w, h.saturating_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE)))
 }
@@ -91,7 +91,7 @@ impl<'a> TereTui<'a> {
 
     /// Queue up a command to clear a given row (starting from 0). Must be executed/flushed
     /// separately.
-    fn queue_clear_row(&mut self, row: u16) -> CTResult<()> {
+    fn queue_clear_row(&mut self, row: usize) -> CTResult<()> {
         queue!(
             self.window,
             cursor::MoveTo(0, row),
@@ -140,7 +140,7 @@ impl<'a> TereTui<'a> {
         let mut win = self.window;
         execute!(
             win,
-            cursor::MoveTo(0, info_win_row),
+            cursor::MoveTo(0, u16::try_from(info_win_row).unwrap_or(u16::MAX)),
             style::SetAttribute(Attribute::Reset),
             style::Print(&self.app_state.info_msg.clone().bold()),
         )
@@ -210,7 +210,7 @@ impl<'a> TereTui<'a> {
     }
 
     fn draw_main_window_row(&mut self,
-                            row: u16,
+                            row: usize,
                             highlight: bool,
                             ) -> CTResult<()> {
         let row_abs = row  + HEADER_SIZE;
@@ -336,11 +336,11 @@ impl<'a> TereTui<'a> {
     }
 
     // redraw row 'row' (relative to the top of the main window) without highlighting
-    pub fn unhighlight_row(&mut self, row: u16) -> CTResult<()> {
+    pub fn unhighlight_row(&mut self, row: usize) -> CTResult<()> {
         self.draw_main_window_row(row, false)
     }
 
-    pub fn highlight_row(&mut self, row: u32) -> CTResult<()> { //TODO: change row to u16
+    pub fn highlight_row(&mut self, row: usize) -> CTResult<()> { //TODO: change row to u16
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
         self.draw_main_window_row(u16::try_from(row).unwrap_or(u16::MAX), true)
@@ -354,7 +354,7 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn highlight_row_exclusive(&mut self, row: u32) -> CTResult<()> { //TODO: make row u16
+    pub fn highlight_row_exclusive(&mut self, row: usize) -> CTResult<()> { //TODO: make row u16
         // Highlight the row `row` exclusively, and hide all other rows.
         self.queue_clear_main_window()?;
         self.highlight_row(row)?;
@@ -393,7 +393,7 @@ impl<'a> TereTui<'a> {
 
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
-    pub fn move_cursor(&mut self, amount: i32, wrap: bool) -> CTResult<()> {
+    pub fn move_cursor(&mut self, amount: isize, wrap: bool) -> CTResult<()> {
         let old_cursor_pos = self.app_state.cursor_pos;
         let old_scroll_pos = self.app_state.scroll_pos;
 

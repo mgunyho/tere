@@ -154,8 +154,8 @@ pub struct TereAppState {
     // Width and height of the main window. These values have to be updated by
     // calling using the update_main_window_dimensions function if the window
     // dimensions change.
-    main_win_w: u32,
-    main_win_h: u32,
+    main_win_w: usize,
+    main_win_h: usize,
 
     // This vector will hold the list of files/folders in the current directory,
     // including ".." (the parent folder).
@@ -169,10 +169,10 @@ pub struct TereAppState {
     // The row on which the cursor is currently on, counted starting from the
     // top of the screen (not from the start of `ls_output_buf`). Note that this
     // doesn't have anything to do with the crossterm cursor position.
-    pub cursor_pos: u32,
+    pub cursor_pos: usize,
 
     // The top of the screen corresponds to this row in the `ls_output_buf`.
-    pub scroll_pos: u32,
+    pub scroll_pos: usize,
 
     search_string: String,
 
@@ -185,7 +185,7 @@ pub struct TereAppState {
 }
 
 impl TereAppState {
-    pub fn init(cli_args: &ArgMatches, window_w: u32, window_h: u32) -> Result<Self, TereError> {
+    pub fn init(cli_args: &ArgMatches, window_w: usize, window_h: usize) -> Result<Self, TereError> {
         // Try to read the current folder from the PWD environment variable, since it doesn't
         // have symlinks resolved (which is what we want). If this fails for some reason (on
         // windows?), default to std::env::current_dir, which has resolved symlinks.
@@ -297,11 +297,11 @@ impl TereAppState {
 
     /// Convert a cursor position (in the range 0..window_height) to an index
     /// into the currently visible items.
-    pub fn cursor_pos_to_visible_item_index(&self, cursor_pos: u32) -> usize {
+    pub fn cursor_pos_to_visible_item_index(&self, cursor_pos: usize) -> usize {
         (cursor_pos + self.scroll_pos) as usize
     }
 
-    pub fn get_item_at_cursor_pos(&self, cursor_pos: u32) -> Option<&CustomDirEntry> {
+    pub fn get_item_at_cursor_pos(&self, cursor_pos: usize) -> Option<&CustomDirEntry> {
         let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
         self.visible_items().get(idx).copied()
     }
@@ -321,7 +321,7 @@ impl TereAppState {
             })
     }
 
-    pub fn get_match_locations_at_cursor_pos(&self, cursor_pos: u32) -> Option<&MatchesLocType> {
+    pub fn get_match_locations_at_cursor_pos(&self, cursor_pos: usize) -> Option<&MatchesLocType> {
         let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
         if self.settings.filter_search {
             // NOTE: we assume that the matches is a sorted map
@@ -340,7 +340,7 @@ impl TereAppState {
         self.header_msg = format!("{}", self.current_path.display());
     }
 
-    pub fn update_main_window_dimensions(&mut self, w: u32, h: u32) {
+    pub fn update_main_window_dimensions(&mut self, w: usize, h: usize) {
         let delta_h = h.saturating_sub(self.main_win_h);
         self.main_win_w = w;
         self.main_win_h = h;
@@ -518,7 +518,7 @@ impl TereAppState {
 
     /// Move the cursor so that it is at the location `row` in the
     /// currently visible items, and update the scroll position as necessary
-    pub fn move_cursor_to(&mut self, row: u32) {
+    pub fn move_cursor_to(&mut self, row: usize) {
         self.move_cursor(row as i32
                          - self.cursor_pos as i32
                          - self.scroll_pos as i32,
@@ -538,7 +538,7 @@ impl TereAppState {
     /// matches. If dir is positive, move to the next match, if it's negative,
     /// move to the previous match, and if it's zero, move to the cursor to the
     /// current match.
-    pub fn move_cursor_to_adjacent_match(&mut self, dir: i32) {
+    pub fn move_cursor_to_adjacent_match(&mut self, dir: isize) {
 
         if self.is_searching() {
             if self.num_matching_items() == 0 {
