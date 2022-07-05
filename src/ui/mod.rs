@@ -776,6 +776,11 @@ impl<'a> TereTui<'a> {
                         return self.redraw_all_windows();
                     }
 
+                    KeyCode::Char('c') if k.modifiers == KeyModifiers::CONTROL => {
+                        self.info_message("")?;
+                        return self.redraw_all_windows();
+                    }
+
                     KeyCode::Down | KeyCode::Char('j') => {
                         help_view_scroll += 1;
                         self.draw_help_view(help_view_scroll)?;
