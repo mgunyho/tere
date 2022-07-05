@@ -507,7 +507,7 @@ impl TereAppState {
             self.cursor_pos = n_visible_items.saturating_sub(self.scroll_pos + 1);
         } else if new_cursor_pos as usize >= max_y {
             // Attempting to go below current view, scroll down.
-            self.cursor_pos = max_y - 1;
+            self.cursor_pos = max_y.saturating_sub(1);
             self.scroll_pos = std::cmp::min(
                 n_visible_items,
                 old_scroll_pos + new_cursor_pos as usize
