@@ -4,6 +4,10 @@ pub enum TereError {
     Io(std::io::Error),
     Clap(clap::Error),
     SerdeJson(serde_json::error::Error),
+
+    // This is raised when the user wants to exit tere without changing the folder. A bit of a hack
+    // to define this here but this is simple enough.
+    ExitWithoutCd(String),
 }
 
 impl From<std::io::Error> for TereError {
