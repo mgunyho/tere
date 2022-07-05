@@ -21,7 +21,7 @@ functionality found in many GUI file managers.
 1. Compile the binary by running `cargo build --release` in the main folder of the repo. This creates the binary in the folder `target/release/tere`.
 1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function instead of an alias, since the latter only changes the working directory of the subshell.
 
-    For bash/zsh, put this into your `.bashrc` or `.zshrc`:
+    For bash/zsh, put this in your `.bashrc` or `.zshrc`:
 
     ```sh
     # you can choose a different name if you want
@@ -138,7 +138,8 @@ These programs have a very similar goal as `tere`, to speed up filesystem
 navigation. However, these kinds of programs are not well suited for
 exploration, as they require that you visit a folder before you can jump to it.
 They also differ from `tere` in philosophy; `tere` aims to be deterministic,
-while the results of a fuzzy match or "frecency"-based query vary over time.
+while the results of a fuzzy match or "frecency"-based query vary depending on
+your previous queries.
 
 - [z](https://github.com/rupa/z)
 - [autojump](https://github.com/wting/autojump)
