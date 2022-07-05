@@ -757,21 +757,19 @@ impl<'a> TereTui<'a> {
     }
 
     fn help_view_loop(&mut self) -> CTResult<()> {
-        self.info_message("Use ↓/↑ or j/k to scroll. Press Esc or q to exit help.")?;
-
-        // clear main window only once here in the beginning, otherwise it causes flashing/blinking.
-        self.queue_clear_main_window()?;
+        self.info_message("Use ↓/↑ or j/k to scroll. Press Esc, 'q', '?' or Ctrl+c to exit help.")?;
 
         // We don't need the help view scroll state anywhere else, so not worth it to put in
         // app_state, just keep it here.
         let mut help_view_scroll: usize = 0;
 
+        // drawing the help takes care of clearing the window
         self.draw_help_view(help_view_scroll)?;
 
         loop {
             match read_event()? {
                 Event::Key(k) => match k.code {
-                    KeyCode::Esc | KeyCode::Char('q') => {
+                    KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('?') => {
                         self.info_message("")?;
                         return self.redraw_all_windows();
                     }
