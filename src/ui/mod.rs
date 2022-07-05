@@ -602,7 +602,7 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn main_event_loop(&mut self) -> CTResult<()> {
+    pub fn main_event_loop(&mut self) -> Result<(), TereError> {
         #[allow(non_snake_case)]
         let ALT = KeyModifiers::ALT;
         #[allow(non_snake_case)]
@@ -683,8 +683,10 @@ impl<'a> TereTui<'a> {
                         break;
                     }
                     KeyCode::Char('c') if k.modifiers == CONTROL => {
-                        // exit on ctl+c
-                        break;
+                        // exit with error on ctl+c, to avoid cd'ing
+                        let msg = format!("{}: Exited without changing folder",
+                                          env!("CARGO_PKG_NAME"));
+                        return Err(TereError::ExitWithoutCd(msg.to_string()));
                     }
                     KeyCode::Char('u') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
                         self.on_page_up_down(true)?;
@@ -751,7 +753,7 @@ impl<'a> TereTui<'a> {
         if self.app_state.settings.mouse_enabled {
             execute!(self.window, DisableMouseCapture)?;
         }
-        self.app_state.on_exit()
+        self.app_state.on_exit().map_err(TereError::from)
     }
 
     fn help_view_loop(&mut self) -> CTResult<()> {

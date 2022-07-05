@@ -169,7 +169,7 @@ fn main() -> Result<(), TereError> {
         .and_then(|_| stderr.flush()).map_err(TereError::from)
         .and_then(|_| TereTui::init(&cli_args, &mut stderr)) // actually run the app
         .and_then(|mut ui| {
-            ui.main_event_loop().map_err(TereError::from)
+            ui.main_event_loop()
                 .map(|_| ui.current_path())
         });
 
@@ -190,6 +190,11 @@ fn main() -> Result<(), TereError> {
             match err {
                 // Print pretty error message if the error was in arg parsing
                 TereError::Clap(e) => e.exit(),
+
+                TereError::ExitWithoutCd(msg) => {
+                    eprintln!("{}", msg);
+                    std::process::exit(1);
+                },
 
                 // exit in case of any other error
                 e => return Err(e),
