@@ -683,8 +683,10 @@ impl<'a> TereTui<'a> {
                         break;
                     }
                     KeyCode::Char('c') if k.modifiers == CONTROL => {
-                        // exit on ctl+c
-                        break;
+                        // exit with error on ctl+c, to avoid cd'ing
+                        let msg = format!("{}: Exited without changing folder",
+                                          env!("CARGO_PKG_NAME"));
+                        return Err(TereError::ExitWithoutCd(msg.to_string()));
                     }
                     KeyCode::Char('u') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
                         self.on_page_up_down(true)?;

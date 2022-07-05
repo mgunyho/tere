@@ -191,6 +191,11 @@ fn main() -> Result<(), TereError> {
                 // Print pretty error message if the error was in arg parsing
                 TereError::Clap(e) => e.exit(),
 
+                TereError::ExitWithoutCd(msg) => {
+                    eprintln!("{}", msg);
+                    std::process::exit(1);
+                },
+
                 // exit in case of any other error
                 e => return Err(e),
             }
