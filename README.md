@@ -37,7 +37,7 @@ functionality found in many GUI file managers.
     def _tere(args):
         result = $(/path/to/tere/target/release/tere @(args)).strip()
         if result:
-            @(["cd", result])
+            cd @(result)
 
     aliases["tere"] = _tere
     ```
