@@ -602,7 +602,7 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn main_event_loop(&mut self) -> CTResult<()> {
+    pub fn main_event_loop(&mut self) -> Result<(), TereError> {
         #[allow(non_snake_case)]
         let ALT = KeyModifiers::ALT;
         #[allow(non_snake_case)]
@@ -751,7 +751,7 @@ impl<'a> TereTui<'a> {
         if self.app_state.settings.mouse_enabled {
             execute!(self.window, DisableMouseCapture)?;
         }
-        self.app_state.on_exit()
+        self.app_state.on_exit().map_err(TereError::from)
     }
 
     fn help_view_loop(&mut self) -> CTResult<()> {
