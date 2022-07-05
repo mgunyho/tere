@@ -636,6 +636,9 @@ impl<'a> TereTui<'a> {
                     KeyCode::Char('h') if k.modifiers == CONTROL | ALT => {
                         self.on_go_to_home()?;
                     }
+                    KeyCode::Char('/') => {
+                        self.on_go_to_root()?;
+                    }
                     KeyCode::Char('r') if k.modifiers == CONTROL => {
                         self.on_go_to_root()?;
                     }
