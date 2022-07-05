@@ -62,12 +62,12 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 |:---:|:---:|
 |Move cursor up  | <kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>k</kbd> |
 |Move cursor down| <kbd>↓</kbd> or <kbd>Alt</kbd>+<kbd>j</kbd> |
-|Enter directory | <kbd>Enter</kbd> or <kbd>→</kbd> or <kbd>Alt</kbd>+<kbd>l</kbd> or if not searching, <kbd>Space</kbd> |
+|Enter directory | <kbd>Enter</kbd> or <kbd>→</kbd> or <kbd>Alt</kbd>+<kbd>↓</kbd> or <kbd>Alt</kbd>+<kbd>l</kbd> or if not searching, <kbd>Space</kbd> |
 |Go to parent directory| <kbd>←</kbd> or <kbd>Alt</kbd>+<kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>h</kbd> or if not searching, <kbd>Backspace</kbd> or <kbd>-</kbd> |
 |Exit `tere`| <kbd>Esc</kbd> or <kbd>Alt</kbd>+<kbd>q</kbd> |
 |Exit `tere` without changing directory| <kbd>Ctrl</kbd>+<kbd>c</kbd> |
 |Go to home directory| <kbd>Ctrl</kbd>+<kbd>Home</kbd> or <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>h</kbd>|
-|Go to root directory| <kbd>Ctrl</kbd>+<kbd>r</kbd>|
+|Go to root directory| <kbd>/</kbd> or <kbd>Ctrl</kbd>+<kbd>r</kbd>|
 |Refresh current directory| <kbd>Alt</kbd>+<kbd>r</kbd>|
 |Move cursor up   by one screen| <kbd>Page Up</kbd>   or <kbd>Ctrl</kbd>+<kbd>u</kbd> or <kbd>Alt</kbd>+<kbd>u</kbd> |
 |Move cursor down by one screen| <kbd>Page Down</kbd> or <kbd>Ctrl</kbd>+<kbd>d</kbd> or <kbd>Alt</kbd>+<kbd>d</kbd> |
@@ -75,7 +75,7 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 |Move cursor to the bottom| <kbd>End</kbd>  or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>g</kbd> |
 |Change case sensitivity mode| <kbd>Alt</kbd>+<kbd>c</kbd> |
 |Change gap search mode| <kbd>Ctrl</kbd>+<kbd>f</kbd> |
-|Show a help screen| <kbd>?</kbd> |
+|Show help screen| <kbd>?</kbd> |
 
 Some of the shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
 
