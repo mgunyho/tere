@@ -44,6 +44,10 @@ functionality found in many GUI file managers.
 
     If instructions for your shell are missing, feel free to send a pull request that includes them!
 
+### Supported platforms
+
+Currently, `tere` is tested on and built for Ubuntu. On Mac, it should be enough to compile the program yourself and the above bash/zsh shell configuration should work out of the box. Windows should also in principle work (the TUI is rendered using a cross-platform library), you just has to figure out the correct shell configuration. Pull requests welcome!
+
 ## User guide
 
 You can navigate folders in `tere` by using the arrow keys and by typing to search. Basic navigation works by moving the cursor up or down, and pressing <kbd>Enter</kbd> or the right arrow <kbd>→</kbd> to enter the highlighted folder. You can move to the parent folder by pressing <kbd>Enter</kbd> on the parent folder item `..`, or with the left arrow <kbd>←</kbd>. Below is a full list of keyboard shortcuts.
