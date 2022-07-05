@@ -44,6 +44,8 @@ functionality found in many GUI file managers.
 
     If instructions for your shell are missing, feel free to send a pull request that includes them!
 
+1. That's it. The above shell configuration also acts as a config file for `tere`, just add the options you want (see `tere --help`).
+
 ### Supported platforms
 
 Currently, `tere` is tested on and built for Ubuntu. On Mac, it should be enough to compile the program yourself and the above bash/zsh shell configuration should work out of the box. Windows should also in principle work (the TUI is rendered using a cross-platform library), you just has to figure out the correct shell configuration. Pull requests welcome!
