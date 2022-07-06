@@ -132,7 +132,7 @@ folder in the terminal and then `cd` to it.
 - [Broot](https://dystroy.org/broot/) - Broot is more focused on browsing large directories, and has a more complex UI than `tere`.
 - [xplr](https://github.com/sayanarijit/xplr) - Lots of features, fully customizable. Not entirely focused on navigation, has file management features. Navigation by searching requires jumping between typing and pressing arrow keys.
 - [deer](https://github.com/Vifon/deer) - zsh only, searching requires extra keystrokes.
-- [cdir](https://github.com/EskelinenAntti/cdir) - No Vim-like keyboard navigation. Not a standalone binary.
+- [cdir](https://github.com/EskelinenAntti/cdir) - Basically exactly the same idea as `tere`, but in written in Python. Doesn't have Vim-like keyboard navigation, and it's not a standalone binary.
 
 ### Fuzzy matching and history-based navigation
 
