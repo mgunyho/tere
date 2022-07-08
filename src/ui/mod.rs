@@ -765,6 +765,12 @@ impl<'a> TereTui<'a> {
         self.app_state.on_exit().map_err(TereError::from)
     }
 
+    /// Event loop that returns once the app state has finished loading the folder listing or the
+    /// user cancels loading.
+    fn dir_listing_loading_loop(&mut self) -> CTResult<()> {
+        todo!()
+    }
+
     fn help_view_loop(&mut self) -> CTResult<()> {
         self.info_message("Use ↓/↑ or j/k to scroll. Press Esc, 'q', '?' or Ctrl+c to exit help.")?;
 
