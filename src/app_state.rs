@@ -413,7 +413,7 @@ impl TereAppState {
         Ok(())
     }
 
-    /// Clear up application state before starting directory listing
+    /// Set up application state before starting directory listing update
     pub fn start_change_dir(&mut self, path: &str) -> IOResult<()> {
         // TODO: add option to use xdg-open (or similar) on files?
         // check out https://crates.io/crates/open
