@@ -226,7 +226,9 @@ impl TereAppState {
         }
 
         ret.update_header();
-        ret.update_ls_output_buf()?;
+        ret.update_ls_output_buf(
+            ret.read_dir()? //TODO: call in separate thread (?)
+        )?;
 
         ret.move_cursor(1, false); // start out from second entry, because first entry is '..'.
         if let Some(prev_dir) = ret.history.current_entry().last_visited_child_label() {
@@ -358,12 +360,25 @@ impl TereAppState {
         }
     }
 
-    pub fn update_ls_output_buf(&mut self) -> IOResult<()> {
+    //TODO: call this in a separate thread
+    //TODO: also: listen for interruptions somehow?
+    pub fn read_dir(&self) -> IOResult<Vec<CustomDirEntry>> {
         let entries = std::fs::read_dir(std::path::Component::CurDir)?;
+
+        // convert iterator of results into a single result (and I think it should short-circuit),
+        // see https://stackoverflow.com/questions/26368288/how-do-i-stop-iteration-and-return-an-error-when-iteratormap-returns-a-result
+        // TODO: don't iterate over the whole thing in one go, but notify the outside world somehow
+        let entries: Result<Vec<_>, _> = entries.collect();
+
+        Ok(entries?.drain(..).map(CustomDirEntry::from).collect())
+    }
+
+    //TODO: is it a good idea to fully take ownership of the entries vec here?
+    pub fn update_ls_output_buf(&mut self, mut entries: Vec<CustomDirEntry>) -> IOResult<()> {
 
         let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> = Box::new(
             //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
-            entries.filter_map(|e| e.ok()).map(CustomDirEntry::from),
+            entries.drain(..)
         );
 
         if self.settings.folders_only {
@@ -398,7 +413,8 @@ impl TereAppState {
         Ok(())
     }
 
-    pub fn change_dir(&mut self, path: &str) -> IOResult<()> {
+    /// Clear up application state before starting directory listing
+    pub fn start_change_dir(&mut self, path: &str) -> IOResult<()> {
         // TODO: add option to use xdg-open (or similar) on files?
         // check out https://crates.io/crates/open
         // (or https://docs.rs/opener/0.4.1/opener/)
@@ -455,10 +471,6 @@ impl TereAppState {
         self.clear_search();
         std::env::set_current_dir(&final_path)?;
         self.current_path = PathBuf::from(&final_path);
-        self.update_ls_output_buf()?;
-
-        self.cursor_pos = 0;
-        self.scroll_pos = 0;
 
         // final_path is always the absolute logical path, so we can just cd to it. This causes a
         // bit of extra work (the history tree has to go all the way from the root to the path
@@ -467,6 +479,15 @@ impl TereAppState {
         // so on, would be much more complicated and would risk having the history tree and logical
         // path out of sync.
         self.history.change_dir(&final_path);
+
+        self.cursor_pos = 0;
+        self.scroll_pos = 0;
+
+        Ok(())
+    }
+
+    /// Update application state after directory listing has been finished
+    pub fn finish_change_dir(&mut self) -> IOResult<()> {
 
         // move cursor one position down, so we're not at '..' if we've entered a folder with no history
         self.move_cursor(1, false);

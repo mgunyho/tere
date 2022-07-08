@@ -441,7 +441,7 @@ impl<'a> TereTui<'a> {
 
     pub fn change_dir(&mut self, path: &str) -> CTResult<()> {
         //TODO: if there are no visible items, don't do anything?
-        match self.app_state.change_dir(path) {
+        match self.app_state.start_change_dir(path) {
             Err(e) => {
                 if cfg!(debug_assertions) {
                     self.error_message(&format!("{:?}", e))?;
@@ -450,6 +450,12 @@ impl<'a> TereTui<'a> {
                 }
             }
             Ok(()) => {
+                // TODO: is this the right place to call these?
+                self.app_state.update_ls_output_buf(
+                    self.app_state.read_dir()? //TODO: call in separate thread
+                )?;
+                self.app_state.finish_change_dir()?;
+
                 self.update_header()?;
                 self.info_message("")?;
             }
