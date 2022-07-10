@@ -154,6 +154,8 @@ your previous queries.
 - [jump](https://github.com/gsamokovarov/jump)
 - [bashmarks](https://github.com/huyng/bashmarks)
 - [goto](https://github.com/ankitvad/goto)
+- [fzf](https://github.com/junegunn/fzf)
+- [skim](https://github.com/lotabout/skim)
 
 ### Terminal file managers
 
