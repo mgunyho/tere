@@ -9,8 +9,6 @@ from shutil import rmtree
 # dummy that appears as a folder instead of a file in the demo
 D = { "dummy": {} }
 
-# basic idea: the final path spells out "tere is pretty nice"
-# basic idea: the final path spells out "tere is a fast folder navigator for the terminal"
 # basic idea: the final path spells out "tere is a fast folder navigator for the terminal"
 TREE = {
     "Documents": D,
@@ -22,22 +20,24 @@ TREE = {
         ".tere": D,
         "is a": {
             # idea: "demonstrate type-ahead search"
+            ".you can quickly jump to a folder by typing": D,
             "fast": {
-                # idea: "type-ahead search is faster than ls+cd"
+                # idea: "type-ahead search is fast"
                 ".if there is only one match, it is selected automatically": D,
                 "folder": {
                     # more type-ahead search
-                    ". it is designed to minimize the number of keystrokes": D,
+                    ".tere is designed to minimize the number of keystrokes": D,
                     "navigator": {
                         # more
                         ".and to make exploration as effortless as possible": D,
                         "for": {
+                            # arrow key demo
                             ".you can also navigate using the arrow keys": D,
                             "the": {
+                                # vim keybindings demo
                                 ".or vim-like key bindings": D,
                                 "terminal": {
                                     "okay that's the end of the demo": D,
-                                    #"you can exit with esc (it's a bit easiear than vim)": D,
                                 },
                                 "triangle": D,
                                 "tolerate": D,
@@ -49,12 +49,12 @@ TREE = {
                             },
                             "map": D,
                             "kid": D,
-                            "sip": D,
                             "owl": D,
-                            "oil": D,
-                            "old": D,
-                            "fat": D,
+                            "bat": D,
                             "run": D,
+                            "use": D,
+                            "van": D,
+                            "win": D,
                         },
                         "set": D,
                         "bet": D,
@@ -76,7 +76,6 @@ TREE = {
                     "notebooks": D,
                     "national": D,
                     "nominate": D,
-                    #"negatives": D,
                 },
                 "fodder": D,
                 "forger": D,
@@ -85,56 +84,20 @@ TREE = {
                 "collar": D,
                 "favor": D,
                 "border": D,
-
-                #"convenient and": D,
-                #"fast way to": D,
-                #"navigate folders - check it out": D,
-                #"this": D,
-                ##"late": D,
-                #"pony": D,
-                #"pity": D,
-                #"skip": D,
-                #"want": D,
-                #"mail": D,
-                #"navigate": D,
-                #"it can be": D,
-                #"used to": D,
-                #"browse": D,
-                #"nice": { "okay that's the end of the demo": {}},
-                #"wouldn't": D,
-                #"you agree": D,
             },
-            #"and you can jump to a folder quickly, like this": D,
-            #".you can jump to a folder quickly, like this": D,
-            ".you can quickly jump to a folder by typing": D,
             "blast": D,
             "cast": D,
             "last": D,
             "mast": D,
             "past": D,
             "vast": D,
-
-            # things that ~rhyme with 'pretty'
-            #"betty": D,
-            #"city": D,
-            ##"dirty": D,
-            #"gritty": D,
-            #"jetty": D,
-            #"nifty": D,
-            #"kitty": D,
-            #"patty": D,
-            ##"petty": D,
-            #"witty": D,
         },
         "little": D,
         "program": D,
         "to": D,
         "help with": 0,
         "navigating folders in": 0,
-        #"folder": 0,
-        #"navigation in": 0,
         "the terminal": 0,
-        #"terminal navigation": 0,
     },
 }
 
