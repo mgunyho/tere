@@ -4,7 +4,11 @@
 `tere` is a terminal file explorer. It is a faster alternative to using `cd`
 and `ls` to browse folders in your terminal. It only really does one thing: it
 allows you to navigate to a folder efficiently using a TUI, and then prints the
-path to that folder when you exit. Note that `tere` is not a file _manager_, it
+path to that folder when you exit.
+
+![A gif showing what tere using looks like](./demo/tere-demo-2022-07-10-2027-e2-O3.gif)
+
+Note that `tere` is not a file _manager_, it
 can only be used to browse folders, not to create, rename or delete them.
 
 `tere` aims to be minimal and simple. It should be obvious how to use it.
