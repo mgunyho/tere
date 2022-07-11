@@ -639,7 +639,7 @@ impl<'a> TereTui<'a> {
                     KeyCode::Char('/') => {
                         self.on_go_to_root()?;
                     }
-                    KeyCode::Char('r') if k.modifiers == CONTROL => {
+                    KeyCode::Char('r') if k.modifiers == ALT => {
                         self.on_go_to_root()?;
                     }
 
@@ -675,7 +675,7 @@ impl<'a> TereTui<'a> {
                         self.change_dir("")?;
                     }
 
-                    KeyCode::Char('r') if k.modifiers == ALT => {
+                    KeyCode::Char('r') if k.modifiers == CONTROL => {
                         // refresh the current folder
                         self.change_dir(".")?;
                         self.info_message("Refreshed directory listing")?;

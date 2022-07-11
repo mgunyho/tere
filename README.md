@@ -79,8 +79,8 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 |Exit `tere`| <kbd>Esc</kbd> or <kbd>Alt</kbd>+<kbd>q</kbd> |
 |Exit `tere` without changing directory| <kbd>Ctrl</kbd>+<kbd>c</kbd> |
 |Go to home directory| <kbd>Ctrl</kbd>+<kbd>Home</kbd> or <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>h</kbd>|
-|Go to root directory| <kbd>/</kbd> or <kbd>Ctrl</kbd>+<kbd>r</kbd>|
-|Refresh current directory| <kbd>Alt</kbd>+<kbd>r</kbd>|
+|Go to root directory| <kbd>/</kbd> or <kbd>Alt</kbd>+<kbd>r</kbd>|
+|Refresh current directory| <kbd>Ctrl</kbd>+<kbd>r</kbd>|
 |Move cursor up   by one screen| <kbd>Page Up</kbd>   or <kbd>Ctrl</kbd>+<kbd>u</kbd> or <kbd>Alt</kbd>+<kbd>u</kbd> |
 |Move cursor down by one screen| <kbd>Page Down</kbd> or <kbd>Ctrl</kbd>+<kbd>d</kbd> or <kbd>Alt</kbd>+<kbd>d</kbd> |
 |Move cursor to the top   | <kbd>Home</kbd> or <kbd>Alt</kbd>+<kbd>g</kbd> |
