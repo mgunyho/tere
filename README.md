@@ -30,7 +30,7 @@ To "install" tere, use the following steps:
     ```sh
     # you can choose a different name if you want
     tere() {
-        local result=$(/path/to/tere/target/release/tere "$@")
+        local result=$(/path/to/tere "$@")
         [ -n "$result" ] && cd -- "$result"
     }
     ```
@@ -39,7 +39,7 @@ To "install" tere, use the following steps:
 
     ```py
     def _tere(args):
-        result = $(/path/to/tere/target/release/tere @(args)).strip()
+        result = $(/path/to/tere @(args)).strip()
         if result:
             cd @(result)
 
