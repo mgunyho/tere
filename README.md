@@ -4,7 +4,11 @@
 `tere` is a terminal file explorer. It is a faster alternative to using `cd`
 and `ls` to browse folders in your terminal. It only really does one thing: it
 allows you to navigate to a folder efficiently using a TUI, and then prints the
-path to that folder when you exit. Note that `tere` is not a file _manager_, it
+path to that folder when you exit.
+
+![A gif showing what tere using looks like](./demo/tere-demo-2022-07-10-2027-e2-O3.gif)
+
+Note that `tere` is not a file _manager_, it
 can only be used to browse folders, not to create, rename or delete them.
 
 `tere` aims to be minimal and simple. It should be obvious how to use it.
@@ -16,17 +20,17 @@ functionality found in many GUI file managers.
 
 ## Setup
 
-1. Clone the repo
-1. [Install the Rust toolchain](https://www.rust-lang.org/tools/install)
-1. Compile the binary by running `cargo build --release` in the main folder of the repo. This creates the binary in the folder `target/release/tere`.
+To start using `tere`, follow these steps:
+
+1. Download the latest [release](https://github.com/mgunyho/tere-rs/releases)
 1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function instead of an alias, since the latter only changes the working directory of the subshell.
 
-    For bash/zsh, put this into your `.bashrc` or `.zshrc`:
+    For bash/zsh, put this in your `.bashrc` or `.zshrc`:
 
     ```sh
     # you can choose a different name if you want
     tere() {
-        local result=$(/path/to/tere/target/release/tere "$@")
+        local result=$(/path/to/tere "$@")
         [ -n "$result" ] && cd -- "$result"
     }
     ```
@@ -35,14 +39,28 @@ functionality found in many GUI file managers.
 
     ```py
     def _tere(args):
-        result = $(/path/to/tere/target/release/tere @(args)).strip()
+        result = $(/path/to/tere @(args)).strip()
         if result:
-            @(["cd", result])
+            cd @(result)
 
     aliases["tere"] = _tere
     ```
 
     If instructions for your shell are missing, feel free to send a pull request that includes them!
+
+1. That's it. The next time you open a new shell, the command `tere` should work. The above shell configuration also acts as a config file for `tere`, just add the options you want (see `tere --help`).
+
+### Supported platforms
+
+Currently, `tere` is tested on and built for Ubuntu. On Mac, it should be enough to compile the program yourself and the above bash/zsh shell configuration should work out of the box. Windows should also in principle work (the TUI is rendered using a cross-platform library), you just has to figure out the correct shell configuration. Pull requests welcome!
+
+### Hacking
+
+To compile `tere` from source, follow the standard procedure:
+
+1. Clone the repo
+1. [Install the Rust toolchain](https://www.rust-lang.org/tools/install)
+1. Run `cargo build` (`--release` for the release version)
 
 ## User guide
 
@@ -56,12 +74,12 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 |:---:|:---:|
 |Move cursor up  | <kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>k</kbd> |
 |Move cursor down| <kbd>↓</kbd> or <kbd>Alt</kbd>+<kbd>j</kbd> |
-|Enter directory | <kbd>Enter</kbd> or <kbd>→</kbd> or <kbd>Alt</kbd>+<kbd>l</kbd> or if not searching, <kbd>Space</kbd> |
+|Enter directory | <kbd>Enter</kbd> or <kbd>→</kbd> or <kbd>Alt</kbd>+<kbd>↓</kbd> or <kbd>Alt</kbd>+<kbd>l</kbd> or if not searching, <kbd>Space</kbd> |
 |Go to parent directory| <kbd>←</kbd> or <kbd>Alt</kbd>+<kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>h</kbd> or if not searching, <kbd>Backspace</kbd> or <kbd>-</kbd> |
 |Exit `tere`| <kbd>Esc</kbd> or <kbd>Alt</kbd>+<kbd>q</kbd> |
 |Exit `tere` without changing directory| <kbd>Ctrl</kbd>+<kbd>c</kbd> |
 |Go to home directory| <kbd>Ctrl</kbd>+<kbd>Home</kbd> or <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>h</kbd>|
-|Go to root directory| <kbd>Ctrl</kbd>+<kbd>r</kbd>|
+|Go to root directory| <kbd>/</kbd> or <kbd>Ctrl</kbd>+<kbd>r</kbd>|
 |Refresh current directory| <kbd>Alt</kbd>+<kbd>r</kbd>|
 |Move cursor up   by one screen| <kbd>Page Up</kbd>   or <kbd>Ctrl</kbd>+<kbd>u</kbd> or <kbd>Alt</kbd>+<kbd>u</kbd> |
 |Move cursor down by one screen| <kbd>Page Down</kbd> or <kbd>Ctrl</kbd>+<kbd>d</kbd> or <kbd>Alt</kbd>+<kbd>d</kbd> |
@@ -69,7 +87,7 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 |Move cursor to the bottom| <kbd>End</kbd>  or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>g</kbd> |
 |Change case sensitivity mode| <kbd>Alt</kbd>+<kbd>c</kbd> |
 |Change gap search mode| <kbd>Ctrl</kbd>+<kbd>f</kbd> |
-|Show a help screen| <kbd>?</kbd> |
+|Show help screen| <kbd>?</kbd> |
 
 Some of the shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
 
@@ -97,13 +115,13 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 
 - `--help` or `-h`: Print a short help and all CLI options. Note that the output goes to stderr, to not interfere with `cd` ing in the shell functions defined during the setup.
 - `--version` or `-V`: Print the version of `tere`. This also goes to stderr.
-- `--filter-search` or `-f` / `--no-filter-search` or `-F`: If this option is set, hide items in the output listing that don't match the current search query.
+- `--filter-search` or `-f` / `--no-filter-search` or `-F`: If `--filter-search` is set, show only items that match the current search query in the listing. Otherwise all items are shown in the listing while searching (this is the default behavior).
 - `--folders-only` or `-d` / `--no-folders-only` or `-D`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
-- `--smart-case` or `-S` / `--ignore-case` or `-i` / `--case-sensitive` or `-s`: Set the case sensitivity mode. The default mode is smart case.
+- `--smart-case` or `-S` / `--ignore-case` or `-i` / `--case-sensitive` or `-s`: Set the case sensitivity mode. The default mode is smart case, which is case insensitive if the query contains only lowercase letters and case sensitive otherwise.
 - `--gap-search` or `-g` / `--gap-search-anywhere` or `-G` / `--no-gap-search` or `-n`: Configure whether to allow matches with gaps in them (see above).
-- `--autocd-timeout` - If only one folder matches the current search query, automatically enter it after this many milliseconds. Can also be set to `off`, which disables this behaviour.
-- `--history-file`: To make browsing more convenient, `tere` saves a history of folders you have visited to this file in JSON format. It should be an absolute path. Defaults to `$CACHE_DIR/tere/history.json`, where `$CACHE_DIR` is `$XDG_CACHE_HOME` or `~/.cache`. Set to the empty string `''` to disable saving the history. Note that the history file may reveal parts of your filesystem hierarchy if it is possible to read by other users.
-- `--mouse`: Enable navigating with the mouse. Off by default.
+- `--autocd-timeout` - If the current search matches only one folder, automatically change to that folder after this many milliseconds. Can also be set to `off`, which disables this behaviour.
+- `--history-file`: To make browsing more convenient, `tere` saves a history of folders you have visited to this file in JSON format. It should be an absolute path. Defaults to `$CACHE_DIR/tere/history.json`, where `$CACHE_DIR` is `$XDG_CACHE_HOME` or `~/.cache`. Set to the empty string `''` to disable saving the history. Note that the history reveals parts of your folder structure if it can be read by someone else.
+- `--mouse=on` or `--mouse=off`: Enable or disable navigating with the mouse. If enabled, you can left-click to enter folders and right-click to go to the parent folder. Off by default.
 
 Some options have two or more versions that override each other (for example `--folders-only` and `--no-folders-only`). For such options, whichever is passed last wins. This way, you can have one option as the default in your shell's `rc` file, but you can sometimes manually override that option when running `tere`.
 
@@ -126,7 +144,7 @@ folder in the terminal and then `cd` to it.
 - [Broot](https://dystroy.org/broot/) - Broot is more focused on browsing large directories, and has a more complex UI than `tere`.
 - [xplr](https://github.com/sayanarijit/xplr) - Lots of features, fully customizable. Not entirely focused on navigation, has file management features. Navigation by searching requires jumping between typing and pressing arrow keys.
 - [deer](https://github.com/Vifon/deer) - zsh only, searching requires extra keystrokes.
-- [cdir](https://github.com/EskelinenAntti/cdir) - No Vim-like keyboard navigation. Not a standalone binary.
+- [cdir](https://github.com/EskelinenAntti/cdir) - Basically exactly the same idea as `tere`, but in written in Python. Doesn't have Vim-like keyboard navigation, and it's not a standalone binary.
 
 ### Fuzzy matching and history-based navigation
 
@@ -134,7 +152,8 @@ These programs have a very similar goal as `tere`, to speed up filesystem
 navigation. However, these kinds of programs are not well suited for
 exploration, as they require that you visit a folder before you can jump to it.
 They also differ from `tere` in philosophy; `tere` aims to be deterministic,
-while the results of a fuzzy match or "frecency"-based query vary over time.
+while the results of a fuzzy match or "frecency"-based query vary depending on
+your previous queries.
 
 - [z](https://github.com/rupa/z)
 - [autojump](https://github.com/wting/autojump)
@@ -143,6 +162,8 @@ while the results of a fuzzy match or "frecency"-based query vary over time.
 - [jump](https://github.com/gsamokovarov/jump)
 - [bashmarks](https://github.com/huyng/bashmarks)
 - [goto](https://github.com/ankitvad/goto)
+- [fzf](https://github.com/junegunn/fzf)
+- [skim](https://github.com/lotabout/skim)
 
 ### Terminal file managers
 
@@ -173,4 +194,4 @@ keystrokes to search and navigate folders. File management is not in the scope o
 
 ## License
 
-Copyright 2022 András Márton Gunyó. Licensed under the EUPL, see the `LICENSE` file.
+Copyright 2022 András Márton Gunyhó. Licensed under the EUPL, see the `LICENSE` file.
