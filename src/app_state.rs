@@ -360,8 +360,6 @@ impl TereAppState {
 
     pub fn update_ls_output_buf(&mut self) -> IOResult<()> {
         let entries = std::fs::read_dir(std::path::Component::CurDir)?;
-        let pardir = std::path::Path::new(&std::path::Component::ParentDir);
-        let mut new_output_buf: Vec<CustomDirEntry> = vec![CustomDirEntry::from(pardir)];
 
         let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> = Box::new(
             //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
@@ -372,7 +370,7 @@ impl TereAppState {
             entries = Box::new(entries.filter(|e| e.path().is_dir()));
         }
 
-        new_output_buf.extend(entries);
+        let mut new_output_buf: Vec<CustomDirEntry> = entries.collect();
 
         new_output_buf.sort_by(|a, b| {
             match (a.is_dir(), b.is_dir()) {
@@ -389,6 +387,12 @@ impl TereAppState {
                 (false, true) => std::cmp::Ordering::Greater,
             }
         });
+
+        // Add the parent directory entry after sorting to make sure it's always first
+        new_output_buf.insert(
+            0,
+            CustomDirEntry::from(std::path::Path::new(&std::path::Component::ParentDir))
+        );
 
         self.ls_output_buf = new_output_buf.into();
         Ok(())
