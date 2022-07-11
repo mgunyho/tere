@@ -20,9 +20,9 @@ functionality found in many GUI file managers.
 
 ## Setup
 
-1. Clone the repo
-1. [Install the Rust toolchain](https://www.rust-lang.org/tools/install)
-1. Compile the binary by running `cargo build --release` in the main folder of the repo. This creates the binary in the folder `target/release/tere`.
+To "install" tere, use the following steps:
+
+1. Download the latest [release](https://github.com/mgunyho/tere-rs/releases)
 1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function instead of an alias, since the latter only changes the working directory of the subshell.
 
     For bash/zsh, put this in your `.bashrc` or `.zshrc`:
@@ -53,6 +53,14 @@ functionality found in many GUI file managers.
 ### Supported platforms
 
 Currently, `tere` is tested on and built for Ubuntu. On Mac, it should be enough to compile the program yourself and the above bash/zsh shell configuration should work out of the box. Windows should also in principle work (the TUI is rendered using a cross-platform library), you just has to figure out the correct shell configuration. Pull requests welcome!
+
+### Hacking
+
+To compile `tere` from source, follow the standard procedure:
+
+1. Clone the repo
+1. [Install the Rust toolchain](https://www.rust-lang.org/tools/install)
+1. Run `cargo build` (`--release` for the release version)
 
 ## User guide
 
