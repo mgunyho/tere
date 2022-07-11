@@ -48,7 +48,7 @@ To "install" tere, use the following steps:
 
     If instructions for your shell are missing, feel free to send a pull request that includes them!
 
-1. That's it. The above shell configuration also acts as a config file for `tere`, just add the options you want (see `tere --help`).
+1. That's it. The next time you open a new shell, the command `tere` should work. The above shell configuration also acts as a config file for `tere`, just add the options you want (see `tere --help`).
 
 ### Supported platforms
 
