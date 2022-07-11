@@ -18,14 +18,6 @@ functionality found in many GUI file managers.
 
 "Tere" means "hello" in Estonian. It also feels nice to type.
 
-## Features
-
-- Navigation by just typing (no extra keystrokes to enter search mode)
-- Fast (written in Rust)
-- Single binary
-- Vim-like keybindings (prefixed by <kbd>Alt</kbd>)
-- Not too many features
-
 ## Setup
 
 To "install" tere, use the following steps:
