@@ -689,7 +689,7 @@ impl<'a> TereTui<'a> {
                         // exit with error on ctl+c, to avoid cd'ing
                         let msg = format!("{}: Exited without changing folder",
                                           env!("CARGO_PKG_NAME"));
-                        return Err(TereError::ExitWithoutCd(msg.to_string()));
+                        return Err(TereError::ExitWithoutCd(msg));
                     }
                     KeyCode::Char('u') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
                         self.on_page_up_down(true)?;
