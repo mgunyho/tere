@@ -82,7 +82,7 @@ impl<'a> TereTui<'a> {
         ret.redraw_all_windows()?;
         ret.info_message(
             format!(
-                "{} {} - Press '?' to view help or Esc to exit.",
+                "{} {} - Type something to search, press '?' to view help or Esc to exit.",
                 env!("CARGO_PKG_NAME"),
                 env!("CARGO_PKG_VERSION")
             )
