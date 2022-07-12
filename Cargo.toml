@@ -1,6 +1,6 @@
 [package]
 name = "tere"
-version = "0.0.22"
+version = "0.0.23"
 authors = ["Márton Gunyhó <marci@gunyho.com>"]
 edition = "2018"
 description = "A fast way to navigate folders in the terminal"
