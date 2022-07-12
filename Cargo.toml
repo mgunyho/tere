@@ -1,6 +1,6 @@
 [package]
 name = "tere"
-version = "0.0.23"
+version = "1.0.0"
 authors = ["Márton Gunyhó <marci@gunyho.com>"]
 edition = "2018"
 description = "Terminal file explorer"

@@ -311,7 +311,7 @@ checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
 name = "tere"
-version = "0.0.23"
+version = "1.0.0"
 dependencies = [
  "clap",
  "crossterm",
