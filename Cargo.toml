@@ -3,11 +3,12 @@ name = "tere"
 version = "0.0.23"
 authors = ["Márton Gunyhó <marci@gunyho.com>"]
 edition = "2018"
-description = "A fast way to navigate folders in the terminal"
+description = "Terminal file explorer"
 license = "EUPL-1.2"
 repository = "https://github.com/mgunyho/tere/"
+keywords = ["tui", "terminal", "file", "explorer"]
+categories = ["command-line-utilities"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 crossterm = "0.24.0"
