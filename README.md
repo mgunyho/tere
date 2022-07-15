@@ -22,7 +22,7 @@ functionality found in many GUI file managers.
 
 To start using `tere`, follow these steps:
 
-1. Download the latest [release](https://github.com/mgunyho/tere-rs/releases)
+1. Download the latest [release](https://github.com/mgunyho/tere-rs/releases). If you have the Rust toolchain installed, you can also install from source by running `cargo install tere`.
 1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function instead of an alias, since the latter only changes the working directory of the subshell.
 
     For bash/zsh, put this in your `.bashrc` or `.zshrc`:
