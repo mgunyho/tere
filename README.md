@@ -53,6 +53,24 @@ To start using `tere`, follow these steps:
     end
     ```
 
+    For powershell core, put this in your `$PROFILE`:
+    ```sh
+        function Invoke-Tere() {
+            $tere_dir = '/path/to/tere'
+            if ($isWindows) {
+                $tere_path = Join-Path $tere_dir 'tere.exe'
+            }
+            else {
+                $tere_path = Join-Path $tere_dir 'tere'
+            }
+            $result = . $tere_path
+            if ($result) {
+                Set-Location $result
+            }
+        }
+        Set-Alias tere Invoke-Tere  
+    ``` 
+
     If instructions for your shell are missing, feel free to send a pull request that includes them!
 
 1. That's it. The next time you open a new shell, the command `tere` should work (you can also of course call the shell function/alias whatever you like). The above shell configuration also acts as a config file for `tere`, just add the options you want (see `tere --help`).
