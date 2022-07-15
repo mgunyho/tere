@@ -58,9 +58,12 @@ Currently, `tere` is tested on and built for Ubuntu. On Mac, it should be enough
 
 To compile `tere` from source, follow the standard procedure:
 
-1. Clone the repo
 1. [Install the Rust toolchain](https://www.rust-lang.org/tools/install)
+1. `git clone git@github.com:mgunyho/tere.git`
+1. `cd tere`
 1. Run `cargo build` (`--release` for the release version)
+
+This will place the `tere` in the folder `target/debug` or `target/release` if you used `--release`.
 
 ## User guide
 
