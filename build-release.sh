@@ -14,12 +14,16 @@ echo "Building $BIN_NAME version $version"
 
 #cargo clean
 #TODO: more targets
-target="x86_64-unknown-linux-gnu"
-echo $target
-cargo build --target=$target --release 
+for target in \
+	"x86_64-unknown-linux-gnu" \
+	"x86_64-unknown-linux-musl"
+do
+echo "Building $target"
+cargo build --target=$target --release
 
 cd target/$target/release
 zip_name=$BIN_NAME-$version-$target.zip
 zip $zip_name $BIN_NAME
 cd -
 mv -v target/$target/release/$zip_name release/
+done
