@@ -45,6 +45,14 @@ To start using `tere`, follow these steps:
     aliases["tere"] = _tere
     ```
 
+    For fish, put this in your `.config.fish`:
+    ```sh
+    function tere
+        set --local result (/path/to/tere $argv)
+        [ -n "$result" ] && cd -- "$result"
+    end
+    ```
+
     If instructions for your shell are missing, feel free to send a pull request that includes them!
 
 1. That's it. The next time you open a new shell, the command `tere` should work (you can also of course call the shell function/alias whatever you like). The above shell configuration also acts as a config file for `tere`, just add the options you want (see `tere --help`).
