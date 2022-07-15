@@ -156,6 +156,7 @@ folder in the terminal and then `cd` to it.
 - [deer](https://github.com/Vifon/deer) - zsh only, searching requires extra keystrokes.
 - [cdir](https://github.com/EskelinenAntti/cdir) - Basically exactly the same idea as `tere`, but in written in Python. Doesn't have Vim-like keyboard navigation, and it's not a standalone binary.
 - [llama](https://github.com/antonmedv/llama) - Very similar to `tere`, written in Go.
+- [sdn](https://git.janouch.name/p/sdn) - Also very similar to `tere`, even in terms of the UI as well. Type-ahead search mode is not the default, searching requires a couple of extra keystrokes.
 
 ### Fuzzy matching and history-based navigation
 
