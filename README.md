@@ -77,6 +77,17 @@ To start using `tere`, follow these steps:
         Set-Alias tere Invoke-Tere  
     ``` 
 
+    For Windows Command Prompt, put this in a folder included in your `PATH` environment variable such as `C:\Windows`:
+    ```batch
+        @echo off
+
+        rem set the location/path of the tere executable here...
+        SET TereEXE=C:\path\to\tere.exe
+
+        FOR /F "tokens=*" %%a in ('%TereEXE%') do SET OUTPUT=%%a
+        cd %OUTPUT%
+    ``` 
+
     If instructions for your shell are missing, feel free to send a pull request that includes them!
 
 1. That's it. The next time you open a new shell, the command `tere` should work (you can also of course call the shell function/alias whatever you like). The above shell configuration also acts as a config file for `tere`, just add the options you want (see `tere --help`).
