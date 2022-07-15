@@ -28,7 +28,6 @@ To start using `tere`, follow these steps:
     For bash/zsh, put this in your `.bashrc` or `.zshrc`:
 
     ```sh
-    # you can choose a different name if you want
     tere() {
         local result=$(/path/to/tere "$@")
         [ -n "$result" ] && cd -- "$result"
@@ -48,7 +47,7 @@ To start using `tere`, follow these steps:
 
     If instructions for your shell are missing, feel free to send a pull request that includes them!
 
-1. That's it. The next time you open a new shell, the command `tere` should work. The above shell configuration also acts as a config file for `tere`, just add the options you want (see `tere --help`).
+1. That's it. The next time you open a new shell, the command `tere` should work (you can also of course call the shell function/alias whatever you like). The above shell configuration also acts as a config file for `tere`, just add the options you want (see `tere --help`).
 
 ### Supported platforms
 
