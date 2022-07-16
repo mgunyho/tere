@@ -613,8 +613,14 @@ impl<'a> TereTui<'a> {
                 Event::Key(k) => match k.code {
                     KeyCode::Right => self.change_dir("")?,
                     KeyCode::Enter => {
-                        self.change_dir("")?;
-                        if self.app_state.settings.enter_is_cd_and_exit { break }
+                        if self.app_state.settings.enter_is_cd_and_exit {
+                            self.change_dir("")?;
+                            break
+                        } else if self.app_state.settings.esc_is_cancel {
+                            break
+                        } else {
+                            self.change_dir("")?;
+                        }
                     }
                     KeyCode::Char(' ') if !self.app_state.is_searching() => {
                         // If the first key is space, treat it like enter. It's probably pretty

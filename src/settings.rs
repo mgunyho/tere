@@ -143,12 +143,12 @@ impl TereSettings {
             ret.mouse_enabled = true;
         }
 
-        if args.is_present("enter-is-cd-and-exit") {
-            ret.enter_is_cd_and_exit = true;
-        }
-
         if args.is_present("esc-is-cancel") {
             ret.esc_is_cancel = true;
+        }
+
+        if args.is_present("enter-is-cd-and-exit") {
+            ret.enter_is_cd_and_exit = true;
         }
 
         Ok(ret)
