@@ -70,6 +70,12 @@ pub struct TereSettings {
     pub gap_search_mode: GapSearchMode,
 
     pub mouse_enabled: bool,
+
+    /// change behaviour of enter keybinding to "change into directory and exit"
+    pub enter_is_cd_and_exit: bool,
+
+    /// change behaviour of esc keybinding to exit with error (and not cd)
+    pub esc_is_cancel: bool,
 }
 
 impl TereSettings {
@@ -135,6 +141,14 @@ impl TereSettings {
         // ok to unwrap, because mouse has the default value of 'off'
         if args.values_of("mouse").unwrap().last().unwrap() == "on" {
             ret.mouse_enabled = true;
+        }
+
+        if args.is_present("enter-is-cd-and-exit") {
+            ret.enter_is_cd_and_exit = true;
+        }
+
+        if args.is_present("esc-is-cancel") {
+            ret.esc_is_cancel = true;
         }
 
         Ok(ret)

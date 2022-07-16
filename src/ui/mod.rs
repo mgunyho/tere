@@ -611,7 +611,11 @@ impl<'a> TereTui<'a> {
         loop {
             match read_event()? {
                 Event::Key(k) => match k.code {
-                    KeyCode::Right | KeyCode::Enter => self.change_dir("")?,
+                    KeyCode::Right => self.change_dir("")?,
+                    KeyCode::Enter => {
+                        self.change_dir("")?;
+                        if self.app_state.settings.enter_is_cd_and_exit { break }
+                    }
                     KeyCode::Char(' ') if !self.app_state.is_searching() => {
                         // If the first key is space, treat it like enter. It's probably pretty
                         // rare to have a folder name starting with space.
@@ -656,7 +660,14 @@ impl<'a> TereTui<'a> {
                             self.redraw_main_window()?;
                             self.redraw_footer()?;
                         } else {
-                            break;
+                            if self.app_state.settings.esc_is_cancel {
+                                // exit with error on Esc, to avoid cd'ing
+                                let msg = format!("{}: Exited without changing folder",
+                                                  env!("CARGO_PKG_NAME"));
+                                return Err(TereError::ExitWithoutCd(msg));
+                            } else {
+                                break;
+                            }
                         }
                     }
 
