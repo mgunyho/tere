@@ -84,7 +84,8 @@ To start using `tere`, follow these steps:
     rem set the location/path of the tere executable here...
     SET TereEXE=C:\path\to\tere.exe
 
-    FOR /F "tokens=*" %%a in ('%TereEXE%') do SET OUTPUT=%%a
+    FOR /F "tokens=*" %%a in ('%TereEXE% %*') do SET OUTPUT=%%a
+    IF [%OUTPUT%] == [] goto :EOF
     cd %OUTPUT%
     ``` 
 
