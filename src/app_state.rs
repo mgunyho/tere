@@ -586,9 +586,9 @@ impl TereAppState {
         }
     }
 
-    ///////////
-    // Seach //
-    ///////////
+    ////////////
+    // Search //
+    ////////////
 
     fn update_search_matches(&mut self) {
         let is_case_sensitive = match self.settings.case_sensitive {
