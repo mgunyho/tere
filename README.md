@@ -23,7 +23,7 @@ functionality found in many GUI file managers.
 To start using `tere`, follow these steps:
 
 1. Download the latest [release](https://github.com/mgunyho/tere-rs/releases). If you have the Rust toolchain installed, you can also install from source by running `cargo install tere`.
-1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function instead of an alias, since the latter only changes the working directory of the subshell.
+1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent.
 
     For bash/zsh, put this in your `.bashrc` or `.zshrc`:
 
@@ -44,6 +44,32 @@ To start using `tere`, follow these steps:
 
     aliases["tere"] = _tere
     ```
+
+    For fish, put this in your `.config.fish`:
+    ```sh
+    function tere
+        set --local result (/path/to/tere $argv)
+        [ -n "$result" ] && cd -- "$result"
+    end
+    ```
+
+    For powershell core, put this in your `$PROFILE`:
+    ```sh
+        function Invoke-Tere() {
+            $tere_dir = '/path/to/tere'
+            if ($isWindows) {
+                $tere_path = Join-Path $tere_dir 'tere.exe'
+            }
+            else {
+                $tere_path = Join-Path $tere_dir 'tere'
+            }
+            $result = . $tere_path
+            if ($result) {
+                Set-Location $result
+            }
+        }
+        Set-Alias tere Invoke-Tere  
+    ``` 
 
     If instructions for your shell are missing, feel free to send a pull request that includes them!
 
@@ -148,6 +174,7 @@ folder in the terminal and then `cd` to it.
 - [deer](https://github.com/Vifon/deer) - zsh only, searching requires extra keystrokes.
 - [cdir](https://github.com/EskelinenAntti/cdir) - Basically exactly the same idea as `tere`, but in written in Python. Doesn't have Vim-like keyboard navigation, and it's not a standalone binary.
 - [llama](https://github.com/antonmedv/llama) - Very similar to `tere`, written in Go.
+- [sdn](https://git.janouch.name/p/sdn) - Also very similar to `tere`, even in terms of the UI as well. Type-ahead search mode is not the default, searching requires a couple of extra keystrokes.
 
 ### Fuzzy matching and history-based navigation
 
