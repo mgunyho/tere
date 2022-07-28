@@ -26,6 +26,7 @@ To start using `tere`, follow these steps:
 
    - Download the [latest release](https://github.com/mgunyho/tere-rs/releases).
    - Install `tere` with [Homebrew](https://brew.sh) by running `brew install tere`.
+   - Install `tere` with [Nix](https://nixos.org/) by running `nix-env -i tere`.
    - Install `tere` with [Cargo](https://www.rust-lang.org/tools/install) by running `cargo install tere`.
 
 1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent.
