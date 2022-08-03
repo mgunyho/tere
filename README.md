@@ -36,7 +36,7 @@ To start using `tere`, follow these steps:
 
     ```sh
     tere() {
-        local result=$(/path/to/tere "$@")
+        local result=$(command tere "$@")
         [ -n "$result" ] && cd -- "$result"
     }
     ```
