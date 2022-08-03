@@ -74,7 +74,7 @@ To start using `tere`, follow these steps:
             Set-Location $result
         }
     }
-    Set-Alias tere Invoke-Tere  
+    Set-Alias tere Invoke-Tere
     ``` 
 
     For Windows Command Prompt, put this in a batch script file called `tere.bat` in a folder included in your `PATH` environment variable such as `C:\Windows`:
