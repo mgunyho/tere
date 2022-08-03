@@ -41,6 +41,14 @@ To start using `tere`, follow these steps:
     }
     ```
 
+    For fish, put this in your `.config.fish`:
+    ```sh
+    function tere
+        set --local result (command tere $argv)
+        [ -n "$result" ] && cd -- "$result"
+    end
+    ```
+
     For xonsh v0.10 or newer, put this in your `.xonshrc`:
 
     ```py
@@ -50,14 +58,6 @@ To start using `tere`, follow these steps:
             cd @(result)
 
     aliases["tere"] = _tere
-    ```
-
-    For fish, put this in your `.config.fish`:
-    ```sh
-    function tere
-        set --local result (command tere $argv)
-        [ -n "$result" ] && cd -- "$result"
-    end
     ```
 
     For powershell core, put this in your `$PROFILE`:
