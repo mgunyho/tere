@@ -90,6 +90,8 @@ To start using `tere`, follow these steps:
     cd %OUTPUT%
     ``` 
 
+    If `tere` is not in your `PATH`, use an absolute path to the tere binary in your shell config file. For example, for bash/zsh, you would need to replace `local result=$(command tere "$@")` with `local result=$(/path/to/tere "$@")`.
+
     If instructions for your shell are missing, feel free to send a pull request that includes them!
 
 1. That's it. The next time you open a new shell, the command `tere` should work (you can also of course call the shell function/alias whatever you like). The above shell configuration also acts as a config file for `tere`, just add the options you want (see `tere --help`).
