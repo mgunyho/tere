@@ -22,7 +22,12 @@ functionality found in many GUI file managers.
 
 To start using `tere`, follow these steps:
 
-1. Download the latest [release](https://github.com/mgunyho/tere-rs/releases). If you have the Rust toolchain installed, you can also install from source by running `cargo install tere`.
+1. Install `tere`. This can be done in various ways:
+
+   - Download the [latest release](https://github.com/mgunyho/tere-rs/releases).
+   - Install `tere` with [Homebrew](https://brew.sh) by running `brew install tere`.
+   - Install `tere` with [Cargo](https://www.rust-lang.org/tools/install) by running `cargo install tere`.
+
 1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent.
 
     For bash/zsh, put this in your `.bashrc` or `.zshrc`:
