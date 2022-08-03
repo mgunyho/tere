@@ -45,7 +45,7 @@ To start using `tere`, follow these steps:
 
     ```py
     def _tere(args):
-        result = $(/path/to/tere @(args)).strip()
+        result = $(tere @(args)).strip()
         if result:
             cd @(result)
 
