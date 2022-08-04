@@ -61,20 +61,32 @@ To start using `tere`, follow these steps:
 
     For powershell core, put this in your `$PROFILE`:
     ```sh
-        function Invoke-Tere() {
-            $tere_dir = '/path/to/tere'
-            if ($isWindows) {
-                $tere_path = Join-Path $tere_dir 'tere.exe'
-            }
-            else {
-                $tere_path = Join-Path $tere_dir 'tere'
-            }
-            $result = . $tere_path
-            if ($result) {
-                Set-Location $result
-            }
+    function Invoke-Tere() {
+        $tere_dir = '/path/to/tere'
+        if ($isWindows) {
+            $tere_path = Join-Path $tere_dir 'tere.exe'
         }
-        Set-Alias tere Invoke-Tere  
+        else {
+            $tere_path = Join-Path $tere_dir 'tere'
+        }
+        $result = . $tere_path
+        if ($result) {
+            Set-Location $result
+        }
+    }
+    Set-Alias tere Invoke-Tere
+    ``` 
+
+    For Windows Command Prompt, put this in a batch script file called `tere.bat` in a folder included in your `PATH` environment variable such as `C:\Windows`:
+    ```batch
+    @echo off
+
+    rem set the location/path of the tere executable here...
+    SET TereEXE=C:\path\to\tere.exe
+
+    FOR /F "tokens=*" %%a in ('%TereEXE% %*') do SET OUTPUT=%%a
+    IF [%OUTPUT%] == [] goto :EOF
+    cd %OUTPUT%
     ``` 
 
     If instructions for your shell are missing, feel free to send a pull request that includes them!
