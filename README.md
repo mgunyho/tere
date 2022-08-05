@@ -22,12 +22,13 @@ functionality found in many GUI file managers.
 
 To start using `tere`, follow these steps:
 
-1. Install `tere`. This can be done in various ways:
+1. Obtain a copy of `tere`. This can be done in various ways:
 
    - Download the [latest release](https://github.com/mgunyho/tere-rs/releases).
    - Install `tere` with [Homebrew](https://brew.sh) by running `brew install tere`.
    - Install `tere` with [Nix](https://nixos.org/) by running `nix-env -i tere`.
    - Install `tere` with [Cargo](https://www.rust-lang.org/tools/install) by running `cargo install tere`.
+   - Install from source, see [below](#hacking)
 
 1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent.
 
@@ -106,7 +107,9 @@ To compile `tere` from source, follow the standard procedure:
 1. `cd tere`
 1. Run `cargo build` (`--release` for the release version)
 
-This will place the `tere` in the folder `target/debug` or `target/release` if you used `--release`.
+This will place the `tere` binary in the folder `target/debug`, or `target/release` if you used `--release`.
+
+New features should go on the `develop` branch before they are released.
 
 ## User guide
 
