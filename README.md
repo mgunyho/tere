@@ -41,7 +41,7 @@ To start using `tere`, follow these steps:
     }
     ```
 
-    For fish, put this in your `.config.fish`:
+    For fish, put this in your `config.fish`:
     ```sh
     function tere
         set --local result (command tere $argv)
