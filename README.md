@@ -45,7 +45,7 @@ To start using `tere`, follow these steps:
     aliases["tere"] = _tere
     ```
 
-    For fish, put this in your `.config.fish`:
+    For fish, put this in your `config.fish`:
     ```sh
     function tere
         set --local result (/path/to/tere $argv)
