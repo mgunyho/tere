@@ -13,10 +13,13 @@ version=$(sed 's/^version = "\([^\"]*\)"/\1/;t;d' Cargo.toml | head -1)
 echo "Building $BIN_NAME version $version"
 
 #cargo clean
-#TODO: more targets
 for target in \
 	"x86_64-unknown-linux-gnu" \
-	"x86_64-unknown-linux-musl"
+	"x86_64-unknown-linux-musl" \
+	"x86_64-pc-windows-gnu" #\
+	# not tested yet (TODO: test)
+	#"aarch64-unknown-linux-gnu" \
+	#"x86_64-apple-darwin"
 do
 echo "Building $target"
 cargo build --target=$target --release
