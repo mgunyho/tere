@@ -69,7 +69,7 @@ To start using `tere`, follow these steps:
         }
     }
     Set-Alias tere Invoke-Tere
-    ``` 
+    ```
 
     For Windows Command Prompt, put this in a batch script file called `tere.bat` in a folder included in your `PATH` environment variable such as `C:\Windows`:
     ```batch
@@ -81,7 +81,7 @@ To start using `tere`, follow these steps:
     FOR /F "tokens=*" %%a in ('%TereEXE% %*') do SET OUTPUT=%%a
     IF [%OUTPUT%] == [] goto :EOF
     cd %OUTPUT%
-    ``` 
+    ```
 
     If `tere` is not in your `PATH`, use an absolute path to the tere binary in your shell config file. For example, for bash/zsh, you would need to replace `local result=$(command tere "$@")` with `local result=$(/path/to/tere "$@")`.
 
