@@ -63,14 +63,7 @@ To start using `tere`, follow these steps:
     For powershell core, put this in your `$PROFILE`:
     ```sh
     function Invoke-Tere() {
-        $tere_dir = '/path/to/tere'
-        if ($isWindows) {
-            $tere_path = Join-Path $tere_dir 'tere.exe'
-        }
-        else {
-            $tere_path = Join-Path $tere_dir 'tere'
-        }
-        $result = . $tere_path
+        $result = . C:\path\to\tere $args
         if ($result) {
             Set-Location $result
         }
