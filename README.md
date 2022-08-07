@@ -63,7 +63,7 @@ To start using `tere`, follow these steps:
     For powershell core, put this in your `$PROFILE`:
     ```sh
     function Invoke-Tere() {
-        $result = . C:\path\to\tere $args
+        $result = . (Get-Command -CommandType Application tere) $args
         if ($result) {
             Set-Location $result
         }
