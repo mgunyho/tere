@@ -60,7 +60,7 @@ To start using `tere`, follow these steps:
     aliases["tere"] = _tere
     ```
 
-    For powershell core, put this in your `$PROFILE`:
+    For PowerShell Core, put this in your `$PROFILE`:
     ```sh
     function Invoke-Tere() {
         $result = . (Get-Command -CommandType Application tere) $args
