@@ -22,54 +22,92 @@ functionality found in many GUI file managers.
 
 To start using `tere`, follow these steps:
 
-1. Download the latest [release](https://github.com/mgunyho/tere-rs/releases). If you have the Rust toolchain installed, you can also install from source by running `cargo install tere`.
-1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent.
+1. Obtain a copy of `tere`. This can be done in various ways:
 
-    For bash/zsh, put this in your `.bashrc` or `.zshrc`:
+   - Download the [latest release](https://github.com/mgunyho/tere-rs/releases).
+   - Install `tere` with [Homebrew](https://brew.sh) by running `brew install tere`.
+   - Install `tere` with [Nix](https://nixos.org/) by running `nix-env -i tere`.
+   - Install `tere` with [Cargo](https://www.rust-lang.org/tools/install) by running `cargo install tere`.
+   - Build from source, see [below](#hacking).
+
+1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent. See instructions for your shell below.
+
+    <details>
+    <summary>Bash/Zsh</summary>
+
+    Put this in your `.bashrc` or `.zshrc`:
 
     ```sh
     tere() {
-        local result=$(/path/to/tere "$@")
+        local result=$(command tere "$@")
         [ -n "$result" ] && cd -- "$result"
     }
     ```
+    </details>
 
-    For xonsh v0.10 or newer, put this in your `.xonshrc`:
+    <details>
+    <summary>fish</summary>
+
+    Put this in your `config.fish`:
+
+    ```sh
+    function tere
+        set --local result (command tere $argv)
+        [ -n "$result" ] && cd -- "$result"
+    end
+    ```
+    </details>
+
+    <details>
+    <summary>Xonsh</summary>
+
+    Put this in your `.xonshrc` (Xonsh v0.10. or newer is required):
 
     ```py
     def _tere(args):
-        result = $(/path/to/tere @(args)).strip()
+        result = $(tere @(args)).strip()
         if result:
             cd @(result)
 
     aliases["tere"] = _tere
     ```
+    </details>
 
-    For fish, put this in your `.config.fish`:
-    ```sh
-    function tere
-        set --local result (/path/to/tere $argv)
-        [ -n "$result" ] && cd -- "$result"
-    end
-    ```
+    <details>
+    <summary>PowerShell</summary>
 
-    For powershell core, put this in your `$PROFILE`:
-    ```sh
-        function Invoke-Tere() {
-            $tere_dir = '/path/to/tere'
-            if ($isWindows) {
-                $tere_path = Join-Path $tere_dir 'tere.exe'
-            }
-            else {
-                $tere_path = Join-Path $tere_dir 'tere'
-            }
-            $result = . $tere_path
-            if ($result) {
-                Set-Location $result
-            }
+    Put this in your `$PROFILE`:
+
+    ```powershell
+    function Invoke-Tere() {
+        $result = . (Get-Command -CommandType Application tere) $args
+        if ($result) {
+            Set-Location $result
         }
-        Set-Alias tere Invoke-Tere  
-    ``` 
+    }
+    Set-Alias tere Invoke-Tere
+    ```
+    </details>
+
+    <details>
+    <summary>Windows Command Prompt (CMD)</summary>
+
+    Put this in a batch script file called `tere.bat` in a folder included in your `PATH` environment variable such as `C:\Windows`:
+
+    ```batch
+    @echo off
+
+    rem set the location/path of the tere executable here...
+    SET TereEXE=C:\path\to\tere.exe
+
+    FOR /F "tokens=*" %%a in ('%TereEXE% %*') do SET OUTPUT=%%a
+    IF [%OUTPUT%] == [] goto :EOF
+    cd %OUTPUT%
+    ```
+    Note that if you want to make `tere` work with *both* PowerShell and CMD, you should *not* put `tere.exe` to a location that is in your `PATH`, because then the `.exe` will be run instead of the `.bat`. Place `tere.exe` somewhere that is not in your `PATH`, and use the full path to the exe in both the `.bat` file and in the PowerShell `$PROFILE`.
+    </details>
+
+    If `tere` is not in your `PATH`, use an absolute path to the tere binary in your shell config file. For example, for Bash/Zsh, you would need to replace `local result=$(command tere "$@")` with `local result=$(/path/to/tere "$@")`, or for PowerShell, replace `(Get-Command -CommandType Application tere)` with `C:\path\to\tere.exe`.
 
     If instructions for your shell are missing, feel free to send a pull request that includes them!
 
@@ -77,7 +115,7 @@ To start using `tere`, follow these steps:
 
 ### Supported platforms
 
-Currently, `tere` is tested on and built for Ubuntu. On Mac, it should be enough to compile the program yourself and the above bash/zsh shell configuration should work out of the box. Windows should also in principle work (the TUI is rendered using a cross-platform library), you just has to figure out the correct shell configuration. Pull requests welcome!
+`tere` works on Linux, Windows and macOS. For Linux and Windows, binaries are provided in the [releases](https://github.com/mgunyho/tere-rs/releases). For Mac you, can install using Homebrew or Cargo, or build from source.
 
 ### Hacking
 
@@ -88,7 +126,9 @@ To compile `tere` from source, follow the standard procedure:
 1. `cd tere`
 1. Run `cargo build` (`--release` for the release version)
 
-This will place the `tere` in the folder `target/debug` or `target/release` if you used `--release`.
+This will place the `tere` binary in the folder `target/debug`, or `target/release` if you used `--release`.
+
+New features should go on the `develop` branch before they are released.
 
 ## User guide
 
