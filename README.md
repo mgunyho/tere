@@ -42,6 +42,7 @@ To start using `tere`, follow these steps:
     ```
 
     For fish, put this in your `config.fish`:
+
     ```sh
     function tere
         set --local result (command tere $argv)
@@ -61,7 +62,8 @@ To start using `tere`, follow these steps:
     ```
 
     For PowerShell Core, put this in your `$PROFILE`:
-    ```sh
+
+    ```powershell
     function Invoke-Tere() {
         $result = . (Get-Command -CommandType Application tere) $args
         if ($result) {
@@ -72,6 +74,7 @@ To start using `tere`, follow these steps:
     ```
 
     For Windows Command Prompt, put this in a batch script file called `tere.bat` in a folder included in your `PATH` environment variable such as `C:\Windows`:
+
     ```batch
     @echo off
 
