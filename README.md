@@ -30,9 +30,12 @@ To start using `tere`, follow these steps:
    - Install `tere` with [Cargo](https://www.rust-lang.org/tools/install) by running `cargo install tere`.
    - Build from source, see [below](#hacking).
 
-1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent.
+1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent. See instructions for your shell below.
 
-    For bash/zsh, put this in your `.bashrc` or `.zshrc`:
+    <details>
+    <summary>Bash/Zsh</summary>
+
+    Put this in your `.bashrc` or `.zshrc`:
 
     ```sh
     tere() {
@@ -40,8 +43,12 @@ To start using `tere`, follow these steps:
         [ -n "$result" ] && cd -- "$result"
     }
     ```
+    </details>
 
-    For fish, put this in your `config.fish`:
+    <details>
+    <summary>fish</summary>
+
+    Put this in your `config.fish`:
 
     ```sh
     function tere
@@ -49,8 +56,12 @@ To start using `tere`, follow these steps:
         [ -n "$result" ] && cd -- "$result"
     end
     ```
+    </details>
 
-    For xonsh v0.10 or newer, put this in your `.xonshrc`:
+    <details>
+    <summary>Xonsh</summary>
+
+    Put this in your `.xonshrc` (Xonsh v0.10. or newer is required):
 
     ```py
     def _tere(args):
@@ -60,8 +71,12 @@ To start using `tere`, follow these steps:
 
     aliases["tere"] = _tere
     ```
+    </details>
 
-    For PowerShell Core, put this in your `$PROFILE`:
+    <details>
+    <summary>PowerShell</summary>
+
+    Put this in your `$PROFILE`:
 
     ```powershell
     function Invoke-Tere() {
@@ -72,8 +87,12 @@ To start using `tere`, follow these steps:
     }
     Set-Alias tere Invoke-Tere
     ```
+    </details>
 
-    For Windows Command Prompt, put this in a batch script file called `tere.bat` in a folder included in your `PATH` environment variable such as `C:\Windows`:
+    <details>
+    <summary>Windows Command Prompt (CMD)</summary>
+
+    Put this in a batch script file called `tere.bat` in a folder included in your `PATH` environment variable such as `C:\Windows`:
 
     ```batch
     @echo off
@@ -85,6 +104,8 @@ To start using `tere`, follow these steps:
     IF [%OUTPUT%] == [] goto :EOF
     cd %OUTPUT%
     ```
+    Note that if you want to make `tere` work with *both* PowerShell and CMD, you should *not* put `tere.exe` to a location that is in your `PATH`, because then the `.exe` will be run instead of the `.bat`. Place `tere.exe` somewhere that is not in your `PATH`, and use the full path to the exe in both the `.bat` file and in the PowerShell `$PROFILE`.
+    </details>
 
     If `tere` is not in your `PATH`, use an absolute path to the tere binary in your shell config file. For example, for bash/zsh, you would need to replace `local result=$(command tere "$@")` with `local result=$(/path/to/tere "$@")`, or for PowerShell, replace `(Get-Command -CommandType Application tere)` with `C:\path\to\tere.exe`.
 
