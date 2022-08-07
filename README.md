@@ -115,7 +115,7 @@ To start using `tere`, follow these steps:
 
 ### Supported platforms
 
-`tere` works on Linux, Windows and macOS. For Linux and Windows, binaries are provided in the [releases](https://github.com/mgunyho/tere-rs/releases). For Mac you, can install using Homebrew or Cargo, or build from source.
+`tere` works on Linux, Windows and macOS. For Linux and Windows, binaries are provided in the [releases](https://github.com/mgunyho/tere-rs/releases). For Mac, you can install using Homebrew or Cargo, or build from source.
 
 ### Hacking
 
