@@ -115,7 +115,7 @@ To start using `tere`, follow these steps:
 
 ### Supported platforms
 
-Currently, `tere` is tested on and built for Ubuntu. On Mac, it should be enough to compile the program yourself and the above bash/zsh shell configuration should work out of the box. Windows should also in principle work (the TUI is rendered using a cross-platform library), you just has to figure out the correct shell configuration. Pull requests welcome!
+`tere` works on Linux, Windows and macOS. For Linux and Windows, binaries are provided in the [releases](https://github.com/mgunyho/tere-rs/releases). For Mac you, can install using Homebrew or Cargo, or build from source.
 
 ### Hacking
 
