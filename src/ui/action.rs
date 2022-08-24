@@ -1,6 +1,7 @@
 /// The possible actions that the user can do
 
 
+#[derive(Clone)]
 pub enum Action {
     /// Change to the directory under the cursor
     ChangeDir,
