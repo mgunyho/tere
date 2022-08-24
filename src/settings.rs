@@ -75,6 +75,8 @@ pub struct TereSettings {
     pub gap_search_mode: GapSearchMode,
 
     pub mouse_enabled: bool,
+
+    pub keymap: HashMap<KeyEvent, Action>,
 }
 
 impl TereSettings {
@@ -141,6 +143,11 @@ impl TereSettings {
         if args.values_of("mouse").unwrap().last().unwrap() == "on" {
             ret.mouse_enabled = true;
         }
+
+        //ret.keymap = HashMap::from_iter(DEFAULT_KEYMAP.iter());
+        ret.keymap = DEFAULT_KEYMAP.iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
 
         Ok(ret)
     }
