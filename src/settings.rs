@@ -2,7 +2,12 @@
 use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::collections::HashMap;
 use clap::ArgMatches;
+use crossterm::event::KeyEvent;
+use crokey::key;
+
+use crate::ui::Action;
 
 //TODO: config file?
 
@@ -138,5 +143,78 @@ impl TereSettings {
         }
 
         Ok(ret)
+    }
+}
+
+// NOTE: can't create a const hashmap (without an extra dependency like phf), so just using a slice
+// of tuples.
+const DEFAULT_KEYMAP: &[(KeyEvent, Action)] = &[
+
+    (key!(enter),    Action::ChangeDir),
+    (key!(right),    Action::ChangeDir),
+    (key!(alt-down), Action::ChangeDir),
+    (key!(alt-l),    Action::ChangeDir),
+    //(key!(space), Action::ChangeDir & NotSearching), //TODO: figure out quantifiers...
+
+    (key!(left),   Action::ChangeDirParent),
+    (key!(alt-up), Action::ChangeDirParent),
+    (key!(alt-h),  Action::ChangeDirParent),
+    //(key!('-'),    Action::ChangeDirParent & NotSearching), // TODO: quantifier
+    //(key!(backspace),    Action::ChangeDirParent & NotSearching), // TODO: quantifier
+
+    (key!('~'), Action::ChangeDirHome),
+    (key!(ctrl-home), Action::ChangeDirHome),
+    (key!(ctrl-alt-h), Action::ChangeDirHome),
+
+    (key!('/'), Action::ChangeDirRoot),
+    (key!(alt-r), Action::ChangeDirRoot),
+
+    (key!(up),    Action::CursorUp),
+    (key!(alt-k), Action::CursorUp),
+
+    (key!(down),  Action::CursorDown),
+    (key!(alt-j), Action::CursorDown),
+
+    (key!(pageup),  Action::CursorUpPage),
+    (key!(alt-u),   Action::CursorUpPage),
+    (key!(ctrl-u),  Action::CursorUpPage),
+
+    (key!(pagedown), Action::CursorDownPage),
+    (key!(alt-d),    Action::CursorDownPage),
+    (key!(ctrl-d),   Action::CursorDownPage),
+
+    (key!(home),  Action::CursorFirst),
+    (key!(alt-g), Action::CursorFirst),
+    (key!(end),   Action::CursorLast),
+    (key!(alt-shift-g), Action::CursorLast),
+
+    (key!(alt-c), Action::ChangeCaseSensitiveMode),
+    (key!(ctrl-f), Action::ChangeGapSearchMode),
+
+    (key!(ctrl-r), Action::RefreshListing),
+
+    (key!('?'), Action::Help),
+
+    (key!(esc), Action::ClearSearchOrExit), //TODO: use quantifier instead...
+    (key!(alt-q), Action::Exit),
+    (key!(ctrl-c), Action::ExitWithoutCd),
+
+];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn check_default_keymap_keys_unique() {
+        let mut key_counts: HashMap<KeyEvent, usize> = HashMap::new();
+
+        DEFAULT_KEYMAP
+            .iter()
+            .for_each(|(k, v)| *key_counts.entry(*k).or_default() += 1);
+
+        for (k, v) in key_counts {
+            assert_eq!(v, 1, "found {} entries for key {:?}", v, k);
+        }
     }
 }
