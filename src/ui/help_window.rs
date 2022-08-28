@@ -1,6 +1,6 @@
 /// Functions for rendering the help window
 use crossterm::style::{StyledContent, Stylize};
-use textwrap::{self, word_splitters::NoHyphenation, Options};
+use textwrap::{self, word_splitters::WordSplitter::NoHyphenation, Options};
 
 const README_STR: &str = include_str!("../../README.md");
 
@@ -43,7 +43,7 @@ pub fn get_formatted_help_text(width: usize) -> Vec<Vec<StyledContent<String>>> 
     let (help_str, bold_toggle_locs) = strip_markup_and_extract_bold_positions(&help_str);
 
     // apply text wrapping
-    let opts = Options::with_word_splitter(width, NoHyphenation);
+    let opts = Options::new(width).word_splitter(NoHyphenation);
     let help_str = textwrap::wrap(&help_str, opts);
 
     // apply bold at the toggle locations and return
