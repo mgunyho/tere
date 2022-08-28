@@ -16,7 +16,7 @@ dirs = "4.0.0"
 regex = "1.6.0"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["rc"] }
-textwrap = "0.14"
+textwrap = "0.15"
 unicode-segmentation = "1.7"
 
 [dependencies.clap]
