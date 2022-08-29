@@ -612,7 +612,25 @@ impl<'a> TereTui<'a> {
 
         loop {
             match read_event()? {
-                Event::Key(k) => match k.code {
+                Event::Key(k) => {
+                    if let Some(action) = self.app_state.settings.keymap.get(&k) {
+                        match action {
+                            Action::ChangeDir => self.change_dir("")?,
+                            Action::ChangeDirParent => self.change_dir("..")?,
+
+                            // TODO: rename on_arrow_key to on_cursor_up
+                            Action::CursorUp => self.on_arrow_key(true)?,
+                            Action::CursorDown => self.on_arrow_key(false)?,
+
+                            Action::Exit => break,
+
+                            _ => todo!(),
+                        }
+                    }
+                }
+
+                    /*
+                    match k.code {
                     KeyCode::Right | KeyCode::Enter => self.change_dir("")?,
                     KeyCode::Char(' ') if !self.app_state.is_searching() => {
                         // If the first key is space, treat it like enter. It's probably pretty
@@ -735,6 +753,7 @@ impl<'a> TereTui<'a> {
 
                     _ => self.info_message(&format!("{:?}", k))?,
                 },
+                */
 
                 Event::Resize(_, _) => {
                     self.update_main_window_dimensions()?;
