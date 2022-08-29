@@ -617,15 +617,60 @@ impl<'a> TereTui<'a> {
                         match action {
                             Action::ChangeDir => self.change_dir("")?,
                             Action::ChangeDirParent => self.change_dir("..")?,
+                            Action::ChangeDirHome => self.on_go_to_home()?,
+                            Action::ChangeDirRoot => self.on_go_to_root()?,
+
+                            /* TODO
+                            Action::ChangeDirAndExit => {
+                                self.change_dir("")?;
+                                break;
+                            }
+                            */
 
                             // TODO: rename on_arrow_key to on_cursor_up
                             Action::CursorUp => self.on_arrow_key(true)?,
                             Action::CursorDown => self.on_arrow_key(false)?,
+                            Action::CursorUpPage => self.on_page_up_down(true)?,
+                            Action::CursorDownPage => self.on_page_up_down(false)?,
+                            // TODO: rename on_home_end to on_cursor_first (or something)
+                            Action::CursorFirst => self.on_home_end(true)?,
+                            Action::CursorLast => self.on_home_end(false)?,
+
+                            //Action::ClearSearch => todo!(), // TODO
+                            //TODO: reimplement using quantifier
+                            Action::ClearSearchOrExit => {
+                                if self.app_state.is_searching() {
+                                    self.app_state.clear_search();
+                                    self.info_message("")?; // clear possible 'no matches' message
+                                    self.redraw_main_window()?;
+                                    self.redraw_footer()?;
+                                } else {
+                                    break;
+                                }
+                            },
+
+                            Action::ChangeCaseSensitiveMode => self.cycle_case_sensitive_mode()?,
+                            Action::ChangeGapSearchMode => self.cycle_gap_search_mode()?,
+
+                            Action::RefreshListing => {
+                                self.change_dir(".")?; //TODO: use 'current dir' instead of hardcoded '.' (?, see also pardir discussion elsewhere)
+                                self.info_message("Refreshed directory listing")?;
+                            }
+
+                            Action::Help => self.help_view_loop()?,
 
                             Action::Exit => break,
+                            Action::ExitWithoutCd => {
+                                // exit with error (ctl+c by default), to avoid cd'ing
+                                let msg = format!("{}: Exited without changing folder",
+                                                  env!("CARGO_PKG_NAME"));
+                                return Err(TereError::ExitWithoutCd(msg));
+                            }
 
                             _ => todo!(),
                         }
+                    } else {
+                        todo!();
                     }
                 }
 
