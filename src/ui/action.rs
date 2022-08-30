@@ -44,3 +44,15 @@ pub enum Action {
     /// Exit without changing the directory
     ExitWithoutCd,
 }
+
+/// An extra quantifier on an action, like 'this only applies when searching'
+pub enum ActionContext {
+    /// Signifies that this shortcut should apply if no other condition applies
+    Any,
+
+    /// This shortcut only applies when searching
+    Searching,
+
+    /// This shortcut only applies when not searching
+    NotSearching,
+}
