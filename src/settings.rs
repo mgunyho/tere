@@ -190,9 +190,9 @@ const DEFAULT_KEYMAP: &[(KeyEvent, Action)] = &[
     (key!(ctrl-d),   Action::CursorDownPage),
 
     (key!(home),  Action::CursorFirst),
-    (key!(alt-g), Action::CursorFirst),
+    (key!(alt-g), Action::CursorFirst), // like vim 'gg'
     (key!(end),   Action::CursorLast),
-    (key!(alt-shift-g), Action::CursorLast),
+    (key!(alt-shift-g), Action::CursorLast), // like vim 'G'
 
     (key!(alt-c), Action::ChangeCaseSensitiveMode),
     (key!(ctrl-f), Action::ChangeGapSearchMode),
