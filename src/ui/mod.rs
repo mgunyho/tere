@@ -676,43 +676,11 @@ impl<'a> TereTui<'a> {
 
                     /*
                     match k.code {
-                    KeyCode::Right | KeyCode::Enter => self.change_dir("")?,
                     KeyCode::Char(' ') if !self.app_state.is_searching() => {
                         // If the first key is space, treat it like enter. It's probably pretty
                         // rare to have a folder name starting with space.
                         self.change_dir("")?;
                     }
-                    KeyCode::Left => self.change_dir("..")?,
-                    KeyCode::Up if k.modifiers == ALT => {
-                        self.change_dir("..")?;
-                    }
-                    KeyCode::Up => self.on_arrow_key(true)?,
-                    KeyCode::Down if k.modifiers == ALT => {
-                        self.change_dir("")?;
-                    }
-                    KeyCode::Down => self.on_arrow_key(false)?,
-
-                    KeyCode::PageUp => self.on_page_up_down(true)?,
-                    KeyCode::PageDown => self.on_page_up_down(false)?,
-
-                    KeyCode::Home if k.modifiers == CONTROL => {
-                        self.on_go_to_home()?;
-                    }
-                    KeyCode::Char('h') if k.modifiers == CONTROL | ALT => {
-                        self.on_go_to_home()?;
-                    }
-                    KeyCode::Char('~') => {
-                        self.on_go_to_home()?;
-                    }
-                    KeyCode::Char('/') => {
-                        self.on_go_to_root()?;
-                    }
-                    KeyCode::Char('r') if k.modifiers == ALT => {
-                        self.on_go_to_root()?;
-                    }
-
-                    KeyCode::Home => self.on_home_end(true)?,
-                    KeyCode::End => self.on_home_end(false)?,
 
                     KeyCode::Esc => {
                         if self.app_state.is_searching() {
@@ -723,62 +691,6 @@ impl<'a> TereTui<'a> {
                         } else {
                             break;
                         }
-                    }
-
-                    KeyCode::Char('?') => {
-                        self.help_view_loop()?;
-                    }
-
-                    // alt + hjkl
-                    KeyCode::Char('h') if k.modifiers == ALT => {
-                        self.change_dir("..")?;
-                    }
-                    KeyCode::Char('j') if k.modifiers == ALT => {
-                        self.on_arrow_key(false)?;
-                    }
-                    KeyCode::Char('k') if k.modifiers == ALT => {
-                        self.on_arrow_key(true)?;
-                    }
-                    KeyCode::Char('l') if k.modifiers == ALT => {
-                        self.change_dir("")?;
-                    }
-
-                    KeyCode::Char('r') if k.modifiers == CONTROL => {
-                        // refresh the current folder
-                        self.change_dir(".")?;
-                        self.info_message("Refreshed directory listing")?;
-                    }
-
-                    // other chars with modifiers
-                    KeyCode::Char('q') if k.modifiers == ALT => {
-                        break;
-                    }
-                    KeyCode::Char('c') if k.modifiers == CONTROL => {
-                        // exit with error on ctl+c, to avoid cd'ing
-                        let msg = format!("{}: Exited without changing folder",
-                                          env!("CARGO_PKG_NAME"));
-                        return Err(TereError::ExitWithoutCd(msg));
-                    }
-                    KeyCode::Char('u') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
-                        self.on_page_up_down(true)?;
-                    }
-                    KeyCode::Char('d') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
-                        self.on_page_up_down(false)?;
-                    }
-                    KeyCode::Char('g') if k.modifiers == ALT => {
-                        // like vim 'gg'
-                        self.on_home_end(true)?;
-                    }
-                    KeyCode::Char('G') if k.modifiers.contains(ALT) => {
-                        self.on_home_end(false)?;
-                    }
-
-                    KeyCode::Char('c') if k.modifiers == ALT => {
-                        self.cycle_case_sensitive_mode()?;
-                    }
-
-                    KeyCode::Char('f') if k.modifiers == CONTROL => {
-                        self.cycle_gap_search_mode()?;
                     }
 
                     KeyCode::Char('-') if !self.app_state.is_searching() => {
