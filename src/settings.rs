@@ -146,7 +146,7 @@ impl TereSettings {
 
         ret.keymap = DEFAULT_KEYMAP.iter()
             //TODO: use contexts from default keymap list...
-            .map(|(k, a)| ((k.clone(), ActionContext::Any), a.clone()))
+            .map(|(k, c, a)| ((k.clone(), c.clone()), a.clone()))
             .collect();
 
         Ok(ret)
@@ -155,56 +155,56 @@ impl TereSettings {
 
 // NOTE: can't create a const hashmap (without an extra dependency like phf), so just using a slice
 // of tuples.
-const DEFAULT_KEYMAP: &[(KeyEvent, Action)] = &[
+const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
 
-    (key!(enter),    Action::ChangeDir),
-    (key!(right),    Action::ChangeDir),
-    (key!(alt-down), Action::ChangeDir),
-    (key!(alt-l),    Action::ChangeDir),
+    (key!(enter),    ActionContext::Any, Action::ChangeDir),
+    (key!(right),    ActionContext::Any, Action::ChangeDir),
+    (key!(alt-down), ActionContext::Any, Action::ChangeDir),
+    (key!(alt-l),    ActionContext::Any, Action::ChangeDir),
     //(key!(space), Action::ChangeDir & NotSearching), //TODO: figure out quantifiers...
 
-    (key!(left),   Action::ChangeDirParent),
-    (key!(alt-up), Action::ChangeDirParent),
-    (key!(alt-h),  Action::ChangeDirParent),
+    (key!(left),   ActionContext::Any, Action::ChangeDirParent),
+    (key!(alt-up), ActionContext::Any, Action::ChangeDirParent),
+    (key!(alt-h),  ActionContext::Any, Action::ChangeDirParent),
     //(key!('-'),    Action::ChangeDirParent & NotSearching), // TODO: quantifier
     //(key!(backspace),    Action::ChangeDirParent & NotSearching), // TODO: quantifier
 
-    (key!('~'), Action::ChangeDirHome),
-    (key!(ctrl-home), Action::ChangeDirHome),
-    (key!(ctrl-alt-h), Action::ChangeDirHome),
+    (key!('~'),        ActionContext::Any, Action::ChangeDirHome),
+    (key!(ctrl-home),  ActionContext::Any, Action::ChangeDirHome),
+    (key!(ctrl-alt-h), ActionContext::Any, Action::ChangeDirHome),
 
-    (key!('/'), Action::ChangeDirRoot),
-    (key!(alt-r), Action::ChangeDirRoot),
+    (key!('/'),        ActionContext::Any, Action::ChangeDirRoot),
+    (key!(alt-r),      ActionContext::Any, Action::ChangeDirRoot),
 
-    (key!(up),    Action::CursorUp),
-    (key!(alt-k), Action::CursorUp),
+    (key!(up),    ActionContext::Any, Action::CursorUp),
+    (key!(alt-k), ActionContext::Any, Action::CursorUp),
 
-    (key!(down),  Action::CursorDown),
-    (key!(alt-j), Action::CursorDown),
+    (key!(down),  ActionContext::Any, Action::CursorDown),
+    (key!(alt-j), ActionContext::Any, Action::CursorDown),
 
-    (key!(pageup),  Action::CursorUpPage),
-    (key!(alt-u),   Action::CursorUpPage),
-    (key!(ctrl-u),  Action::CursorUpPage),
+    (key!(pageup),  ActionContext::Any, Action::CursorUpPage),
+    (key!(alt-u),   ActionContext::Any, Action::CursorUpPage),
+    (key!(ctrl-u),  ActionContext::Any, Action::CursorUpPage),
 
-    (key!(pagedown), Action::CursorDownPage),
-    (key!(alt-d),    Action::CursorDownPage),
-    (key!(ctrl-d),   Action::CursorDownPage),
+    (key!(pagedown), ActionContext::Any, Action::CursorDownPage),
+    (key!(alt-d),    ActionContext::Any, Action::CursorDownPage),
+    (key!(ctrl-d),   ActionContext::Any, Action::CursorDownPage),
 
-    (key!(home),  Action::CursorFirst),
-    (key!(alt-g), Action::CursorFirst), // like vim 'gg'
-    (key!(end),   Action::CursorLast),
-    (key!(alt-shift-g), Action::CursorLast), // like vim 'G'
+    (key!(home),        ActionContext::Any, Action::CursorFirst),
+    (key!(alt-g),       ActionContext::Any, Action::CursorFirst), // like vim 'gg'
+    (key!(end),         ActionContext::Any, Action::CursorLast),
+    (key!(alt-shift-g), ActionContext::Any, Action::CursorLast), // like vim 'G'
 
-    (key!(alt-c), Action::ChangeCaseSensitiveMode),
-    (key!(ctrl-f), Action::ChangeGapSearchMode),
+    (key!(alt-c),  ActionContext::Any, Action::ChangeCaseSensitiveMode),
+    (key!(ctrl-f), ActionContext::Any, Action::ChangeGapSearchMode),
 
-    (key!(ctrl-r), Action::RefreshListing),
+    (key!(ctrl-r), ActionContext::Any, Action::RefreshListing),
 
-    (key!('?'), Action::Help),
+    (key!('?'), ActionContext::Any, Action::Help),
 
-    (key!(esc), Action::ClearSearchOrExit), //TODO: use quantifier instead...
-    (key!(alt-q), Action::Exit),
-    (key!(ctrl-c), Action::ExitWithoutCd),
+    (key!(esc),    ActionContext::Any, Action::ClearSearchOrExit), //TODO: use quantifier instead...
+    (key!(alt-q),  ActionContext::Any, Action::Exit),
+    (key!(ctrl-c), ActionContext::Any, Action::ExitWithoutCd),
 
 ];
 
