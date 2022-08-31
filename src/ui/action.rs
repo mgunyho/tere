@@ -1,3 +1,6 @@
+use std::cmp::{PartialEq, Eq};
+use std::hash::Hash;
+
 /// The possible actions that the user can do
 
 
@@ -46,6 +49,7 @@ pub enum Action {
 }
 
 /// An extra quantifier on an action, like 'this only applies when searching'
+#[derive(Hash, PartialEq, Eq)]
 pub enum ActionContext {
     /// Signifies that this shortcut should apply if no other condition applies
     Any,
