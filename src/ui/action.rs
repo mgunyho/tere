@@ -23,6 +23,8 @@ pub enum Action {
     /// Move cursor to last item
     CursorLast,
 
+    /// Erase a character from the search
+    EraseSearchChar,
     /// Clear the current search
     ClearSearch,
     /// Clear the current search, or if it's empty, exit
