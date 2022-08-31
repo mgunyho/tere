@@ -7,7 +7,7 @@ use clap::ArgMatches;
 use crossterm::event::KeyEvent;
 use crokey::key;
 
-use crate::ui::Action;
+use crate::ui::{Action, ActionContext};
 
 //TODO: config file?
 
@@ -76,7 +76,7 @@ pub struct TereSettings {
 
     pub mouse_enabled: bool,
 
-    pub keymap: HashMap<KeyEvent, Action>,
+    pub keymap: HashMap<(KeyEvent, ActionContext), Action>,
 }
 
 impl TereSettings {
@@ -145,7 +145,8 @@ impl TereSettings {
         }
 
         ret.keymap = DEFAULT_KEYMAP.iter()
-            .map(|(k, v)| (k.clone(), v.clone()))
+            //TODO: use contexts from default keymap list...
+            .map(|(k, a)| ((k.clone(), ActionContext::Any), a.clone()))
             .collect();
 
         Ok(ret)
