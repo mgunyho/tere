@@ -13,7 +13,7 @@ use crate::app_state::{
     NO_MATCHES_MSG,
 };
 use help_window::get_formatted_help_text;
-pub use action::Action;
+pub use action::{Action, ActionContext};
 
 use crossterm::{
     execute,
@@ -613,7 +613,20 @@ impl<'a> TereTui<'a> {
         loop {
             match read_event()? {
                 Event::Key(k) => {
-                    if let Some(action) = self.app_state.settings.keymap.get(&k) {
+                    let valid_ctx = if self.app_state.is_searching() {
+                        ActionContext::Searching
+                    } else {
+                        ActionContext::NotSearching
+                    };
+
+                    let action = self
+                        .app_state
+                        .settings.keymap.get(&(k, valid_ctx))
+                        // If no mapping is found with the currently applying context, look for a
+                        // mapping that applies in any context
+                        .or_else(|| self.app_state.settings.keymap.get(&(k, ActionContext::Any)));
+
+                    if let Some(action) = action { //self.app_state.settings.keymap.get(&k) {
                         match action {
                             Action::ChangeDir => self.change_dir("")?,
                             Action::ChangeDirParent => self.change_dir("..")?,
