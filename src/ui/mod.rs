@@ -626,7 +626,7 @@ impl<'a> TereTui<'a> {
                         // mapping that applies in any context
                         .or_else(|| self.app_state.settings.keymap.get(&(k, ActionContext::Any)));
 
-                    if let Some(action) = action { //self.app_state.settings.keymap.get(&k) {
+                    if let Some(action) = action {
                         match action {
                             Action::ChangeDir => self.change_dir("")?,
                             Action::ChangeDirParent => self.change_dir("..")?,
