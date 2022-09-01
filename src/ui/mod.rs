@@ -503,6 +503,14 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    fn on_clear_search(&mut self) -> CTResult<()> {
+        self.app_state.clear_search();
+        self.info_message("")?; // clear possible 'no matches' message
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
+    }
+
     pub fn update_main_window_dimensions(&mut self) -> CTResult<()> {
         let (w, h) = main_window_size()?;
         self.app_state.update_main_window_dimensions(w, h);
