@@ -30,8 +30,6 @@ pub enum Action {
     EraseSearchChar,
     /// Clear the current search
     ClearSearch,
-    /// Clear the current search, or if it's empty, exit
-    ClearSearchOrExit,
 
     /// Cycle the case sensitivity mode
     ChangeCaseSensitiveMode,
