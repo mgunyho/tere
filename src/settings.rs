@@ -195,6 +195,8 @@ const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
     (key!(end),         ActionContext::Any, Action::CursorLast),
     (key!(alt-shift-g), ActionContext::Any, Action::CursorLast), // like vim 'G'
 
+    (key!(esc),    ActionContext::Searching, Action::ClearSearch),
+
     (key!(alt-c),  ActionContext::Any, Action::ChangeCaseSensitiveMode),
     (key!(ctrl-f), ActionContext::Any, Action::ChangeGapSearchMode),
 
@@ -202,7 +204,7 @@ const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
 
     (key!('?'), ActionContext::Any, Action::Help),
 
-    (key!(esc),    ActionContext::Any, Action::ClearSearchOrExit), //TODO: use quantifier instead...
+    (key!(esc),    ActionContext::NotSearching, Action::Exit),
     (key!(alt-q),  ActionContext::Any, Action::Exit),
     (key!(ctrl-c), ActionContext::Any, Action::ExitWithoutCd),
 
