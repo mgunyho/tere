@@ -49,7 +49,7 @@ pub enum Action {
 }
 
 /// An extra quantifier on an action, like 'this only applies when searching'
-#[derive(Hash, PartialEq, Eq, Clone)]
+#[derive(Hash, PartialEq, Eq, Clone, Debug)]
 pub enum ActionContext {
     /// Signifies that this shortcut should apply if no other condition applies
     Any,
