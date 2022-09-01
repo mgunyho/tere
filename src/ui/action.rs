@@ -1,3 +1,6 @@
+use std::cmp::{PartialEq, Eq};
+use std::hash::Hash;
+
 /// The possible actions that the user can do
 
 
@@ -27,8 +30,6 @@ pub enum Action {
     EraseSearchChar,
     /// Clear the current search
     ClearSearch,
-    /// Clear the current search, or if it's empty, exit
-    ClearSearchOrExit,
 
     /// Cycle the case sensitivity mode
     ChangeCaseSensitiveMode,
@@ -43,4 +44,17 @@ pub enum Action {
     Exit,
     /// Exit without changing the directory
     ExitWithoutCd,
+}
+
+/// An extra quantifier on an action, like 'this only applies when searching'
+#[derive(Hash, PartialEq, Eq, Clone, Debug)]
+pub enum ActionContext {
+    /// Signifies that this shortcut should apply if no other condition applies
+    Any,
+
+    /// This shortcut only applies when searching
+    Searching,
+
+    /// This shortcut only applies when not searching
+    NotSearching,
 }

@@ -13,7 +13,7 @@ use crate::app_state::{
     NO_MATCHES_MSG,
 };
 use help_window::get_formatted_help_text;
-pub use action::Action;
+pub use action::{Action, ActionContext};
 
 use crossterm::{
     execute,
@@ -24,6 +24,7 @@ use crossterm::{
     event::{
         read as read_event,
         Event,
+        KeyEvent,
         MouseEvent,
         MouseEventKind,
         MouseButton,
@@ -502,6 +503,14 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    fn on_clear_search(&mut self) -> CTResult<()> {
+        self.app_state.clear_search();
+        self.info_message("")?; // clear possible 'no matches' message
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
+    }
+
     pub fn update_main_window_dimensions(&mut self) -> CTResult<()> {
         let (w, h) = main_window_size()?;
         self.app_state.update_main_window_dimensions(w, h);
@@ -605,15 +614,24 @@ impl<'a> TereTui<'a> {
     }
 
     pub fn main_event_loop(&mut self) -> Result<(), TereError> {
-        #[allow(non_snake_case)]
-        let ALT = KeyModifiers::ALT;
-        #[allow(non_snake_case)]
-        let CONTROL = KeyModifiers::CONTROL;
 
         loop {
             match read_event()? {
                 Event::Key(k) => {
-                    if let Some(action) = self.app_state.settings.keymap.get(&k) {
+                    let valid_ctx = if self.app_state.is_searching() {
+                        ActionContext::Searching
+                    } else {
+                        ActionContext::NotSearching
+                    };
+
+                    let action = self
+                        .app_state
+                        .settings.keymap.get(&(k, valid_ctx))
+                        // If no mapping is found with the currently applying context, look for a
+                        // mapping that applies in any context
+                        .or_else(|| self.app_state.settings.keymap.get(&(k, ActionContext::Any)));
+
+                    if let Some(action) = action {
                         match action {
                             Action::ChangeDir => self.change_dir("")?,
                             Action::ChangeDirParent => self.change_dir("..")?,
@@ -636,18 +654,9 @@ impl<'a> TereTui<'a> {
                             Action::CursorFirst => self.on_home_end(true)?,
                             Action::CursorLast => self.on_home_end(false)?,
 
-                            //Action::ClearSearch => todo!(), // TODO
-                            //TODO: reimplement using quantifier
-                            Action::ClearSearchOrExit => {
-                                if self.app_state.is_searching() {
-                                    self.app_state.clear_search();
-                                    self.info_message("")?; // clear possible 'no matches' message
-                                    self.redraw_main_window()?;
-                                    self.redraw_footer()?;
-                                } else {
-                                    break;
-                                }
-                            },
+                            Action::EraseSearchChar => self.erase_search_char()?,
+
+                            Action::ClearSearch => self.on_clear_search()?,
 
                             Action::ChangeCaseSensitiveMode => self.cycle_case_sensitive_mode()?,
                             Action::ChangeGapSearchMode => self.cycle_gap_search_mode()?,
@@ -667,50 +676,17 @@ impl<'a> TereTui<'a> {
                                 return Err(TereError::ExitWithoutCd(msg));
                             }
 
-                            _ => todo!(),
+                            _ => todo!(), // TODO
                         }
                     } else {
-                        todo!();
+                        // If the key is not part of any mapping, advance the search
+                        match k {
+                            KeyEvent { code: KeyCode::Char(c), .. } => self.on_search_char(c)?,
+                            _ => (),
+                            //_ => self.info_message(&format!("{:?}", k))?, // for debugging
+                        }
                     }
                 }
-
-                    /*
-                    match k.code {
-                    KeyCode::Char(' ') if !self.app_state.is_searching() => {
-                        // If the first key is space, treat it like enter. It's probably pretty
-                        // rare to have a folder name starting with space.
-                        self.change_dir("")?;
-                    }
-
-                    KeyCode::Esc => {
-                        if self.app_state.is_searching() {
-                            self.app_state.clear_search();
-                            self.info_message("")?; // clear possible 'no matches' message
-                            self.redraw_main_window()?;
-                            self.redraw_footer()?;
-                        } else {
-                            break;
-                        }
-                    }
-
-                    KeyCode::Char('-') if !self.app_state.is_searching() => {
-                        // go up with '-', like vim does
-                        self.change_dir("..")?;
-                    }
-
-                    KeyCode::Char(c) => self.on_search_char(c)?,
-
-                    KeyCode::Backspace => {
-                        if self.app_state.is_searching() {
-                            self.erase_search_char()?;
-                        } else {
-                            self.change_dir("..")?;
-                        }
-                    }
-
-                    _ => self.info_message(&format!("{:?}", k))?,
-                },
-                */
 
                 Event::Resize(_, _) => {
                     self.update_main_window_dimensions()?;
