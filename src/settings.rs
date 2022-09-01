@@ -195,7 +195,9 @@ const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
     (key!(end),         ActionContext::Any, Action::CursorLast),
     (key!(alt-shift-g), ActionContext::Any, Action::CursorLast), // like vim 'G'
 
-    (key!(esc),    ActionContext::Searching, Action::ClearSearch),
+    (key!(backspace), ActionContext::Searching, Action::EraseSearchChar),
+
+    (key!(esc), ActionContext::Searching, Action::ClearSearch),
 
     (key!(alt-c),  ActionContext::Any, Action::ChangeCaseSensitiveMode),
     (key!(ctrl-f), ActionContext::Any, Action::ChangeGapSearchMode),
