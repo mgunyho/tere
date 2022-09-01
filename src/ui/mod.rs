@@ -658,18 +658,7 @@ impl<'a> TereTui<'a> {
                             Action::CursorFirst => self.on_home_end(true)?,
                             Action::CursorLast => self.on_home_end(false)?,
 
-                            //Action::ClearSearch => todo!(), // TODO
-                            //TODO: reimplement using quantifier
-                            Action::ClearSearchOrExit => {
-                                if self.app_state.is_searching() {
-                                    self.app_state.clear_search();
-                                    self.info_message("")?; // clear possible 'no matches' message
-                                    self.redraw_main_window()?;
-                                    self.redraw_footer()?;
-                                } else {
-                                    break;
-                                }
-                            },
+                            Action::ClearSearch => self.on_clear_search()?,
 
                             Action::ChangeCaseSensitiveMode => self.cycle_case_sensitive_mode()?,
                             Action::ChangeGapSearchMode => self.cycle_gap_search_mode()?,
