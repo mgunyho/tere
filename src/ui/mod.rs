@@ -691,44 +691,6 @@ impl<'a> TereTui<'a> {
                     }
                 }
 
-                    /*
-                    match k.code {
-                    KeyCode::Char(' ') if !self.app_state.is_searching() => {
-                        // If the first key is space, treat it like enter. It's probably pretty
-                        // rare to have a folder name starting with space.
-                        self.change_dir("")?;
-                    }
-
-                    KeyCode::Esc => {
-                        if self.app_state.is_searching() {
-                            self.app_state.clear_search();
-                            self.info_message("")?; // clear possible 'no matches' message
-                            self.redraw_main_window()?;
-                            self.redraw_footer()?;
-                        } else {
-                            break;
-                        }
-                    }
-
-                    KeyCode::Char('-') if !self.app_state.is_searching() => {
-                        // go up with '-', like vim does
-                        self.change_dir("..")?;
-                    }
-
-                    KeyCode::Char(c) => self.on_search_char(c)?,
-
-                    KeyCode::Backspace => {
-                        if self.app_state.is_searching() {
-                            self.erase_search_char()?;
-                        } else {
-                            self.change_dir("..")?;
-                        }
-                    }
-
-                    _ => self.info_message(&format!("{:?}", k))?,
-                },
-                */
-
                 Event::Resize(_, _) => {
                     self.update_main_window_dimensions()?;
                     self.redraw_all_windows()?;
