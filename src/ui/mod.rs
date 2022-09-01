@@ -676,13 +676,14 @@ impl<'a> TereTui<'a> {
                                 return Err(TereError::ExitWithoutCd(msg));
                             }
 
-                            _ => todo!(),
+                            _ => todo!(), // TODO
                         }
                     } else {
                         // If the key is not part of any mapping, advance the search
                         match k {
                             KeyEvent { code: KeyCode::Char(c), .. } => self.on_search_char(c)?,
                             _ => (),
+                            //_ => self.info_message(&format!("{:?}", k))?, // for debugging
                         }
                     }
                 }
