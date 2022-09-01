@@ -161,13 +161,13 @@ const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
     (key!(right),    ActionContext::Any, Action::ChangeDir),
     (key!(alt-down), ActionContext::Any, Action::ChangeDir),
     (key!(alt-l),    ActionContext::Any, Action::ChangeDir),
-    //(key!(space), Action::ChangeDir & NotSearching), //TODO: figure out quantifiers...
+    (key!(space), ActionContext::NotSearching, Action::ChangeDir),
 
     (key!(left),   ActionContext::Any, Action::ChangeDirParent),
     (key!(alt-up), ActionContext::Any, Action::ChangeDirParent),
     (key!(alt-h),  ActionContext::Any, Action::ChangeDirParent),
-    //(key!('-'),    Action::ChangeDirParent & NotSearching), // TODO: quantifier
-    //(key!(backspace),    Action::ChangeDirParent & NotSearching), // TODO: quantifier
+    (key!('-'),       ActionContext::NotSearching, Action::ChangeDirParent),
+    (key!(backspace), ActionContext::NotSearching, Action::ChangeDirParent),
 
     (key!('~'),        ActionContext::Any, Action::ChangeDirHome),
     (key!(ctrl-home),  ActionContext::Any, Action::ChangeDirHome),
