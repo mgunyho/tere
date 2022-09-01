@@ -658,6 +658,8 @@ impl<'a> TereTui<'a> {
                             Action::CursorFirst => self.on_home_end(true)?,
                             Action::CursorLast => self.on_home_end(false)?,
 
+                            Action::EraseSearchChar => self.erase_search_char()?,
+
                             Action::ClearSearch => self.on_clear_search()?,
 
                             Action::ChangeCaseSensitiveMode => self.cycle_case_sensitive_mode()?,
