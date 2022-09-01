@@ -24,6 +24,7 @@ use crossterm::{
     event::{
         read as read_event,
         Event,
+        KeyEvent,
         MouseEvent,
         MouseEventKind,
         MouseButton,
@@ -683,7 +684,11 @@ impl<'a> TereTui<'a> {
                             _ => todo!(),
                         }
                     } else {
-                        todo!();
+                        // If the key is not part of any mapping, advance the search
+                        match k {
+                            KeyEvent { code: KeyCode::Char(c), .. } => self.on_search_char(c)?,
+                            _ => (),
+                        }
                     }
                 }
 
