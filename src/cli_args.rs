@@ -3,14 +3,22 @@ use clap::{App, Arg};
 /// The CLI options for tere
 
 macro_rules! case_sensitive_template {
-    ($x:tt, $y:tt) => {
-        format!("This overrides the --{} and --{} options. You can also change the case sensitivity mode while the program is running with the keyboard shortcut ALT+C.", $x, $y)
+    ($help_text:tt, $x:tt, $y:tt) => {
+        concat!(
+            $help_text,
+            "\n\nThis overrides the --", $x, " and --", $y,
+            " options. You can also change the case sensitivity mode while the program is running with the keyboard shortcut ALT+C."
+            )
     }
 }
 
 macro_rules! gap_search_mode_template {
-    ($x:tt, $y:tt) => {
-        format!("This overrides the --{} and --{} options. You can also change the search mode while the program is running with the keyboard shortcut CTRL+F.", $x, $y)
+    ($help_text:tt, $x:tt, $y:tt) => {
+        concat!(
+            $help_text,
+            "\n\nThis overrides the --", $x, " and --", $y,
+            " options. You can also change the search mode while the program is running with the keyboard shortcut CTRL+F."
+        )
     }
 }
 
