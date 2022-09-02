@@ -638,12 +638,10 @@ impl<'a> TereTui<'a> {
                             Action::ChangeDirHome => self.on_go_to_home()?,
                             Action::ChangeDirRoot => self.on_go_to_root()?,
 
-                            /* TODO
                             Action::ChangeDirAndExit => {
                                 self.change_dir("")?;
                                 break;
-                            }
-                            */
+                            },
 
                             // TODO: rename on_arrow_key to on_cursor_up
                             Action::CursorUp => self.on_arrow_key(true)?,
@@ -676,7 +674,6 @@ impl<'a> TereTui<'a> {
                                 return Err(TereError::ExitWithoutCd(msg));
                             }
 
-                            _ => todo!(), // TODO
                         }
                     } else {
                         // If the key is not part of any mapping, advance the search
