@@ -6,44 +6,63 @@ use std::hash::Hash;
 
 #[derive(Clone)]
 pub enum Action {
-    /// Change to the directory under the cursor
     ChangeDir,
-    /// Change to the parent directory
     ChangeDirParent,
     ChangeDirHome,
     ChangeDirRoot,
-    /// Change to the directory under the cursor and exit
     ChangeDirAndExit,
 
     CursorUp,
     CursorDown,
-    /// Move cursor down by one page
     CursorUpPage,
-    /// Move cursor up by one page
     CursorDownPage,
-    /// Move cursor to first item
     CursorFirst,
-    /// Move cursor to last item
     CursorLast,
 
-    /// Erase a character from the search
     EraseSearchChar,
-    /// Clear the current search
     ClearSearch,
 
-    /// Cycle the case sensitivity mode
     ChangeCaseSensitiveMode,
-    /// Cycle the gap search mode
     ChangeGapSearchMode,
 
     RefreshListing,
 
-    /// Show the help screen
     Help,
 
     Exit,
-    /// Exit without changing the directory
     ExitWithoutCd,
+}
+
+impl Action {
+    pub fn description(&self) -> &'static str {
+        match self {
+            Self::ChangeDir => "Change to the directory under the cursor",
+            Self::ChangeDirParent => "Change to the parent directory",
+            Self::ChangeDirHome => "Change to the home directory",
+            Self::ChangeDirRoot => "Change to the root directory",
+            Self::ChangeDirAndExit => "Change to the directory under the cursor and exit",
+
+            Self::CursorUp => "Move the cursor up by one step",
+            Self::CursorDown => "Move the cursor down by one step",
+            Self::CursorUpPage => "Move the cursor up by one screenful",
+            Self::CursorDownPage => "Move the cursor down by one screenful",
+            Self::CursorFirst => "Move the cursor to the first item in the listing",
+            Self::CursorLast => "Move the cursor to the last item in the listing",
+
+            Self::EraseSearchChar => "Erase one character from the search",
+            Self::ClearSearch => "Clear the search",
+
+            Self::ChangeCaseSensitiveMode => "Change the case-sensitive mode",
+            Self::ChangeGapSearchMode => "Change the gap-search mode",
+
+            Self::RefreshListing => "Refresh the directory listing",
+
+            Self::Help => "Show the help screen",
+
+            Self::Exit => "Exit the program",
+            Self::ExitWithoutCd => "Exit the program without changing the working directory",
+        }
+    }
 }
 
 /// An extra quantifier on an action, like 'this only applies when searching'
