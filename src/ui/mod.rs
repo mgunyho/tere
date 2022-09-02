@@ -554,7 +554,8 @@ impl<'a> TereTui<'a> {
     }
 
     fn on_go_to_root(&mut self) -> CTResult<()> {
-        self.change_dir("/")
+        self.change_dir("/")?;
+        Ok(())
     }
 
     // on 'home' or 'end'
@@ -637,14 +638,15 @@ impl<'a> TereTui<'a> {
 
                     if let Some(action) = action {
                         match action {
-                            Action::ChangeDir => self.change_dir("")?,
-                            Action::ChangeDirParent => self.change_dir("..")?,
+                            Action::ChangeDir => { self.change_dir("")?; },
+                            Action::ChangeDirParent => { self.change_dir("..")?; },
                             Action::ChangeDirHome => self.on_go_to_home()?,
                             Action::ChangeDirRoot => self.on_go_to_root()?,
 
                             Action::ChangeDirAndExit => {
-                                self.change_dir("")?;
-                                break;
+                                if self.change_dir("")? {
+                                    break;
+                                }
                             },
 
                             // TODO: rename on_arrow_key to on_cursor_up
@@ -699,7 +701,7 @@ impl<'a> TereTui<'a> {
                         | MouseEventKind::Drag(MouseButton::Left)
                         | MouseEventKind::Up(MouseButton::Left)
                         => self.handle_mouse_event(event)?,
-                    MouseEventKind::Up(MouseButton::Right) => self.change_dir("..")?,
+                    MouseEventKind::Up(MouseButton::Right) => { self.change_dir("..")?; },
 
                     //TODO: add configuration to jump multiple items on scroll
                     MouseEventKind::ScrollUp   => self.on_arrow_key(true)?,
