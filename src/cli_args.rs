@@ -127,6 +127,31 @@ pub fn get_cli_args() -> App<'static> {
              .overrides_with("no-gap-search")
             )
         //TODO: if somebody wants this: '-N', '--no-gap-search-anywhere - don't allow gaps, but can start anywhere. maybe have to come up with a better long name.
+        .arg(Arg::new("map")
+             .long("map")
+             .short('m')
+             .help("Map one or more keyboard shortcuts. See full help (with --help) for further details.")
+             .long_help(
+"Add one or more keyboard shortcut mappings. The basic syntax is of the form 'modifier-key:action' or 'modifier-key:context:action', see examples below. This option can be provided multiple times, and multiple mappings can be made by a comma-separated list of mappings. If the same key combination (with the same context) is provided multiple times, the previous mappings are overridden.
+
+Examples:
+
+    -m ctrl-x:Exit - Exit tere by typing ctrl-x
+    -m ctrl-h:ChangeDirParent,ctrl-j:CursorDown,ctrl-k:CursorUp,ctrl-l:ChangeDir - Navigate using Control + hjkl in addition to the default Alt + hjkl.
+    -m 1:NotSearching:CursorFirst - Move the cursor to the top of the listing by typing '1', but only if not already searching (so you can still search for filenames that contain the number '1')
+
+Possible actions:
+
+?
+
+Possible contexts:
+
+    None - This mapping applies if no other context applies. This is the behavior if no context is specified in the mapping.
+    Searching - This mapping only applies while searching (at least one search character has been given).
+    NotSearching - This mapping only applies while not searching.
+")
+            .takes_value(true)
+            )
         .arg(Arg::new("autocd-timeout")
              .long("autocd-timeout")
              .help("Timeout for auto-cd when there's only one match, in milliseconds. Use 'off' to disable auto-cd.")
