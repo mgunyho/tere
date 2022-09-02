@@ -242,4 +242,15 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_keyboard_mapping_cli_option1() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x:Exit",
+            ]);
+        let settings = TereSettings::parse_cli_args(&m).unwrap();
+        assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::Exit));
+    }
+
 }
