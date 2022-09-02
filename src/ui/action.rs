@@ -4,7 +4,7 @@ use std::hash::Hash;
 /// The possible actions that the user can do
 
 
-#[derive(Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Action {
     ChangeDir,
     ChangeDirParent,
