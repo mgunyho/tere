@@ -1,6 +1,6 @@
-/// The CLI options for tere
-
 use clap::{App, Arg};
+
+/// The CLI options for tere
 
 macro_rules! case_sensitive_template {
     ($x:tt, $y:tt) => {
