@@ -442,24 +442,28 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn change_dir(&mut self, path: &str) -> CTResult<()> {
+    /// Change the working directory. If successful, returns true. If unsuccessful, print an error
+    /// message to the UI and return false.
+    fn change_dir(&mut self, path: &str) -> CTResult<bool> {
         //TODO: if there are no visible items, don't do anything?
-        match self.app_state.change_dir(path) {
+        let res = match self.app_state.change_dir(path) {
             Err(e) => {
                 if cfg!(debug_assertions) {
                     self.error_message(&format!("{:?}", e))?;
                 } else {
                     self.error_message(&format!("{}", e))?;
                 }
+                false
             }
             Ok(()) => {
                 self.update_header()?;
                 self.info_message("")?;
+                true
             }
-        }
+        };
         self.redraw_main_window()?;
         self.redraw_footer()?;
-        Ok(())
+        Ok(res)
     }
 
     pub fn on_search_char(&mut self, c: char) -> CTResult<()> {
