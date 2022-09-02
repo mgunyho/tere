@@ -101,3 +101,21 @@ pub enum ActionContext {
     /// This shortcut only applies when not searching
     NotSearching,
 }
+
+impl ActionContext {
+    pub fn description(&self) -> &'static str {
+        match self {
+            Self::Any => "This mapping applies if no other context applies. This is the behavior if no context is specified in the mapping.",
+            Self::Searching => "This mapping only applies while searching (at least one search character has been given).",
+            Self::NotSearching => "This mapping only applies while not searching.",
+        }
+    }
+}
+
+/// A list of all possible action contexts, so that they can be programmatically included in the
+/// help text etc.
+pub const ALL_ACTION_CONTEXTS: &[ActionContext] = &[
+    ActionContext::Any,
+    ActionContext::Searching,
+    ActionContext::NotSearching,
+];
