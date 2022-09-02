@@ -145,7 +145,6 @@ impl TereSettings {
         }
 
         ret.keymap = DEFAULT_KEYMAP.iter()
-            //TODO: use contexts from default keymap list...
             .map(|(k, c, a)| ((k.clone(), c.clone()), a.clone()))
             .collect();
 
