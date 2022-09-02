@@ -156,61 +156,61 @@ impl TereSettings {
 // of tuples.
 const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
 
-    (key!(enter),    ActionContext::Any, Action::ChangeDir),
-    (key!(right),    ActionContext::Any, Action::ChangeDir),
-    (key!(alt-down), ActionContext::Any, Action::ChangeDir),
-    (key!(alt-l),    ActionContext::Any, Action::ChangeDir),
+    (key!(enter),    ActionContext::None, Action::ChangeDir),
+    (key!(right),    ActionContext::None, Action::ChangeDir),
+    (key!(alt-down), ActionContext::None, Action::ChangeDir),
+    (key!(alt-l),    ActionContext::None, Action::ChangeDir),
     (key!(space), ActionContext::NotSearching, Action::ChangeDir),
 
-    (key!(left),   ActionContext::Any, Action::ChangeDirParent),
-    (key!(alt-up), ActionContext::Any, Action::ChangeDirParent),
-    (key!(alt-h),  ActionContext::Any, Action::ChangeDirParent),
+    (key!(left),   ActionContext::None, Action::ChangeDirParent),
+    (key!(alt-up), ActionContext::None, Action::ChangeDirParent),
+    (key!(alt-h),  ActionContext::None, Action::ChangeDirParent),
     (key!('-'),       ActionContext::NotSearching, Action::ChangeDirParent),
     (key!(backspace), ActionContext::NotSearching, Action::ChangeDirParent),
 
-    (key!('~'),        ActionContext::Any, Action::ChangeDirHome),
-    (key!(ctrl-home),  ActionContext::Any, Action::ChangeDirHome),
-    (key!(ctrl-alt-h), ActionContext::Any, Action::ChangeDirHome),
+    (key!('~'),        ActionContext::None, Action::ChangeDirHome),
+    (key!(ctrl-home),  ActionContext::None, Action::ChangeDirHome),
+    (key!(ctrl-alt-h), ActionContext::None, Action::ChangeDirHome),
 
-    (key!('/'),        ActionContext::Any, Action::ChangeDirRoot),
-    (key!(alt-r),      ActionContext::Any, Action::ChangeDirRoot),
+    (key!('/'),        ActionContext::None, Action::ChangeDirRoot),
+    (key!(alt-r),      ActionContext::None, Action::ChangeDirRoot),
 
-    (key!(alt-enter),  ActionContext::Any, Action::ChangeDirAndExit),
-    (key!(ctrl-space), ActionContext::Any, Action::ChangeDirAndExit),
+    (key!(alt-enter),  ActionContext::None, Action::ChangeDirAndExit),
+    (key!(ctrl-space), ActionContext::None, Action::ChangeDirAndExit),
 
-    (key!(up),    ActionContext::Any, Action::CursorUp),
-    (key!(alt-k), ActionContext::Any, Action::CursorUp),
+    (key!(up),    ActionContext::None, Action::CursorUp),
+    (key!(alt-k), ActionContext::None, Action::CursorUp),
 
-    (key!(down),  ActionContext::Any, Action::CursorDown),
-    (key!(alt-j), ActionContext::Any, Action::CursorDown),
+    (key!(down),  ActionContext::None, Action::CursorDown),
+    (key!(alt-j), ActionContext::None, Action::CursorDown),
 
-    (key!(pageup),  ActionContext::Any, Action::CursorUpPage),
-    (key!(alt-u),   ActionContext::Any, Action::CursorUpPage),
-    (key!(ctrl-u),  ActionContext::Any, Action::CursorUpPage),
+    (key!(pageup),  ActionContext::None, Action::CursorUpPage),
+    (key!(alt-u),   ActionContext::None, Action::CursorUpPage),
+    (key!(ctrl-u),  ActionContext::None, Action::CursorUpPage),
 
-    (key!(pagedown), ActionContext::Any, Action::CursorDownPage),
-    (key!(alt-d),    ActionContext::Any, Action::CursorDownPage),
-    (key!(ctrl-d),   ActionContext::Any, Action::CursorDownPage),
+    (key!(pagedown), ActionContext::None, Action::CursorDownPage),
+    (key!(alt-d),    ActionContext::None, Action::CursorDownPage),
+    (key!(ctrl-d),   ActionContext::None, Action::CursorDownPage),
 
-    (key!(home),        ActionContext::Any, Action::CursorFirst),
-    (key!(alt-g),       ActionContext::Any, Action::CursorFirst), // like vim 'gg'
-    (key!(end),         ActionContext::Any, Action::CursorLast),
-    (key!(alt-shift-g), ActionContext::Any, Action::CursorLast), // like vim 'G'
+    (key!(home),        ActionContext::None, Action::CursorFirst),
+    (key!(alt-g),       ActionContext::None, Action::CursorFirst), // like vim 'gg'
+    (key!(end),         ActionContext::None, Action::CursorLast),
+    (key!(alt-shift-g), ActionContext::None, Action::CursorLast), // like vim 'G'
 
     (key!(backspace), ActionContext::Searching, Action::EraseSearchChar),
 
     (key!(esc), ActionContext::Searching, Action::ClearSearch),
 
-    (key!(alt-c),  ActionContext::Any, Action::ChangeCaseSensitiveMode),
-    (key!(ctrl-f), ActionContext::Any, Action::ChangeGapSearchMode),
+    (key!(alt-c),  ActionContext::None, Action::ChangeCaseSensitiveMode),
+    (key!(ctrl-f), ActionContext::None, Action::ChangeGapSearchMode),
 
-    (key!(ctrl-r), ActionContext::Any, Action::RefreshListing),
+    (key!(ctrl-r), ActionContext::None, Action::RefreshListing),
 
-    (key!('?'), ActionContext::Any, Action::Help),
+    (key!('?'), ActionContext::None, Action::Help),
 
     (key!(esc),    ActionContext::NotSearching, Action::Exit),
-    (key!(alt-q),  ActionContext::Any, Action::Exit),
-    (key!(ctrl-c), ActionContext::Any, Action::ExitWithoutCd),
+    (key!(alt-q),  ActionContext::None, Action::Exit),
+    (key!(ctrl-c), ActionContext::None, Action::ExitWithoutCd),
 
 ];
 

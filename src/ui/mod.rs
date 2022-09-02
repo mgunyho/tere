@@ -634,7 +634,7 @@ impl<'a> TereTui<'a> {
                         .settings.keymap.get(&(k, valid_ctx))
                         // If no mapping is found with the currently applying context, look for a
                         // mapping that applies in any context
-                        .or_else(|| self.app_state.settings.keymap.get(&(k, ActionContext::Any)));
+                        .or_else(|| self.app_state.settings.keymap.get(&(k, ActionContext::None)));
 
                     if let Some(action) = action {
                         match action {
