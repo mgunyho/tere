@@ -176,6 +176,9 @@ const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
     (key!('/'),        ActionContext::Any, Action::ChangeDirRoot),
     (key!(alt-r),      ActionContext::Any, Action::ChangeDirRoot),
 
+    (key!(alt-enter),  ActionContext::Any, Action::ChangeDirAndExit),
+    (key!(ctrl-space), ActionContext::Any, Action::ChangeDirAndExit),
+
     (key!(up),    ActionContext::Any, Action::CursorUp),
     (key!(alt-k), ActionContext::Any, Action::CursorUp),
 
