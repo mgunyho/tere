@@ -278,6 +278,28 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_keymap_arg1() {
+        let m = parse_keymap_arg("ctrl-x:Exit").unwrap();
+        assert_eq!(m.len(), 1);
+        let (e, c, a) = &m[0];
+        assert_eq!(e, &key!(ctrl-x));
+        assert_eq!(c, &ActionContext::None);
+        assert_eq!(a, &Action::Exit);
+    }
+
+    #[test]
+    fn test_parse_keymap_arg2() {
+        let m = parse_keymap_arg("ctrl-x:Exit,ctrl-j:NotSearching:CursorUp").unwrap();
+        assert_eq!(m.len(), 2);
+        assert_eq!(m[0].0, key!(ctrl-x));
+        assert_eq!(m[0].1, ActionContext::None);
+        assert_eq!(m[0].2, Action::Exit);
+        assert_eq!(m[1].0, key!(ctrl-j));
+        assert_eq!(m[1].1, ActionContext::NotSearching);
+        assert_eq!(m[1].2, Action::CursorUp);
+    }
+
+    #[test]
     fn test_keyboard_mapping_cli_option1() {
         let m = crate::cli_args::get_cli_args()
             .get_matches_from(vec![
@@ -286,6 +308,29 @@ mod tests {
             ]);
         let settings = TereSettings::parse_cli_args(&m).unwrap();
         assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::Exit));
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option2() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x:Exit,ctrl-y:ClearSearch",
+            ]);
+        let settings = TereSettings::parse_cli_args(&m).unwrap();
+        assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::Exit));
+        assert_eq!(settings.keymap.get(&(key!(ctrl-y), ActionContext::None)), Some(&Action::ClearSearch));
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option3() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x:Exit,ctrl-x:ClearSearch", // repeated mapping
+            ]);
+        let settings = TereSettings::parse_cli_args(&m).unwrap();
+        assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::ClearSearch));
     }
 
 }
