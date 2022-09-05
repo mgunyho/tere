@@ -148,8 +148,43 @@ impl TereSettings {
             .map(|(k, c, a)| ((k.clone(), c.clone()), a.clone()))
             .collect();
 
+        //TODO: option to clear defaults
+
+        if let Some(mapping_args) = args.get_many("map") {
+            for mapping_arg in mapping_args.cloned() {
+                let mapping_arg: String = mapping_arg; // to enforce correct type coming from get_many
+                let mappings = parse_keymap_arg(&mapping_arg)?;
+                for (k, c, a) in mappings {
+                    ret.keymap.insert((k, c), a);
+                }
+            }
+        }
+
         Ok(ret)
     }
+}
+
+fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>, ClapError> {
+    let mappings = arg.split(",");
+    let mut ret = Vec::new();
+    for mapping in mappings {
+        if mapping.is_empty() {
+            //TODO: don't use raw/unformatted error?
+            return Err(TereError::Clap(clap::Error::raw(clap::error::ErrorKind::InvalidValue, format!("Invalid mapping: {}", arg))));
+        }
+
+        let parts: Vec<&str> = mapping.split(":").collect();
+        let (k, c, a) = match parts[..] {
+            //TODO: use 'strum' for automatic conversion between action <-> string?
+            [keys, action] => (crokey::parse(keys)?, ActionContext::None, Action::from_str(action)?),
+            [keys, ctx, action] => todo!(),
+            _ => todo!(), //TODO: proper error handling
+        };
+
+        ret.push((k, c, a));
+    }
+
+    Ok(ret)
 }
 
 // NOTE: can't create a const hashmap (without an extra dependency like phf), so just using a slice
