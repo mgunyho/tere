@@ -144,7 +144,8 @@ impl TereSettings {
             ret.mouse_enabled = true;
         }
 
-        ret.keymap = DEFAULT_KEYMAP.iter()
+        ret.keymap = DEFAULT_KEYMAP
+            .iter()
             .map(|(k, c, a)| ((k.clone(), c.clone()), a.clone()))
             .collect();
 
