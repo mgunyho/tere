@@ -3,7 +3,7 @@ use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::collections::HashMap;
-use clap::ArgMatches;
+use clap::{ArgMatches, Error as ClapError, error::ErrorKind as ClapErrorKind};
 use crossterm::event::KeyEvent;
 use crokey::key;
 
@@ -80,7 +80,7 @@ pub struct TereSettings {
 }
 
 impl TereSettings {
-    pub fn parse_cli_args(args: &ArgMatches) -> Result<Self, clap::Error> {
+    pub fn parse_cli_args(args: &ArgMatches) -> Result<Self, ClapError> {
         let mut ret = Self::default();
 
         if args.is_present("folders-only") {
@@ -120,8 +120,8 @@ impl TereSettings {
                     // We don't want to pass the App all the way here, so create raw error
                     // NOTE: We don't call error.format(app) anywhere now, but it doesn't seem to
                     // make a difference for this error type.
-                    clap::Error::raw(
-                        clap::ErrorKind::InvalidValue,
+                    ClapError::raw(
+                        ClapErrorKind::InvalidValue,
                         format!("Invalid value for 'autocd-timeout': '{}'\n", x),
                     )
                 })?
