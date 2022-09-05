@@ -132,7 +132,7 @@ pub fn get_cli_args() -> App<'static> {
              .short('m')
              .help("Map one or more keyboard shortcuts. See full help (with --help) for further details.")
              .long_help(
-"Add one or more keyboard shortcut mappings. The basic syntax is of the form 'modifier-key:action' or 'modifier-key:context:action', see examples below. This option can be provided multiple times, and multiple mappings can be made by a comma-separated list of mappings. If the same key combination (with the same context) is provided multiple times, the previous mappings are overridden.
+"Add one or more keyboard shortcut mappings. The basic syntax is of the form 'key-combination:action' or 'key-combination:context:action', see examples below. This option can be provided multiple times, and multiple mappings can be made by a comma-separated list of mappings. If the same key combination (with the same context) is provided multiple times, the previous mappings are overridden.
 
 Examples:
 
