@@ -167,18 +167,48 @@ impl TereSettings {
 fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>, ClapError> {
     let mappings = arg.split(",");
     let mut ret = Vec::new();
+
+    fn parsekey_to_clap(mapping: &str, err: crokey::ParseKeyError) -> ClapError {
+        ClapError::raw(
+            ClapErrorKind::InvalidValue,
+            format!("Error parsing key combination '{}': {}\n", mapping, err),
+        )
+    }
+
+    fn strum_to_clap(mapping: &str, attempted_value: &str, ctx_or_action: &str) -> ClapError {
+        ClapError::raw(
+            ClapErrorKind::InvalidValue,
+            format!(
+                "Error parsing key mapping '{}': invalid {} '{}'\n",
+                mapping, ctx_or_action, attempted_value,
+            ),
+        )
+    }
+
     for mapping in mappings {
         if mapping.is_empty() {
-            //TODO: don't use raw/unformatted error?
-            return Err(TereError::Clap(clap::Error::raw(clap::error::ErrorKind::InvalidValue, format!("Invalid mapping: {}", arg))));
+            return Err(ClapError::raw(
+                ClapErrorKind::InvalidValue,
+                format!("Invalid mapping: '{}'\n", arg),
+            ));
         }
 
         let parts: Vec<&str> = mapping.split(":").collect();
         let (k, c, a) = match parts[..] {
-            //TODO: use 'strum' for automatic conversion between action <-> string?
-            [keys, action] => (crokey::parse(keys)?, ActionContext::None, Action::from_str(action)?),
-            [keys, ctx, action] => (crokey::parse(keys)?, ActionContext::from_str(ctx)?, Action::from_str(action)?),
-            _ => todo!(), //TODO: proper error handling
+            [keys, action] => (
+                crokey::parse(keys).map_err(|e| parsekey_to_clap(mapping, e))?,
+                ActionContext::None,
+                Action::from_str(action).or(Err(strum_to_clap(mapping, action, "action")))?
+            ),
+            [keys, ctx, action] => (
+                crokey::parse(keys).map_err(|e| parsekey_to_clap(mapping, e))?,
+                ActionContext::from_str(ctx).or(Err(strum_to_clap(mapping, &ctx, "context")))?,
+                Action::from_str(action).or(Err(strum_to_clap(mapping, &action, "action")))?
+            ),
+            _ => return Err(ClapError::raw(
+                    ClapErrorKind::InvalidValue,
+                    format!("Keyboard mapping is not of the form 'key-combination:action' or 'key-combination:context:action': '{}'\n", &mapping),
+                    ).into())
         };
 
         ret.push((k, c, a));
