@@ -177,7 +177,7 @@ fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>,
         let (k, c, a) = match parts[..] {
             //TODO: use 'strum' for automatic conversion between action <-> string?
             [keys, action] => (crokey::parse(keys)?, ActionContext::None, Action::from_str(action)?),
-            [keys, ctx, action] => todo!(),
+            [keys, ctx, action] => (crokey::parse(keys)?, ActionContext::from_str(ctx)?, Action::from_str(action)?),
             _ => todo!(), //TODO: proper error handling
         };
 
