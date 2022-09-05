@@ -363,4 +363,64 @@ mod tests {
         assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::ClearSearch));
     }
 
+    #[test]
+    fn test_keyboard_mapping_cli_option_wrong1() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x:Exxit", // incorrect action
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).is_err());
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option_wrong2() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-:Exit", // inccorect mapping
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).is_err());
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option_wrong3() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x:Wrong:Exit", // incorrect context
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).is_err());
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option_wrong4() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x::Exit", // Incorrect syntax
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).is_err());
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option_wrong5() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x", // missing mapping and/or context
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).is_err());
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option_wrong6() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x:", // missing mapping and/or context
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).is_err());
+    }
+
 }
