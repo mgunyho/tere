@@ -122,7 +122,7 @@ impl TereSettings {
                 .into(),
         };
 
-        if let Some(hist_file) = args.value_of("history-file") {
+        if let Some(hist_file) = args.get_one::<String>("history-file") {
             ret.history_file = if hist_file.is_empty() {
                 None
             } else {
