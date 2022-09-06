@@ -101,9 +101,10 @@ impl TereSettings {
         }
 
         ret.autocd_timeout = match args
-            .values_of("autocd-timeout")
+            .get_many::<String>("autocd-timeout")
             // ok to unwrap because autocd-timeout has a default value which is always present
             .unwrap()
+            .map(|v| v.as_str())
             .last()
             .unwrap()
         {
@@ -133,7 +134,7 @@ impl TereSettings {
         }
 
         // ok to unwrap, because mouse has the default value of 'off'
-        if args.values_of("mouse").unwrap().last().unwrap() == "on" {
+        if args.get_many::<String>("mouse").unwrap().map(|v| v.as_str()).last().unwrap() == "on" {
             ret.mouse_enabled = true;
         }
 
