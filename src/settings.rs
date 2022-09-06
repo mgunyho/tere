@@ -144,12 +144,12 @@ impl TereSettings {
             ret.mouse_enabled = true;
         }
 
-        ret.keymap = DEFAULT_KEYMAP
-            .iter()
-            .map(|(k, c, a)| ((k.clone(), c.clone()), a.clone()))
-            .collect();
-
-        //TODO: option to clear defaults
+        if !args.is_present("clear-default-keymap") {
+            ret.keymap = DEFAULT_KEYMAP
+                .iter()
+                .map(|(k, c, a)| ((k.clone(), c.clone()), a.clone()))
+                .collect();
+        }
 
         if let Some(mapping_args) = args.get_many("map") {
             for mapping_arg in mapping_args.cloned() {
