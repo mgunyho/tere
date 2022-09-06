@@ -152,6 +152,7 @@ Possible contexts:
 ")
             .takes_value(true)
             .value_name("MAPPING")
+            .multiple_occurrences(true)
             )
         .arg(Arg::new("autocd-timeout")
              .long("autocd-timeout")
