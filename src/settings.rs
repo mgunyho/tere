@@ -309,7 +309,9 @@ mod tests {
             .map(|(_, _, a)| a.clone())
             .collect();
         for a in crate::ui::ALL_ACTIONS {
-            assert!(actions_in_default_keymap.contains(a), "Action {:?} not found in default keymap", a)
+            if a != &Action::None {
+                assert!(actions_in_default_keymap.contains(a), "Action {:?} not found in default keymap", a)
+            }
         }
     }
 
