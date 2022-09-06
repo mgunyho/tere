@@ -302,7 +302,7 @@ mod tests {
     fn check_all_actions_have_default_keymap() {
         let actions_in_default_keymap: Vec<Action> = DEFAULT_KEYMAP
             .iter()
-            .map(|(k, c, a)| a.clone())
+            .map(|(_, _, a)| a.clone())
             .collect();
         for a in crate::ui::ALL_ACTIONS {
             assert!(actions_in_default_keymap.contains(a), "Action {:?} not found in default keymap", a)
