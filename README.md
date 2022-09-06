@@ -136,7 +136,7 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 
 ### Keyboard shortcuts
 
-`tere` has the following keyboard shortcuts:
+`tere` has the following keyboard shortcuts by default:
 
 | Action | Shortcut(s) |
 |:---:|:---:|

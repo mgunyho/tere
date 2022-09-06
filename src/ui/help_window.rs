@@ -54,7 +54,7 @@ pub fn get_formatted_help_text(width: usize) -> Vec<Vec<StyledContent<String>>> 
 /// without the markup
 pub fn get_justified_keyboard_shortcuts_table() -> String {
     let keyboard_shortcuts = README_STR
-        .split_once("keyboard shortcuts:\n\n")
+        .split_once("keyboard shortcuts by default:\n\n")
         .expect("Couldn't find table of keyboard shortcuts in README")
         .1;
     let keyboard_shortcuts = keyboard_shortcuts
