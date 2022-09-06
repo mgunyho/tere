@@ -3,7 +3,7 @@ use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::collections::HashMap;
-use clap::ArgMatches;
+use clap::{ArgMatches, Error as ClapError, error::ErrorKind as ClapErrorKind};
 use crossterm::event::KeyEvent;
 use crokey::key;
 
@@ -80,7 +80,7 @@ pub struct TereSettings {
 }
 
 impl TereSettings {
-    pub fn parse_cli_args(args: &ArgMatches) -> Result<Self, clap::Error> {
+    pub fn parse_cli_args(args: &ArgMatches) -> Result<Self, ClapError> {
         let mut ret = Self::default();
 
         if args.is_present("folders-only") {
@@ -120,8 +120,8 @@ impl TereSettings {
                     // We don't want to pass the App all the way here, so create raw error
                     // NOTE: We don't call error.format(app) anywhere now, but it doesn't seem to
                     // make a difference for this error type.
-                    clap::Error::raw(
-                        clap::ErrorKind::InvalidValue,
+                    ClapError::raw(
+                        ClapErrorKind::InvalidValue,
                         format!("Invalid value for 'autocd-timeout': '{}'\n", x),
                     )
                 })?
@@ -144,12 +144,83 @@ impl TereSettings {
             ret.mouse_enabled = true;
         }
 
-        ret.keymap = DEFAULT_KEYMAP.iter()
-            .map(|(k, c, a)| ((k.clone(), c.clone()), a.clone()))
-            .collect();
+        if !args.is_present("clear-default-keymap") {
+            ret.keymap = DEFAULT_KEYMAP
+                .iter()
+                .map(|(k, c, a)| ((k.clone(), c.clone()), a.clone()))
+                .collect();
+        }
+
+        if let Some(mapping_args) = args.get_many("map") {
+            for mapping_arg in mapping_args.cloned() {
+                let mapping_arg: String = mapping_arg; // to enforce correct type coming from get_many
+                let mappings = parse_keymap_arg(&mapping_arg)?;
+                for (k, c, a) in mappings {
+                    if a == Action::None {
+                        ret.keymap.remove(&(k, c));
+                    } else {
+                        ret.keymap.insert((k, c), a);
+                    }
+                }
+            }
+        }
 
         Ok(ret)
     }
+}
+
+fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>, ClapError> {
+    let mappings = arg.split(",");
+    let mut ret = Vec::new();
+
+    fn parsekey_to_clap(mapping: &str, err: crokey::ParseKeyError) -> ClapError {
+        ClapError::raw(
+            ClapErrorKind::InvalidValue,
+            format!("Error parsing key combination '{}': {}\n", mapping, err),
+        )
+    }
+
+    fn strum_to_clap(mapping: &str, attempted_value: &str, ctx_or_action: &str) -> ClapError {
+        ClapError::raw(
+            ClapErrorKind::InvalidValue,
+            format!(
+                "Error parsing key mapping '{}': invalid {} '{}'\n",
+                mapping, ctx_or_action, attempted_value,
+            ),
+        )
+    }
+
+    for mapping in mappings {
+        if mapping.is_empty() {
+            return Err(ClapError::raw(
+                ClapErrorKind::InvalidValue,
+                format!("Invalid mapping: '{}'\n", arg),
+            ));
+        }
+
+        //TODO: what if I want to map colon? see how crokey does the hyphen parsing
+        let parts: Vec<&str> = mapping.split(":").collect();
+        let (k, c, a) = match parts[..] {
+            [keys, action] => (
+                crokey::parse(keys).map_err(|e| parsekey_to_clap(mapping, e))?,
+                ActionContext::None,
+                Action::from_str(action).or(Err(strum_to_clap(mapping, action, "action")))?
+            ),
+            [keys, ctx, action] => (
+                crokey::parse(keys).map_err(|e| parsekey_to_clap(mapping, e))?,
+                ActionContext::from_str(ctx).or(Err(strum_to_clap(mapping, &ctx, "context")))?,
+                Action::from_str(action).or(Err(strum_to_clap(mapping, &action, "action")))?
+            ),
+            _ => return Err(ClapError::raw(
+                    ClapErrorKind::InvalidValue,
+                    format!("Keyboard mapping is not of the form 'key-combination:action' or 'key-combination:context:action': '{}'\n", &mapping),
+                    ).into())
+        };
+
+        ret.push((k, c, a));
+    }
+
+    Ok(ret)
 }
 
 // NOTE: can't create a const hashmap (without an extra dependency like phf), so just using a slice
@@ -235,11 +306,200 @@ mod tests {
     fn check_all_actions_have_default_keymap() {
         let actions_in_default_keymap: Vec<Action> = DEFAULT_KEYMAP
             .iter()
-            .map(|(k, c, a)| a.clone())
+            .map(|(_, _, a)| a.clone())
             .collect();
         for a in crate::ui::ALL_ACTIONS {
-            assert!(actions_in_default_keymap.contains(a), "Action {:?} not found in default keymap", a)
+            if a != &Action::None {
+                assert!(actions_in_default_keymap.contains(a), "Action {:?} not found in default keymap", a)
+            }
         }
+    }
+
+    #[test]
+    fn test_parse_keymap_arg1() {
+        let m = parse_keymap_arg("ctrl-x:Exit").unwrap();
+        assert_eq!(m.len(), 1);
+        let (e, c, a) = &m[0];
+        assert_eq!(e, &key!(ctrl-x));
+        assert_eq!(c, &ActionContext::None);
+        assert_eq!(a, &Action::Exit);
+    }
+
+    #[test]
+    fn test_parse_keymap_arg2() {
+        let m = parse_keymap_arg("ctrl-x:Exit,ctrl-j:NotSearching:CursorUp").unwrap();
+        assert_eq!(m.len(), 2);
+        assert_eq!(m[0].0, key!(ctrl-x));
+        assert_eq!(m[0].1, ActionContext::None);
+        assert_eq!(m[0].2, Action::Exit);
+        assert_eq!(m[1].0, key!(ctrl-j));
+        assert_eq!(m[1].1, ActionContext::NotSearching);
+        assert_eq!(m[1].2, Action::CursorUp);
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option1() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x:Exit",
+            ]);
+        let settings = TereSettings::parse_cli_args(&m).unwrap();
+        assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::Exit));
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option2() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x:Exit,ctrl-y:ClearSearch",
+            ]);
+        let settings = TereSettings::parse_cli_args(&m).unwrap();
+        assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::Exit));
+        assert_eq!(settings.keymap.get(&(key!(ctrl-y), ActionContext::None)), Some(&Action::ClearSearch));
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option3() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x:Exit,ctrl-x:ClearSearch", // repeated mapping
+            ]);
+        let settings = TereSettings::parse_cli_args(&m).unwrap();
+        assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::ClearSearch));
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option4() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                // provide option multiple times
+                "-m", "ctrl-x:Exit",
+                "-m", "ctrl-x:ClearSearch",
+            ]);
+        let settings = TereSettings::parse_cli_args(&m).unwrap();
+        assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::ClearSearch));
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option_wrong1() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x:Exxit", // incorrect action
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).is_err());
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option_wrong2() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-:Exit", // inccorect mapping
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).is_err());
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option_wrong3() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x:Wrong:Exit", // incorrect context
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).is_err());
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option_wrong4() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x::Exit", // Incorrect syntax
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).is_err());
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option_wrong5() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x", // missing mapping and/or context
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).is_err());
+    }
+
+    #[test]
+    fn test_keyboard_mapping_cli_option_wrong6() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "ctrl-x:", // missing mapping and/or context
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).is_err());
+    }
+
+    #[test]
+    fn test_unmap1() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+            ]);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-h), ActionContext::None)), Some(&Action::ChangeDirParent));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-j), ActionContext::None)), Some(&Action::CursorDown));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-k), ActionContext::None)), Some(&Action::CursorUp));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-l), ActionContext::None)), Some(&Action::ChangeDir));
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "alt-h:None,alt-j:None,alt-k:None,alt-l:None",
+            ]);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-h), ActionContext::None)), None);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-j), ActionContext::None)), None);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-k), ActionContext::None)), None);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-l), ActionContext::None)), None);
+    }
+
+    #[test]
+    fn test_unmap2() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+            ]);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(esc), ActionContext::NotSearching)), Some(&Action::Exit));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(esc), ActionContext::Searching)), Some(&Action::ClearSearch));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(esc), ActionContext::None)), None);
+
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(backspace), ActionContext::Searching)), Some(&Action::EraseSearchChar));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(backspace), ActionContext::NotSearching)), Some(&Action::ChangeDirParent));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(backspace), ActionContext::None)), None);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "-m", "esc:Searching:None",
+                "-m", "backspace:None", // this shouldn't affect any of the mappings since they are context-dependent
+                "-m", "backspace:None:None", // this shouldn't affect any of the mappings since they are context-dependent
+            ]);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(esc), ActionContext::NotSearching)), Some(&Action::Exit));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(esc), ActionContext::Searching)), None);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(esc), ActionContext::None)), None);
+    }
+
+    #[test]
+    fn test_clear_default_keymap() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--clear-default-keymap",
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).unwrap().keymap.is_empty());
     }
 
 }

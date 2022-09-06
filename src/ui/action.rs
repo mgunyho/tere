@@ -4,7 +4,7 @@ use std::hash::Hash;
 /// The possible actions that the user can do
 
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, strum_macros::Display, strum_macros::EnumString)]
 pub enum Action {
     ChangeDir,
     ChangeDirParent,
@@ -31,6 +31,8 @@ pub enum Action {
 
     Exit,
     ExitWithoutCd,
+
+    None,
 }
 
 impl Action {
@@ -61,6 +63,8 @@ impl Action {
 
             Self::Exit => "Exit the program",
             Self::ExitWithoutCd => "Exit the program without changing the working directory",
+
+            Self::None => "Disable this mapping",
         }
     }
 }
@@ -87,10 +91,11 @@ pub const ALL_ACTIONS: &[Action] = &[
     Action::Help,
     Action::Exit,
     Action::ExitWithoutCd,
+    Action::None,
 ];
 
 /// An extra quantifier on an action, like 'this only applies when searching'
-#[derive(Hash, PartialEq, Eq, Clone, Debug)]
+#[derive(Hash, PartialEq, Eq, Clone, Debug, strum_macros::Display, strum_macros::EnumString)]
 pub enum ActionContext {
     /// Signifies that this shortcut should apply if no other condition applies
     None,
@@ -105,7 +110,7 @@ pub enum ActionContext {
 impl ActionContext {
     pub fn description(&self) -> &'static str {
         match self {
-            Self::None => "This mapping applies if no other context applies. This is the behavior if no context is specified in the mapping.",
+            Self::None => "This mapping applies if no other context applies. This is the behavior if no context is specified: the mapping 'key-combination:action' is equivalent to 'key-combination:None:action'.",
             Self::Searching => "This mapping only applies while searching (at least one search character has been given).",
             Self::NotSearching => "This mapping only applies while not searching.",
         }

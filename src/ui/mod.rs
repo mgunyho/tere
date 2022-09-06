@@ -680,6 +680,8 @@ impl<'a> TereTui<'a> {
                                 return Err(TereError::ExitWithoutCd(msg));
                             }
 
+                            Action::None => (),
+
                         }
                     } else {
                         // If the key is not part of any mapping, advance the search
