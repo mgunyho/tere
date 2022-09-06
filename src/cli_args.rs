@@ -151,6 +151,7 @@ Possible contexts:
     NotSearching - This mapping only applies while not searching.
 ")
             .takes_value(true)
+            .value_name("MAPPING")
             )
         .arg(Arg::new("autocd-timeout")
              .long("autocd-timeout")
