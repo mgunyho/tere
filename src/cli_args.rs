@@ -189,3 +189,20 @@ Possible contexts:
              .multiple_occurrences(true)
             )
 }
+
+/// Justify the list of actions and their descriptions, and indent them to be printed in the help
+/// text
+fn get_justified_actions_and_descriptions() -> String {
+    use crate::ui::ALL_ACTIONS;
+
+    let indentation: String = " ".repeat(4);
+    let action_names: Vec<String> = ALL_ACTIONS.iter().map(|a| a.to_string()).collect();
+    let max_len = action_names.iter().map(|a| a.len()).max().expect("action_names is empty");
+    let action_descriptions: Vec<&str> = ALL_ACTIONS.iter().map(|a| a.description()).collect();
+
+    let lines: Vec<String> = action_names.iter().zip(action_descriptions)
+        .map(|(a, d)| indentation.clone() + a + &" ".repeat(max_len - a.len() + 1) + d)
+        .collect();
+
+    return lines.join("\n");
+}
