@@ -131,7 +131,13 @@ pub fn get_cli_args() -> App<'static> {
              .long("map")
              .short('m')
              .help("Map one or more keyboard shortcuts. See full help (with --help) for further details.")
-             .long_help(
+             // We need to provide static strings to the long help, but then we can't use format
+             // because it returns String, and it won't live long enough. So we leak the string,
+             // which is ok because it's done only once. Another option would be to create a
+             // wrapper object to own the strings, but this is simpler.
+             // see https://stackoverflow.com/questions/64184984/dynamically-generate-subcommands-with-formatted-description-in-clap
+             // and https://stackoverflow.com/questions/65303960/clap-how-to-pass-a-default-value-when-returning-argmatchesstatic
+             .long_help(&*Box::leak(format!(
 "Add one or more keyboard shortcut mappings. The basic syntax is of the form 'key-combination:action' or 'key-combination:context:action', see examples below. This option can be provided multiple times, and multiple mappings can be created by a comma-separated list of mappings. If the same key combination (with the same context) is provided multiple times, the previous mappings are overridden. Use the action 'None' to remove a previously added mapping or one of the default mappings.
 
 Examples:
@@ -145,14 +151,16 @@ Examples:
 
 Possible actions:
 
-?
+{}
 
 Possible contexts:
 
     None - This mapping applies if no other context applies. This is the behavior if no context is specified in the mapping.
     Searching - This mapping only applies while searching (at least one search character has been given).
     NotSearching - This mapping only applies while not searching.
-")
+",
+get_justified_actions_and_descriptions()
+).into_boxed_str()))
             .takes_value(true)
             .value_name("MAPPING")
             .multiple_occurrences(true)
