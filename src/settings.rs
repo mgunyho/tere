@@ -76,27 +76,27 @@ impl TereSettings {
     pub fn parse_cli_args(args: &ArgMatches) -> Result<Self, clap::Error> {
         let mut ret = Self::default();
 
-        if args.is_present("folders-only") {
+        if args.contains_id("folders-only") {
             ret.folders_only = true;
         }
 
-        if args.is_present("filter-search") {
+        if args.contains_id("filter-search") {
             ret.filter_search = true;
         }
 
-        if args.is_present("case-sensitive") {
+        if args.contains_id("case-sensitive") {
             ret.case_sensitive = CaseSensitiveMode::CaseSensitive;
-        } else if args.is_present("ignore-case") {
+        } else if args.contains_id("ignore-case") {
             ret.case_sensitive = CaseSensitiveMode::IgnoreCase;
-        } else if args.is_present("smart-case") {
+        } else if args.contains_id("smart-case") {
             ret.case_sensitive = CaseSensitiveMode::SmartCase;
         }
 
-        if args.is_present("gap-search") {
+        if args.contains_id("gap-search") {
             ret.gap_search_mode = GapSearchMode::GapSearchFromStart;
-        } else if args.is_present("gap-search-anywhere") {
+        } else if args.contains_id("gap-search-anywhere") {
             ret.gap_search_mode = GapSearchMode::GapSearchAnywere;
-        } else if args.is_present("no-gap-search") {
+        } else if args.contains_id("no-gap-search") {
             ret.gap_search_mode = GapSearchMode::NoGapSearch;
         }
 
