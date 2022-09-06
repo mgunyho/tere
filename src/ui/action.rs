@@ -4,7 +4,7 @@ use std::hash::Hash;
 /// The possible actions that the user can do
 
 
-#[derive(Debug, PartialEq, Clone, strum_macros::EnumString)]
+#[derive(Debug, PartialEq, Clone, strum_macros::Display, strum_macros::EnumString)]
 pub enum Action {
     ChangeDir,
     ChangeDirParent,
@@ -95,7 +95,7 @@ pub const ALL_ACTIONS: &[Action] = &[
 ];
 
 /// An extra quantifier on an action, like 'this only applies when searching'
-#[derive(Hash, PartialEq, Eq, Clone, Debug, strum_macros::EnumString)]
+#[derive(Hash, PartialEq, Eq, Clone, Debug, strum_macros::Display, strum_macros::EnumString)]
 pub enum ActionContext {
     /// Signifies that this shortcut should apply if no other condition applies
     None,
