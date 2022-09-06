@@ -1,4 +1,5 @@
 use clap::{App, Arg};
+use crate::ui::ALL_ACTIONS;
 
 /// The CLI options for tere
 
@@ -159,7 +160,10 @@ Possible contexts:
     Searching - This mapping only applies while searching (at least one search character has been given).
     NotSearching - This mapping only applies while not searching.
 ",
-get_justified_actions_and_descriptions()
+justify_and_indent(
+    &ALL_ACTIONS.iter().map(|a| a.to_string()).collect(),
+    &ALL_ACTIONS.iter().map(|a| a.description().to_string()).collect()
+    )
 ).into_boxed_str()))
             .takes_value(true)
             .value_name("MAPPING")
@@ -198,18 +202,15 @@ get_justified_actions_and_descriptions()
             )
 }
 
-/// Justify the list of actions and their descriptions, and indent them to be printed in the help
-/// text
-fn get_justified_actions_and_descriptions() -> String {
-    use crate::ui::ALL_ACTIONS;
+/// Justify the list of enum variants (i.e. `ALL_ACTIONS` or `ALL_CONTEXTS`) and their
+/// descriptions, and indent them to be printed in the help text
+fn justify_and_indent(variants: &Vec<String>, descriptions: &Vec<String>) -> String {
 
     let indentation: String = " ".repeat(4);
-    let action_names: Vec<String> = ALL_ACTIONS.iter().map(|a| a.to_string()).collect();
-    let max_len = action_names.iter().map(|a| a.len()).max().expect("action_names is empty");
-    let action_descriptions: Vec<&str> = ALL_ACTIONS.iter().map(|a| a.description()).collect();
+    let max_len = variants.iter().map(|x| x.len()).max().expect("list of variants is empty");
 
-    let lines: Vec<String> = action_names.iter().zip(action_descriptions)
-        .map(|(a, d)| indentation.clone() + a + &" ".repeat(max_len - a.len() + 1) + d)
+    let lines: Vec<String> = variants.iter().zip(descriptions)
+        .map(|(x, d)| indentation.clone() + x + &" ".repeat(max_len - x.len() + 1) + d)
         .collect();
 
     return lines.join("\n");
