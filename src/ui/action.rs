@@ -91,6 +91,7 @@ pub const ALL_ACTIONS: &[Action] = &[
     Action::Help,
     Action::Exit,
     Action::ExitWithoutCd,
+    Action::None,
 ];
 
 /// An extra quantifier on an action, like 'this only applies when searching'
