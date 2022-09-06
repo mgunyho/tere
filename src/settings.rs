@@ -156,7 +156,11 @@ impl TereSettings {
                 let mapping_arg: String = mapping_arg; // to enforce correct type coming from get_many
                 let mappings = parse_keymap_arg(&mapping_arg)?;
                 for (k, c, a) in mappings {
-                    ret.keymap.insert((k, c), a);
+                    if a == Action::None {
+                        ret.keymap.remove(&(k, c));
+                    } else {
+                        ret.keymap.insert((k, c), a);
+                    }
                 }
             }
         }
