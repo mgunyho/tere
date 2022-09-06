@@ -31,6 +31,8 @@ pub enum Action {
 
     Exit,
     ExitWithoutCd,
+
+    None,
 }
 
 impl Action {
@@ -61,6 +63,8 @@ impl Action {
 
             Self::Exit => "Exit the program",
             Self::ExitWithoutCd => "Exit the program without changing the working directory",
+
+            Self::None => "Disable this mapping",
         }
     }
 }
