@@ -194,6 +194,7 @@ fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>,
             ));
         }
 
+        //TODO: what if I want to map colon? see how crokey does the hyphen parsing
         let parts: Vec<&str> = mapping.split(":").collect();
         let (k, c, a) = match parts[..] {
             [keys, action] => (
