@@ -132,13 +132,15 @@ pub fn get_cli_args() -> App<'static> {
              .short('m')
              .help("Map one or more keyboard shortcuts. See full help (with --help) for further details.")
              .long_help(
-"Add one or more keyboard shortcut mappings. The basic syntax is of the form 'key-combination:action' or 'key-combination:context:action', see examples below. This option can be provided multiple times, and multiple mappings can be created by a comma-separated list of mappings. If the same key combination (with the same context) is provided multiple times, the previous mappings are overridden.
+"Add one or more keyboard shortcut mappings. The basic syntax is of the form 'key-combination:action' or 'key-combination:context:action', see examples below. This option can be provided multiple times, and multiple mappings can be created by a comma-separated list of mappings. If the same key combination (with the same context) is provided multiple times, the previous mappings are overridden. Use the action 'None' to remove a previously added mapping or one of the default mappings.
 
 Examples:
 
     -m ctrl-x:Exit - Exit tere by typing ctrl-x
     -m ctrl-h:ChangeDirParent,ctrl-j:CursorDown,ctrl-k:CursorUp,ctrl-l:ChangeDir - Navigate using Control + hjkl in addition to the default Alt + hjkl.
     -m 1:NotSearching:CursorFirst - Move the cursor to the top of the listing by typing '1', but only if not already searching (so you can still search for filenames that contain the number '1')
+    -m alt-h:None,alt-j:None,alt-k:None,alt-l:None - Disable navigation using alt+hjkl
+    -m esc:Searching:None - Don't clear the search by pressing esc, but still exit using esc (if the search query is empty)
 
 Possible actions:
 
