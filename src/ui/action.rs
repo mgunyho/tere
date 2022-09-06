@@ -110,7 +110,7 @@ pub enum ActionContext {
 impl ActionContext {
     pub fn description(&self) -> &'static str {
         match self {
-            Self::None => "This mapping applies if no other context applies. This is the behavior if no context is specified in the mapping.",
+            Self::None => "This mapping applies if no other context applies. This is the behavior if no context is specified: the mapping 'key-combination:action' is equivalent to 'key-combination:None:action'.",
             Self::Searching => "This mapping only applies while searching (at least one search character has been given).",
             Self::NotSearching => "This mapping only applies while not searching.",
         }
