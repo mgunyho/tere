@@ -159,6 +159,10 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 
 Some of the shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
 
+#### Mapping keyboard shortcuts
+
+To customize keyboard shortcuts, use the `-m` or `--map` CLI option. Keyboard mappings can be either of the form `key-combination:action` or `key-combination:context:action`, where `key-combination` is a key combination, such as `ctrl-x`, `action` is a valid action that the mapping should correspond to (for example `Exit` or `ChangeDir`, see `--help` for a full list of actions), and the optional `context` specifies the context in which the mappling applies (for example `Searching` and `NotSearching`, see `--help`). For further details and examples, see the output of `--help`.
+
 ### Searching
 
 To search for an item in the current folder, just type some letters. `tere` will incrementally highlight all folders and files that match the search query.
