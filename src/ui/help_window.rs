@@ -214,6 +214,32 @@ mod tests {
     }
 
     #[test]
+    fn test_keyboard_shortcuts_table_fond() {
+        let table = get_keyboard_shortcuts_table();
+        let lines: Vec<_> = table.split("\n").collect();
+        assert_eq!(lines[0].chars().next().unwrap(), '|');
+        assert_eq!(lines[0].chars().last().unwrap(), '|');
+
+        assert_eq!(lines.iter().last().unwrap().chars().next().unwrap(), '|');
+        assert_eq!(lines.iter().last().unwrap().chars().last().unwrap(), '|');
+
+        assert!(lines[0].contains("Description"));
+    }
+
+    #[test]
+    fn test_all_key_mappings_listed_in_readme() {
+        use std::str::FromStr;
+        let table_lines: Vec<_> = get_keyboard_shortcuts_table()
+            .split("\n").collect();
+
+        let actions: Vec<_> = table_lines.iter().skip(2).map(|line| {
+            let parts: Vec<_> = line.split("|").collect();
+            let action_name = parts[3].replace("`", "").trim().to_string();
+            crate::ui::Action::from_str(&action_name).expect(format!("Invalid action in table row '{}': '{}'", line, action_name).as_ref());
+        }).collect();
+    }
+
+    #[test]
     fn test_strip_markup() {
         let input = "## foo bar\n\nlorem ipsum `dolor` sit amet";
         let (output, locs) = strip_markup_and_extract_bold_positions(input);
