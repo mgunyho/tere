@@ -239,7 +239,9 @@ mod tests {
         }).collect();
 
         for action in crate::ui::ALL_ACTIONS {
-            assert!(actions.contains(action), "Action '{}' not found in readme", action);
+            if action != &crate::ui::Action::None {
+                assert!(actions.contains(action), "Action '{}' not found in readme", action);
+            }
         }
     }
 
