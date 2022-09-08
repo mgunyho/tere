@@ -161,7 +161,9 @@ Some of the shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim use
 
 #### Mapping keyboard shortcuts
 
-To customize keyboard shortcuts, use the `-m` or `--map` CLI option. Keyboard mappings can be either of the form `key-combination:action` or `key-combination:context:action`, where `key-combination` is a key combination, such as `ctrl-x`, `action` is a valid action that the mapping should correspond to (for example `Exit` or `ChangeDir`, see `--help` for a full list of actions), and the optional `context` specifies the context in which the mappling applies (for example `Searching` and `NotSearching`, see `--help`). For further details and examples, see the output of `--help`.
+To customize keyboard shortcuts, use the `-m` or `--map` CLI option. Keyboard mappings can be either of the form `key-combination:action` or `key-combination:context:action`, where `key-combination` is a key combination, such as `ctrl-x`, `action` is a valid action name (for example `Exit` or `ChangeDir`, see the table above or `--help` for a full list of actions), and the optional `context` specifies the context in which the mappling applies (for example `Searching` and `NotSearching`, see `--help`). To remove a mapping, use `--map key-combination:None`.
+
+For further details and examples, see the output of `--help`.
 
 ### Searching
 
