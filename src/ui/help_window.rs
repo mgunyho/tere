@@ -235,8 +235,12 @@ mod tests {
         let actions: Vec<_> = table_lines.iter().skip(2).map(|line| {
             let parts: Vec<_> = line.split("|").collect();
             let action_name = parts[3].replace("`", "").trim().to_string();
-            crate::ui::Action::from_str(&action_name).expect(format!("Invalid action in table row '{}': '{}'", line, action_name).as_ref());
+            crate::ui::Action::from_str(&action_name).expect(format!("Invalid action in table row '{}': '{}'", line, action_name).as_ref())
         }).collect();
+
+        for action in crate::ui::ALL_ACTIONS {
+            assert!(actions.contains(action), "Action '{}' not found in readme", action);
+        }
     }
 
     #[test]
