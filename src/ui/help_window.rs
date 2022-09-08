@@ -67,7 +67,7 @@ fn get_keyboard_shortcuts_table() -> &'static  str {
 
 /// Apply justification to the table of keyboard shortcuts in the README and render it to a String
 /// without the markup
-pub fn get_justified_keyboard_shortcuts_table() -> String {
+fn get_justified_keyboard_shortcuts_table() -> String {
 
     let keyboard_shortcuts = get_keyboard_shortcuts_table();
 
