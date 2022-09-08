@@ -140,22 +140,25 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 
 | Description | Default shortcut(s) | Action name |
 |:---:|:---:|:--:|
-|Move cursor up  | <kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>k</kbd> | `CursorUp` |
-|Move cursor down| <kbd>↓</kbd> or <kbd>Alt</kbd>+<kbd>j</kbd> | `CursorDown` |
-|Enter directory | <kbd>Enter</kbd> or <kbd>→</kbd> or <kbd>Alt</kbd>+<kbd>↓</kbd> or <kbd>Alt</kbd>+<kbd>l</kbd> or if not searching, <kbd>Space</kbd> | `ChangeDir` |
+|Enter directory under cursor | <kbd>Enter</kbd> or <kbd>→</kbd> or <kbd>Alt</kbd>+<kbd>↓</kbd> or <kbd>Alt</kbd>+<kbd>l</kbd> or if not searching, <kbd>Space</kbd> | `ChangeDir` |
 |Go to parent directory| <kbd>←</kbd> or <kbd>Alt</kbd>+<kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>h</kbd> or if not searching, <kbd>Backspace</kbd> or <kbd>-</kbd> | `ChangeDirParent` |
-|Exit `tere`| <kbd>Esc</kbd> or <kbd>Alt</kbd>+<kbd>q</kbd> | `Exit` |
-|Exit `tere` without changing directory| <kbd>Ctrl</kbd>+<kbd>c</kbd> | `ExitWithoutCd` |
 |Go to home directory| <kbd>~</kbd> or <kbd>Ctrl</kbd>+<kbd>Home</kbd> or <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>h</kbd>| `ChangeDirHome` |
 |Go to root directory| <kbd>/</kbd> or <kbd>Alt</kbd>+<kbd>r</kbd>| `ChangeDirRoot` |
-|Refresh current directory| <kbd>Ctrl</kbd>+<kbd>r</kbd>| `RefreshListing` |
+|Move cursor up  | <kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>k</kbd> | `CursorUp` |
+|Move cursor down| <kbd>↓</kbd> or <kbd>Alt</kbd>+<kbd>j</kbd> | `CursorDown` |
 |Move cursor up   by one screen| <kbd>Page Up</kbd>   or <kbd>Ctrl</kbd>+<kbd>u</kbd> or <kbd>Alt</kbd>+<kbd>u</kbd> | `CursorUpPage` |
-|Move cursor down by one screen| <kbd>Page Down</kbd> or <kbd>Ctrl</kbd>+<kbd>d</kbd> or <kbd>Alt</kbd>+<kbd>d</kbd> | `CursorUpPage` |
+|Move cursor down by one screen| <kbd>Page Down</kbd> or <kbd>Ctrl</kbd>+<kbd>d</kbd> or <kbd>Alt</kbd>+<kbd>d</kbd> | `CursorDownPage` |
 |Move cursor to the top   | <kbd>Home</kbd> or <kbd>Alt</kbd>+<kbd>g</kbd> | `CursorFirst` |
 |Move cursor to the bottom| <kbd>End</kbd>  or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>g</kbd> | `CursorLast` |
+|Erase a character from the search | <kbd>Backspace</kbd> if searching | `EraseSearchChar` |
+|Clear the search | <kbd>Esc</kbd> if searching | `ClearSearch` |
 |Change case sensitivity mode| <kbd>Alt</kbd>+<kbd>c</kbd> | `ChangeCaseSensitiveMode` |
 |Change gap search mode| <kbd>Ctrl</kbd>+<kbd>f</kbd> | `ChangeGapSearchMode` |
+|Refresh current directory| <kbd>Ctrl</kbd>+<kbd>r</kbd>| `RefreshListing` |
 |Show help screen| <kbd>?</kbd> | `Help` |
+|Exit `tere`| <kbd>Esc</kbd> or <kbd>Alt</kbd>+<kbd>q</kbd> | `Exit` |
+|Enter directory and exit `tere`| <kbd>Alt</kbd>+<kbd>Enter</kbd> or <kbd>Ctrl</kbd>+<kbd>Space</kbd> | `ChangeDirAndExit` |
+|Exit `tere` without changing directory| <kbd>Ctrl</kbd>+<kbd>c</kbd> | `ExitWithoutCd` |
 
 Some of the shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
 
