@@ -50,9 +50,9 @@ pub fn get_formatted_help_text(width: usize) -> Vec<Vec<StyledContent<String>>> 
     stylize_wrapped_lines(help_str, bold_toggle_locs)
 }
 
-/// Apply justification to the table of keyboard shortcuts in the README and render it to a String
-/// without the markup
-pub fn get_justified_keyboard_shortcuts_table() -> String {
+/// Extract the table of keyboard shortcuts from the README. Panics if the README is incorrectly
+/// formatted.
+fn get_keyboard_shortcuts_table() -> &'static  str {
     let keyboard_shortcuts = README_STR
         .split_once("keyboard shortcuts by default:\n\n")
         .expect("Couldn't find table of keyboard shortcuts in README")
@@ -61,6 +61,15 @@ pub fn get_justified_keyboard_shortcuts_table() -> String {
         .split_once("\n\n")
         .expect("Couldn't find end of keyboard shortcuts table in README")
         .0;
+
+    keyboard_shortcuts
+}
+
+/// Apply justification to the table of keyboard shortcuts in the README and render it to a String
+/// without the markup
+pub fn get_justified_keyboard_shortcuts_table() -> String {
+
+    let keyboard_shortcuts = get_keyboard_shortcuts_table();
 
     let first_column_width = keyboard_shortcuts
         .lines()
