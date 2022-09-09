@@ -1,7 +1,11 @@
 /// Functions for rendering the help window
 use std::collections::HashMap;
-use crossterm::style::{StyledContent, Stylize};
+use crossterm::{
+    style::{StyledContent, Stylize},
+    event::KeyEvent,
+};
 use textwrap::{self, word_splitters::WordSplitter::NoHyphenation, Options};
+use crate::ui::{Action, ActionContext};
 
 const README_STR: &str = include_str!("../../README.md");
 
@@ -230,14 +234,13 @@ mod tests {
     #[test]
     fn test_all_key_mappings_listed_in_readme() {
         use std::str::FromStr;
-        use crate::ui::Action;
 
         let table_lines: Vec<_> = get_keyboard_shortcuts_table()
             .split("\n")
             .skip(2)
             .collect();
 
-        let mut key_mappings: HashMap<crossterm::event::KeyEvent, Vec<Action>> = HashMap::new();
+        let mut key_mappings: HashMap<KeyEvent, Vec<Action>> = HashMap::new();
 
         table_lines.iter().for_each(|line| {
             let parts: Vec<_> = line.split("|").collect();
