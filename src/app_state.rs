@@ -11,7 +11,7 @@ use std::path::{Component, Path, PathBuf};
 use regex::Regex;
 
 #[path = "settings.rs"]
-mod settings;
+pub mod settings;
 use settings::TereSettings;
 pub use settings::{CaseSensitiveMode, GapSearchMode};
 

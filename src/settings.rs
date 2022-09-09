@@ -225,7 +225,7 @@ fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>,
 
 // NOTE: can't create a const hashmap (without an extra dependency like phf), so just using a slice
 // of tuples.
-const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
+pub const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
 
     (key!(enter),    ActionContext::None, Action::ChangeDir),
     (key!(right),    ActionContext::None, Action::ChangeDir),

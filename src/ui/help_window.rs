@@ -50,9 +50,9 @@ pub fn get_formatted_help_text(width: usize) -> Vec<Vec<StyledContent<String>>> 
     stylize_wrapped_lines(help_str, bold_toggle_locs)
 }
 
-/// Apply justification to the table of keyboard shortcuts in the README and render it to a String
-/// without the markup
-pub fn get_justified_keyboard_shortcuts_table() -> String {
+/// Extract the table of keyboard shortcuts from the README. Panics if the README is incorrectly
+/// formatted.
+fn get_keyboard_shortcuts_table() -> &'static  str {
     let keyboard_shortcuts = README_STR
         .split_once("keyboard shortcuts by default:\n\n")
         .expect("Couldn't find table of keyboard shortcuts in README")
@@ -61,6 +61,15 @@ pub fn get_justified_keyboard_shortcuts_table() -> String {
         .split_once("\n\n")
         .expect("Couldn't find end of keyboard shortcuts table in README")
         .0;
+
+    keyboard_shortcuts
+}
+
+/// Apply justification to the table of keyboard shortcuts in the README and render it to a String
+/// without the markup
+fn get_justified_keyboard_shortcuts_table() -> String {
+
+    let keyboard_shortcuts = get_keyboard_shortcuts_table();
 
     let first_column_width = keyboard_shortcuts
         .lines()
@@ -202,6 +211,77 @@ mod tests {
     fn test_user_guide_found() {
         // this should panic if the README is incorrectly formatted
         get_formatted_help_text(100);
+    }
+
+    #[test]
+    fn test_keyboard_shortcuts_table_fond() {
+        let table = get_keyboard_shortcuts_table();
+        let lines: Vec<_> = table.split("\n").collect();
+        assert_eq!(lines[0].chars().next().unwrap(), '|');
+        assert_eq!(lines[0].chars().last().unwrap(), '|');
+
+        assert_eq!(lines.iter().last().unwrap().chars().next().unwrap(), '|');
+        assert_eq!(lines.iter().last().unwrap().chars().last().unwrap(), '|');
+
+        assert!(lines[0].contains("Description"));
+    }
+
+    #[test]
+    fn test_all_key_mappings_listed_in_readme() {
+        use std::str::FromStr;
+        use crate::ui::Action;
+
+        let table_lines: Vec<_> = get_keyboard_shortcuts_table()
+            .split("\n")
+            .skip(2)
+            .collect();
+
+        let mut key_mappings: std::collections::HashMap<crossterm::event::KeyEvent, Vec<Action>> = std::collections::HashMap::new();
+
+        table_lines.iter().for_each(|line| {
+            let parts: Vec<_> = line.split("|").collect();
+
+            let action_name = parts[3].replace("`", "").trim().to_string();
+            let action = Action::from_str(&action_name).expect(format!("Invalid action in table row '{}': '{}'", line, action_name).as_ref());
+
+            let key_combos: Vec<_> = parts[2]
+                .replace("if not searching,", "").replace("if searching", "") //TODO: context is now ignored...
+                .replace("<kbd>", "").replace("</kbd>", "")
+                .replace("+", "-")
+                .replace("↑", "up").replace("↓", "down").replace("←", "left").replace("→", "right")
+                .replace("Page Up", "pageup").replace("Page Down", "pagedown")
+                .split(" or ")
+                .map(|k| crokey::parse(k.trim()).unwrap())
+                .collect();
+            for k in key_combos {
+                //TODO: duplicate keys (due to context...)
+                key_mappings.entry(k).and_modify(|a| a.push(action.clone())).or_insert(vec![action.clone()]);
+            }
+        });
+
+        // Check that all actions are listed
+        let actions: Vec<_> = key_mappings.values().flatten().collect();
+        for action in crate::ui::ALL_ACTIONS {
+            if action != &Action::None {
+                assert!(actions.contains(&action), "Action '{}' not found in readme", action);
+            }
+        }
+
+        // Check that default keymaps match the ones listed in the README
+        for (key_combo, _, expected_action) in crate::app_state::settings::DEFAULT_KEYMAP {
+            let key_combo_str = crokey::KeyEventFormat::default().to_string(*key_combo);
+            let actions = key_mappings.get(&key_combo).expect(&format!(
+                    "Key mapping {}:{} not found in README",
+                    key_combo_str, expected_action,
+            ));
+            assert!(
+                actions.contains(expected_action),
+                "Key mapping '{}:{}' in default keymap doesn't match README: '{:?}'",
+                key_combo_str,
+                expected_action,
+                actions
+            );
+        }
     }
 
     #[test]
