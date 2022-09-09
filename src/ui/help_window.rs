@@ -1,4 +1,5 @@
 /// Functions for rendering the help window
+use std::collections::HashMap;
 use crossterm::style::{StyledContent, Stylize};
 use textwrap::{self, word_splitters::WordSplitter::NoHyphenation, Options};
 
@@ -236,7 +237,7 @@ mod tests {
             .skip(2)
             .collect();
 
-        let mut key_mappings: std::collections::HashMap<crossterm::event::KeyEvent, Vec<Action>> = std::collections::HashMap::new();
+        let mut key_mappings: HashMap<crossterm::event::KeyEvent, Vec<Action>> = HashMap::new();
 
         table_lines.iter().for_each(|line| {
             let parts: Vec<_> = line.split("|").collect();
