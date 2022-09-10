@@ -132,7 +132,7 @@ New features should go on the `develop` branch before they are released.
 
 ## User guide
 
-You can navigate folders in `tere` by using the arrow keys and by typing to search. Basic navigation works by moving the cursor up or down, and pressing <kbd>Enter</kbd> or the right arrow <kbd>→</kbd> to enter the highlighted folder. You can move to the parent folder by pressing <kbd>Enter</kbd> on the parent folder item `..`, or with the left arrow <kbd>←</kbd>. Below is a full list of keyboard shortcuts.
+You can navigate folders in `tere` by moving the cursor around and by typing to search. By default, the cursor can be moved up or down using the arrow keys, and pressing <kbd>Enter</kbd> or the right arrow <kbd>→</kbd> to enter the highlighted folder. You can move to the parent folder by pressing <kbd>Enter</kbd> on the parent folder item `..`, or with the left arrow <kbd>←</kbd>. Below is a full list of keyboard shortcuts.
 
 ### Keyboard shortcuts
 
@@ -164,7 +164,7 @@ Some of the shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim use
 
 #### Customizing keyboard shortcuts
 
-To customize keyboard shortcuts, use the `-m` or `--map` CLI option. Keyboard mappings can be either of the form `key-combination:action` or `key-combination:context:action`, where `key-combination` is a key combination, such as `ctrl-x`, `action` is a valid action name (for example `Exit` or `ChangeDir`, see the table above or `--help` for a full list of actions), and the optional `context` specifies the context in which the mappling applies (for example `Searching` and `NotSearching`, see `--help`). To remove a mapping, use `--map key-combination:None`.
+All of the keyboard shortcuts listed above can be customized using the `--map` (or `-m`) CLI option. Keyboard mappings can be either of the form `--map key-combination:action` or `--map key-combination:context:action`, where `key-combination` is a key combination, such as `ctrl-x`, `action` is a valid action name (for example `Exit` or `ChangeDir`, see the table above or `--help` for a full list of actions), and the optional `context` specifies the context in which the mappling applies (for example `Searching` and `NotSearching`, see `--help`). To remove a mapping, use `--map key-combination:None`. Multiple mappings can be made by providing `--map` multiple times, or by using a comma-separated list of mappings: `--map combination1:action1,combination2:action2`.
 
 For further details and examples, see the output of `--help`.
 
