@@ -494,13 +494,24 @@ mod tests {
     }
 
     #[test]
-    fn test_clear_default_keymap() {
+    fn test_empty_keymap_is_error() {
         let m = crate::cli_args::get_cli_args()
             .get_matches_from(vec![
                 "foo",
                 "--clear-default-keymap",
             ]);
-        assert!(TereSettings::parse_cli_args(&m).unwrap().keymap.is_empty());
+        assert!(TereSettings::parse_cli_args(&m).is_err());
+    }
+
+    #[test]
+    fn test_clear_default_keymap() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--clear-default-keymap",
+                "--map", "ctrl-x:Exit",
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).unwrap().keymap.len() == 1);
     }
 
 }
