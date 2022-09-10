@@ -558,10 +558,10 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    // on 'home' or 'end'
-    fn on_home_end(&mut self, home: bool) -> CTResult<()> {
+    // When moving the cursor to the top or bottom of the listing
+    fn on_cursor_top_bottom(&mut self, top: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
-            let target = if home {
+            let target = if top {
                 0
             } else {
                 self.app_state.num_visible_items()
@@ -654,9 +654,8 @@ impl<'a> TereTui<'a> {
                             Action::CursorDown => self.on_arrow_key(false)?,
                             Action::CursorUpScreen => self.on_page_up_down(true)?,
                             Action::CursorDownScreen => self.on_page_up_down(false)?,
-                            // TODO: rename on_home_end to on_cursor_first (or something)
-                            Action::CursorTop => self.on_home_end(true)?,
-                            Action::CursorBottom => self.on_home_end(false)?,
+                            Action::CursorTop => self.on_cursor_top_bottom(true)?,
+                            Action::CursorBottom => self.on_cursor_top_bottom(false)?,
 
                             Action::EraseSearchChar => self.erase_search_char()?,
 
