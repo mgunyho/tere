@@ -212,7 +212,7 @@ fn justify_and_indent(variants: &Vec<String>, descriptions: &Vec<String>) -> Str
     let max_len = variants.iter().map(|x| x.len()).max().expect("list of variants is empty");
 
     let lines: Vec<String> = variants.iter().zip(descriptions)
-        .map(|(x, d)| indentation.clone() + x + &" ".repeat(max_len - x.len() + 1) + d)
+        .map(|(x, d)| indentation.clone() + x + &" ".repeat(max_len - x.len() + 2) + d)
         .collect();
 
     return lines.join("\n");
