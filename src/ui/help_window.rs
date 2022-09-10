@@ -320,10 +320,7 @@ mod tests {
     fn test_all_key_mappings_listed_in_readme() {
         use std::str::FromStr;
 
-        let table_lines: Vec<_> = get_keyboard_shortcuts_table()
-            .split("\n")
-            .skip(2)
-            .collect();
+        let table_lines: Vec<_> = get_keyboard_shortcuts_table().split("\n").skip(2).collect();
 
         let mut key_mappings: HashMap<KeyEvent, Vec<Action>> = HashMap::new();
 
@@ -331,10 +328,12 @@ mod tests {
             let parts: Vec<_> = line.split("|").collect();
 
             let action_name = parts[3].replace("`", "").trim().to_string();
-            let action = Action::from_str(&action_name).expect(format!("Invalid action in table row '{}': '{}'", line, action_name).as_ref());
+            let action = Action::from_str(&action_name).expect(
+                format!("Invalid action in table row '{}': '{}'", line, action_name).as_ref(),
+            );
 
             let key_combos: Vec<_> = parts[2]
-                .replace("if not searching,", "").replace("if searching", "") //TODO: context is now ignored...
+                .replace("if not searching,", "").replace("if searching", "")
                 .replace("<kbd>", "").replace("</kbd>", "")
                 .replace("+", "-")
                 .replace("↑", "up").replace("↓", "down").replace("←", "left").replace("→", "right")
@@ -343,8 +342,10 @@ mod tests {
                 .map(|k| crokey::parse(k.trim()).unwrap())
                 .collect();
             for k in key_combos {
-                //TODO: duplicate keys (due to context...)
-                key_mappings.entry(k).and_modify(|a| a.push(action.clone())).or_insert(vec![action.clone()]);
+                key_mappings
+                    .entry(k)
+                    .and_modify(|a| a.push(action.clone()))
+                    .or_insert(vec![action.clone()]);
             }
         });
 
@@ -352,7 +353,11 @@ mod tests {
         let actions: Vec<_> = key_mappings.values().flatten().collect();
         for action in crate::ui::ALL_ACTIONS {
             if action != &Action::None {
-                assert!(actions.contains(&action), "Action '{}' not found in readme", action);
+                assert!(
+                    actions.contains(&action),
+                    "Action '{}' not found in readme",
+                    action
+                );
             }
         }
 
@@ -360,8 +365,8 @@ mod tests {
         for (key_combo, _, expected_action) in crate::app_state::settings::DEFAULT_KEYMAP {
             let key_combo_str = crokey::KeyEventFormat::default().to_string(*key_combo);
             let actions = key_mappings.get(&key_combo).expect(&format!(
-                    "Key mapping {}:{} not found in README",
-                    key_combo_str, expected_action,
+                "Key mapping {}:{} not found in README",
+                key_combo_str, expected_action,
             ));
             assert!(
                 actions.contains(expected_action),
