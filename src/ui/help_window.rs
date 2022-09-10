@@ -15,7 +15,10 @@ const README_STR: &str = include_str!("../../README.md");
 /// Returns a vector of vectors, where the outer vector represents lines, and the inner vector
 /// contains either a single string for the whole line, or multiple strings, if the style varies
 /// within the line.
-pub fn get_formatted_help_text(width: usize) -> Vec<Vec<StyledContent<String>>> {
+pub fn get_formatted_help_text(
+    width: usize,
+    key_mapping: &HashMap<(KeyEvent, ActionContext), Action>,
+) -> Vec<Vec<StyledContent<String>>> {
     let help_str = &README_STR[
         README_STR.find("## User guide").expect("Could not find user guide in README")
         ..
@@ -35,7 +38,7 @@ pub fn get_formatted_help_text(width: usize) -> Vec<Vec<StyledContent<String>>> 
     // Add justified keyboard shortcuts table to help string
     let mut help_str = help_str.to_string();
     help_str.push_str("\n\n"); // add back newlines eaten by split_once
-    help_str.push_str(&get_justified_keyboard_shortcuts_table());
+    help_str.push_str(&get_justified_keyboard_shortcuts_table(&key_mapping));
     help_str.push_str(rest);
 
     // We need to get rid of the `<kbd>` tags before wrapping so it works correctly. We're going to
@@ -72,7 +75,9 @@ fn get_keyboard_shortcuts_table() -> &'static  str {
 
 /// Apply justification to the table of keyboard shortcuts in the README and render it to a String
 /// without the markup
-fn get_justified_keyboard_shortcuts_table() -> String {
+fn get_justified_keyboard_shortcuts_table(
+    key_mapping: &HashMap<(KeyEvent, ActionContext), Action>,
+) -> String {
 
     let keyboard_shortcuts = get_keyboard_shortcuts_table();
 

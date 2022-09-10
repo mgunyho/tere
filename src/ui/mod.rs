@@ -780,7 +780,7 @@ impl<'a> TereTui<'a> {
         )?;
 
         let (w, h) = main_window_size()?;
-        let help_text = get_formatted_help_text(w);
+        let help_text = get_formatted_help_text(w, &self.app_state.settings.keymap);
         for (i, line) in help_text
             .iter()
             .skip(scroll)
