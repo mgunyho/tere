@@ -108,11 +108,22 @@ pub enum ActionContext {
 }
 
 impl ActionContext {
+    /// Description of this context to use in the output of --help
     pub fn description(&self) -> &'static str {
         match self {
             Self::None => "This mapping applies if no other context applies. This is the behavior if no context is specified: the mapping 'key-combination:action' is equivalent to 'key-combination:None:action'.",
             Self::Searching => "This mapping only applies while searching (at least one search character has been given).",
             Self::NotSearching => "This mapping only applies while not searching.",
+        }
+    }
+
+    /// Half-way between the serialization provided by strum::Display and self.description(): a
+    /// short human-readable string.
+    pub fn short_description(&self) -> &'static str {
+        match self {
+            Self::None => "no context",
+            Self::Searching => "when searching",
+            Self::NotSearching => "when not searching",
         }
     }
 }
