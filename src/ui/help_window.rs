@@ -320,6 +320,7 @@ mod tests {
     #[test]
     fn test_all_key_mappings_listed_in_readme() {
         use std::str::FromStr;
+        use strum::IntoEnumIterator;
 
         let table_lines: Vec<_> = get_keyboard_shortcuts_table().split("\n").skip(2).collect();
 
@@ -352,10 +353,10 @@ mod tests {
 
         // Check that all actions are listed
         let actions: Vec<_> = key_mappings.values().flatten().collect();
-        for action in crate::ui::ALL_ACTIONS {
-            if action != &Action::None {
+        for action in Action::iter() {
+            if action != Action::None {
                 assert!(
-                    actions.contains(&action),
+                    actions.contains(&&action),
                     "Action '{}' not found in readme",
                     action
                 );

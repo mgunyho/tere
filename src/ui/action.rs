@@ -4,7 +4,7 @@ use std::hash::Hash;
 /// The possible actions that the user can do
 
 
-#[derive(Debug, PartialEq, Clone, strum_macros::Display, strum_macros::EnumString)]
+#[derive(Debug, PartialEq, Clone, strum_macros::Display, strum_macros::EnumString, strum_macros::EnumIter)]
 pub enum Action {
     ChangeDir,
     ChangeDirParent,

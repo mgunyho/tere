@@ -312,13 +312,15 @@ mod tests {
 
     #[test]
     fn check_all_actions_have_default_keymap() {
+        use strum::IntoEnumIterator;
+
         let actions_in_default_keymap: Vec<Action> = DEFAULT_KEYMAP
             .iter()
             .map(|(_, _, a)| a.clone())
             .collect();
-        for a in crate::ui::ALL_ACTIONS {
-            if a != &Action::None {
-                assert!(actions_in_default_keymap.contains(a), "Action {:?} not found in default keymap", a)
+        for a in Action::iter() {
+            if a != Action::None {
+                assert!(actions_in_default_keymap.contains(&a), "Action {:?} not found in default keymap", a)
             }
         }
     }

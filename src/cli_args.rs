@@ -1,5 +1,6 @@
 use clap::{App, Arg};
-use crate::ui::{ALL_ACTIONS, ALL_ACTION_CONTEXTS};
+use crate::ui::{Action, ALL_ACTION_CONTEXTS};
+use strum::IntoEnumIterator;
 
 /// The CLI options for tere
 
@@ -159,8 +160,8 @@ Possible contexts:
 {}
 ",
 justify_and_indent(
-    &ALL_ACTIONS.iter().map(|a| a.to_string()).collect(),
-    &ALL_ACTIONS.iter().map(|a| a.description().to_string()).collect()
+    &Action::iter().map(|a| a.to_string()).collect(),
+    &Action::iter().map(|a| a.description().to_string()).collect()
     ),
 justify_and_indent(
     &ALL_ACTION_CONTEXTS.iter().map(|a| a.to_string()).collect(),
