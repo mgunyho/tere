@@ -38,11 +38,11 @@ pub enum Action {
 impl Action {
     pub fn description(&self) -> &'static str {
         match self {
-            Self::ChangeDir => "Change to the directory under the cursor",
-            Self::ChangeDirParent => "Change to the parent directory",
-            Self::ChangeDirHome => "Change to the home directory",
-            Self::ChangeDirRoot => "Change to the root directory",
-            Self::ChangeDirAndExit => "Change to the directory under the cursor and exit",
+            Self::ChangeDir => "Enter directory under the cursor",
+            Self::ChangeDirParent => "Go to the parent directory",
+            Self::ChangeDirHome => "Go to the home directory",
+            Self::ChangeDirRoot => "Go to the root directory",
+            Self::ChangeDirAndExit => "Enter the directory under the cursor and exit",
 
             Self::CursorUp => "Move the cursor up by one step",
             Self::CursorDown => "Move the cursor down by one step",
