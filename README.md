@@ -178,9 +178,9 @@ If only one folder matches your current search, `tere` will highlight it, and ch
 
 To stop searching, press <kbd>Esc</kbd> or erase all search characters by pressing <kbd>Backspace</kbd>.
 
-By default, the searching uses "smart case", meaning that if the query contains only lowercase letters, case is ignored, but if there are uppercase letters, the search is case sensitive. This can be changed with the `--ignore-case` and `--case-sensitive` options, or with the keyboard shortcut <kbd>Alt</kbd>-<kbd>c</kbd> while `tere` is running.
+By default, the searching uses "smart case", meaning that if the query contains only lowercase letters, case is ignored, but if there are uppercase letters, the search is case sensitive. This can be changed with the `--ignore-case` and `--case-sensitive` options, or with the keyboard shortcut <kbd>Alt</kbd>-<kbd>c</kbd> by default.
 
-In addition, in the default search mode, "gap search" is enabled. This means that the search query matches any folder or file name that contains the searched characters, even if there are other characters between them. For example, searching for `dt` would match both `DeskTop` and `DocumenTs`. This behavior can be changed with the `--gap-search-anywhere` and `--no-gap-search` options, or with the keyboard shortcut <kbd>Ctrl</kbd>-<kbd>f</kbd> while `tere` is running. See the output of the `--help` option for further details.
+In addition, in the default search mode, "gap search" is enabled. This means that the search query matches any folder or file name that contains the searched characters, even if there are other characters between them. For example, searching for `dt` would match both `DeskTop` and `DocumenTs`. This behavior can be changed with the `--gap-search-anywhere` and `--no-gap-search` options, or with the keyboard shortcut <kbd>Ctrl</kbd>-<kbd>f</kbd> by default. See the output of the `--help` option for further details.
 
 ### Mouse navigation
 

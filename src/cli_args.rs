@@ -8,7 +8,7 @@ macro_rules! case_sensitive_template {
         concat!(
             $help_text,
             "\n\nThis overrides the --", $x, " and --", $y,
-            " options. You can also change the case sensitivity mode while the program is running with the keyboard shortcut ALT+C."
+            " options. You can also change the case sensitivity mode while the program is running with the keyboard shortcut ALT+C by default."
             )
     }
 }
@@ -18,7 +18,7 @@ macro_rules! gap_search_mode_template {
         concat!(
             $help_text,
             "\n\nThis overrides the --", $x, " and --", $y,
-            " options. You can also change the search mode while the program is running with the keyboard shortcut CTRL+F."
+            " options. You can also change the search mode while the program is running with the keyboard shortcut CTRL+F by default."
         )
     }
 }
@@ -174,7 +174,7 @@ justify_and_indent(
         .arg(Arg::new("clear-default-keymap")
              .long("clear-default-keymap")
              .help("Do not use the default keyboard mapping.")
-             .long_help("Do not use the default keyboard mapping, so that all shortcuts have to be manually created from scratch using the -m/--map option. If no mapping for Exit is provided, tere will not run.")
+             .long_help("Do not use the default keyboard mapping, so that all shortcuts have to be manually created from scratch using the --map/-m option. If no mapping for Exit is provided, tere will not run.")
              )
         .arg(Arg::new("autocd-timeout")
              .long("autocd-timeout")
