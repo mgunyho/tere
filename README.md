@@ -132,32 +132,41 @@ New features should go on the `develop` branch before they are released.
 
 ## User guide
 
-You can navigate folders in `tere` by using the arrow keys and by typing to search. Basic navigation works by moving the cursor up or down, and pressing <kbd>Enter</kbd> or the right arrow <kbd>→</kbd> to enter the highlighted folder. You can move to the parent folder by pressing <kbd>Enter</kbd> on the parent folder item `..`, or with the left arrow <kbd>←</kbd>. Below is a full list of keyboard shortcuts.
+You can navigate folders in `tere` by moving the cursor around and by typing to search. By default, the cursor can be moved up or down using the arrow keys, and pressing <kbd>Enter</kbd> or the right arrow <kbd>→</kbd> to enter the highlighted folder. You can move to the parent folder by pressing <kbd>Enter</kbd> on the parent folder item `..`, or with the left arrow <kbd>←</kbd>. Below is a full list of keyboard shortcuts.
 
 ### Keyboard shortcuts
 
-`tere` has the following keyboard shortcuts:
+`tere` has the following keyboard shortcuts by default:
 
-| Action | Shortcut(s) |
-|:---:|:---:|
-|Move cursor up  | <kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>k</kbd> |
-|Move cursor down| <kbd>↓</kbd> or <kbd>Alt</kbd>+<kbd>j</kbd> |
-|Enter directory | <kbd>Enter</kbd> or <kbd>→</kbd> or <kbd>Alt</kbd>+<kbd>↓</kbd> or <kbd>Alt</kbd>+<kbd>l</kbd> or if not searching, <kbd>Space</kbd> |
-|Go to parent directory| <kbd>←</kbd> or <kbd>Alt</kbd>+<kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>h</kbd> or if not searching, <kbd>Backspace</kbd> or <kbd>-</kbd> |
-|Exit `tere`| <kbd>Esc</kbd> or <kbd>Alt</kbd>+<kbd>q</kbd> |
-|Exit `tere` without changing directory| <kbd>Ctrl</kbd>+<kbd>c</kbd> |
-|Go to home directory| <kbd>~</kbd> or <kbd>Ctrl</kbd>+<kbd>Home</kbd> or <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>h</kbd>|
-|Go to root directory| <kbd>/</kbd> or <kbd>Alt</kbd>+<kbd>r</kbd>|
-|Refresh current directory| <kbd>Ctrl</kbd>+<kbd>r</kbd>|
-|Move cursor up   by one screen| <kbd>Page Up</kbd>   or <kbd>Ctrl</kbd>+<kbd>u</kbd> or <kbd>Alt</kbd>+<kbd>u</kbd> |
-|Move cursor down by one screen| <kbd>Page Down</kbd> or <kbd>Ctrl</kbd>+<kbd>d</kbd> or <kbd>Alt</kbd>+<kbd>d</kbd> |
-|Move cursor to the top   | <kbd>Home</kbd> or <kbd>Alt</kbd>+<kbd>g</kbd> |
-|Move cursor to the bottom| <kbd>End</kbd>  or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>g</kbd> |
-|Change case sensitivity mode| <kbd>Alt</kbd>+<kbd>c</kbd> |
-|Change gap search mode| <kbd>Ctrl</kbd>+<kbd>f</kbd> |
-|Show help screen| <kbd>?</kbd> |
+| Description | Default shortcut(s) | Action name |
+|:---:|:---:|:--:|
+|Enter directory under cursor | <kbd>Enter</kbd> or <kbd>→</kbd> or <kbd>Alt</kbd>-<kbd>↓</kbd> or <kbd>Alt</kbd>-<kbd>l</kbd> or if not searching, <kbd>Space</kbd> | `ChangeDir` |
+|Go to parent directory| <kbd>←</kbd> or <kbd>Alt</kbd>-<kbd>↑</kbd> or <kbd>Alt</kbd>-<kbd>h</kbd> or if not searching, <kbd>Backspace</kbd> or <kbd>-</kbd> | `ChangeDirParent` |
+|Go to home directory| <kbd>~</kbd> or <kbd>Ctrl</kbd>-<kbd>Home</kbd> or <kbd>Ctrl</kbd>-<kbd>Alt</kbd>-<kbd>h</kbd>| `ChangeDirHome` |
+|Go to root directory| <kbd>/</kbd> or <kbd>Alt</kbd>-<kbd>r</kbd>| `ChangeDirRoot` |
+|Move cursor up  | <kbd>↑</kbd> or <kbd>Alt</kbd>-<kbd>k</kbd> | `CursorUp` |
+|Move cursor down| <kbd>↓</kbd> or <kbd>Alt</kbd>-<kbd>j</kbd> | `CursorDown` |
+|Move cursor up   by one screen| <kbd>Page Up</kbd>   or <kbd>Ctrl</kbd>-<kbd>u</kbd> or <kbd>Alt</kbd>-<kbd>u</kbd> | `CursorUpScreen` |
+|Move cursor down by one screen| <kbd>Page Down</kbd> or <kbd>Ctrl</kbd>-<kbd>d</kbd> or <kbd>Alt</kbd>-<kbd>d</kbd> | `CursorDownScreen` |
+|Move cursor to the top   | <kbd>Home</kbd> or <kbd>Alt</kbd>-<kbd>g</kbd> | `CursorTop` |
+|Move cursor to the bottom| <kbd>End</kbd>  or <kbd>Alt</kbd>-<kbd>Shift</kbd>-<kbd>g</kbd> | `CursorBottom` |
+|Erase a character from the search | <kbd>Backspace</kbd> if searching | `EraseSearchChar` |
+|Clear the search | <kbd>Esc</kbd> if searching | `ClearSearch` |
+|Change case sensitivity mode| <kbd>Alt</kbd>-<kbd>c</kbd> | `ChangeCaseSensitiveMode` |
+|Change gap search mode| <kbd>Ctrl</kbd>-<kbd>f</kbd> | `ChangeGapSearchMode` |
+|Refresh current directory| <kbd>Ctrl</kbd>-<kbd>r</kbd>| `RefreshListing` |
+|Show help screen| <kbd>?</kbd> | `Help` |
+|Exit `tere`| <kbd>Esc</kbd> or <kbd>Alt</kbd>-<kbd>q</kbd> | `Exit` |
+|Enter directory and exit `tere`| <kbd>Alt</kbd>-<kbd>Enter</kbd> or <kbd>Ctrl</kbd>-<kbd>Space</kbd> | `ChangeDirAndExit` |
+|Exit `tere` without changing directory| <kbd>Ctrl</kbd>-<kbd>c</kbd> | `ExitWithoutCd` |
 
 Some of the shortcuts starting with <kbd>Alt</kbd> should be familiar to Vim users.
+
+#### Customizing keyboard shortcuts
+
+All of the keyboard shortcuts listed above can be customized using the `--map` (or `-m`) CLI option. Keyboard mappings can be either of the form `--map key-combination:action` or `--map key-combination:context:action`, where `key-combination` is a key combination, such as `ctrl-x`, `action` is a valid action name (for example `Exit` or `ChangeDir`, see the table above or `--help` for a full list of actions), and the optional `context` specifies the context in which the mappling applies (for example `Searching` and `NotSearching`, see `--help`). To remove a mapping, use `--map key-combination:None`. Multiple mappings can be made by providing `--map` multiple times, or by using a comma-separated list of mappings: `--map combination1:action1,combination2:action2`.
+
+For further details and examples, see the output of `--help`.
 
 ### Searching
 
@@ -169,9 +178,9 @@ If only one folder matches your current search, `tere` will highlight it, and ch
 
 To stop searching, press <kbd>Esc</kbd> or erase all search characters by pressing <kbd>Backspace</kbd>.
 
-By default, the searching uses "smart case", meaning that if the query contains only lowercase letters, case is ignored, but if there are uppercase letters, the search is case sensitive. This can be changed with the `--ignore-case` and `--case-sensitive` options, or with the keyboard shortcut <kbd>Alt</kbd>+<kbd>c</kbd> while `tere` is running.
+By default, the searching uses "smart case", meaning that if the query contains only lowercase letters, case is ignored, but if there are uppercase letters, the search is case sensitive. This can be changed with the `--ignore-case` and `--case-sensitive` options, or with the keyboard shortcut <kbd>Alt</kbd>-<kbd>c</kbd> by default.
 
-In addition, in the default search mode, "gap search" is enabled. This means that the search query matches any folder or file name that contains the searched characters, even if there are other characters between them. For example, searching for `dt` would match both `DeskTop` and `DocumenTs`. This behavior can be changed with the `--gap-search-anywhere` and `--no-gap-search` options, or with the keyboard shortcut <kbd>Ctrl</kbd>+<kbd>f</kbd> while `tere` is running. See the output of the `--help` option for further details.
+In addition, in the default search mode, "gap search" is enabled. This means that the search query matches any folder or file name that contains the searched characters, even if there are other characters between them. For example, searching for `dt` would match both `DeskTop` and `DocumenTs`. This behavior can be changed with the `--gap-search-anywhere` and `--no-gap-search` options, or with the keyboard shortcut <kbd>Ctrl</kbd>-<kbd>f</kbd> by default. See the output of the `--help` option for further details.
 
 ### Mouse navigation
 

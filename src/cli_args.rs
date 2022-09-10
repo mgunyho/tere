@@ -1,4 +1,6 @@
 use clap::{App, Arg};
+use crate::ui::{Action, ActionContext};
+use strum::IntoEnumIterator;
 
 /// The CLI options for tere
 
@@ -7,7 +9,7 @@ macro_rules! case_sensitive_template {
         concat!(
             $help_text,
             "\n\nThis overrides the --", $x, " and --", $y,
-            " options. You can also change the case sensitivity mode while the program is running with the keyboard shortcut ALT+C."
+            " options. You can also change the case sensitivity mode while the program is running with the keyboard shortcut ALT+C by default."
             )
     }
 }
@@ -17,7 +19,7 @@ macro_rules! gap_search_mode_template {
         concat!(
             $help_text,
             "\n\nThis overrides the --", $x, " and --", $y,
-            " options. You can also change the search mode while the program is running with the keyboard shortcut CTRL+F."
+            " options. You can also change the search mode while the program is running with the keyboard shortcut CTRL+F by default."
         )
     }
 }
@@ -127,6 +129,54 @@ pub fn get_cli_args() -> App<'static> {
              .overrides_with("no-gap-search")
             )
         //TODO: if somebody wants this: '-N', '--no-gap-search-anywhere - don't allow gaps, but can start anywhere. maybe have to come up with a better long name.
+        .arg(Arg::new("map")
+             .long("map")
+             .short('m')
+             .help("Map one or more keyboard shortcuts. See full help (with --help) for further details.")
+             // We need to provide static strings to the long help, but then we can't use format
+             // because it returns String, and it won't live long enough. So we leak the string,
+             // which is ok because it's done only once. Another option would be to create a
+             // wrapper object to own the strings, but this is simpler.
+             // see https://stackoverflow.com/questions/64184984/dynamically-generate-subcommands-with-formatted-description-in-clap
+             // and https://stackoverflow.com/questions/65303960/clap-how-to-pass-a-default-value-when-returning-argmatchesstatic
+             .long_help(&*Box::leak(format!(
+"Add one or more keyboard shortcut mappings. The basic syntax is of the form 'key-combination:action' or 'key-combination:context:action', see examples below. This option can be provided multiple times, and multiple mappings can be created by a comma-separated list of mappings. If the same key combination (with the same context) is provided multiple times, the previous mappings are overridden. Use the action 'None' to remove a previously added mapping or one of the default mappings.
+
+Examples:
+
+    -m ctrl-x:Exit - Exit tere by typing ctrl-x
+    -m ctrl-h:ChangeDirParent,ctrl-j:CursorDown,ctrl-k:CursorUp,ctrl-l:ChangeDir - Navigate using Control + hjkl in addition to the default Alt + hjkl
+    -m 1:NotSearching:CursorTop - Move the cursor to the top of the listing by typing '1', but only if not already searching (so you can still search for filenames that contain '1')
+    -m esc:NotSearching:ExitWithoutCd,enter:ChangeDirAndExit - Map Escape to exiting with error, and map Enter to select the directory under the cursor and exit
+    -m alt-h:None,alt-j:None,alt-k:None,alt-l:None - Disable navigation using Alt+hjkl
+    -m esc:Searching:None - Don't clear the search by pressing esc, but still exit using esc (if the search query is empty)
+
+Possible actions:
+
+{}
+
+Possible contexts:
+
+{}
+",
+justify_and_indent(
+    &Action::iter().map(|a| a.to_string()).collect(),
+    &Action::iter().map(|a| a.description().to_string()).collect()
+    ),
+justify_and_indent(
+    &ActionContext::iter().map(|a| a.to_string()).collect(),
+    &ActionContext::iter().map(|a| a.description().to_string()).collect()
+    ),
+).into_boxed_str()))
+            .takes_value(true)
+            .value_name("MAPPING")
+            .multiple_occurrences(true)
+            )
+        .arg(Arg::new("clear-default-keymap")
+             .long("clear-default-keymap")
+             .help("Do not use the default keyboard mapping.")
+             .long_help("Do not use the default keyboard mapping, so that all shortcuts have to be manually created from scratch using the --map/-m option. If no mapping for Exit is provided, tere will not run.")
+             )
         .arg(Arg::new("autocd-timeout")
              .long("autocd-timeout")
              .help("Timeout for auto-cd when there's only one match, in milliseconds. Use 'off' to disable auto-cd.")
@@ -153,4 +203,18 @@ pub fn get_cli_args() -> App<'static> {
              .default_value("off")
              .multiple_occurrences(true)
             )
+}
+
+/// Justify the list of enum variants (i.e. `ALL_ACTIONS` or `ALL_CONTEXTS`) and their
+/// descriptions, and indent them to be printed in the help text
+fn justify_and_indent(variants: &Vec<String>, descriptions: &Vec<String>) -> String {
+
+    let indentation: String = " ".repeat(4);
+    let max_len = variants.iter().map(|x| x.len()).max().expect("list of variants is empty");
+
+    let lines: Vec<String> = variants.iter().zip(descriptions)
+        .map(|(x, d)| indentation.clone() + x + &" ".repeat(max_len - x.len() + 2) + d)
+        .collect();
+
+    return lines.join("\n");
 }
