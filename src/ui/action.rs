@@ -1,10 +1,15 @@
 use std::cmp::{PartialEq, Eq};
 use std::hash::Hash;
+use strum_macros::{
+    Display as StrumDisplay,
+    EnumString,
+    EnumIter,
+};
 
 /// The possible actions that the user can do
 
 
-#[derive(Debug, PartialEq, Clone, strum_macros::Display, strum_macros::EnumString, strum_macros::EnumIter)]
+#[derive(Debug, PartialEq, Clone, StrumDisplay, EnumString, EnumIter)]
 pub enum Action {
     ChangeDir,
     ChangeDirParent,
@@ -70,7 +75,7 @@ impl Action {
 }
 
 /// An extra quantifier on an action, like 'this only applies when searching'
-#[derive(Hash, PartialEq, Eq, Clone, Debug, strum_macros::Display, strum_macros::EnumString, strum_macros::EnumIter)]
+#[derive(Hash, PartialEq, Eq, Clone, Debug, StrumDisplay, EnumString, EnumIter)]
 pub enum ActionContext {
     /// Signifies that this shortcut should apply if no other condition applies
     None,
