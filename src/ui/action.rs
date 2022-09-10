@@ -69,31 +69,6 @@ impl Action {
     }
 }
 
-/// A list of all of the possible actions, so that they can be programmatically included in the
-/// help text etc.
-pub const ALL_ACTIONS: &[Action] = &[
-    Action::ChangeDir,
-    Action::ChangeDirParent,
-    Action::ChangeDirHome,
-    Action::ChangeDirRoot,
-    Action::ChangeDirAndExit,
-    Action::CursorUp,
-    Action::CursorDown,
-    Action::CursorUpScreen,
-    Action::CursorDownScreen,
-    Action::CursorTop,
-    Action::CursorBottom,
-    Action::EraseSearchChar,
-    Action::ClearSearch,
-    Action::ChangeCaseSensitiveMode,
-    Action::ChangeGapSearchMode,
-    Action::RefreshListing,
-    Action::Help,
-    Action::Exit,
-    Action::ExitWithoutCd,
-    Action::None,
-];
-
 /// An extra quantifier on an action, like 'this only applies when searching'
 #[derive(Hash, PartialEq, Eq, Clone, Debug, strum_macros::Display, strum_macros::EnumString)]
 pub enum ActionContext {
