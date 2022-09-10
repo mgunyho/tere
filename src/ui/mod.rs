@@ -521,7 +521,7 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn on_arrow_key(&mut self, up: bool) -> CTResult<()> {
+    fn on_cursor_up_down(&mut self, up: bool) -> CTResult<()> {
         let dir = if up { -1 } else { 1 };
         if self.app_state.is_searching() {
             //TODO: handle case where 'is_searching' but there are no matches - move cursor?
@@ -649,9 +649,8 @@ impl<'a> TereTui<'a> {
                                 }
                             },
 
-                            // TODO: rename on_arrow_key to on_cursor_up
-                            Action::CursorUp => self.on_arrow_key(true)?,
-                            Action::CursorDown => self.on_arrow_key(false)?,
+                            Action::CursorUp => self.on_cursor_up_down(true)?,
+                            Action::CursorDown => self.on_cursor_up_down(false)?,
                             Action::CursorUpScreen => self.on_cursor_up_down_screen(true)?,
                             Action::CursorDownScreen => self.on_cursor_up_down_screen(false)?,
                             Action::CursorTop => self.on_cursor_top_bottom(true)?,
@@ -705,8 +704,8 @@ impl<'a> TereTui<'a> {
                     MouseEventKind::Up(MouseButton::Right) => { self.change_dir("..")?; },
 
                     //TODO: add configuration to jump multiple items on scroll
-                    MouseEventKind::ScrollUp   => self.on_arrow_key(true)?,
-                    MouseEventKind::ScrollDown => self.on_arrow_key(false)?,
+                    MouseEventKind::ScrollUp   => self.on_cursor_up_down(true)?,
+                    MouseEventKind::ScrollDown => self.on_cursor_up_down(false)?,
 
                     //e => self.info_message(&format!("{:?}", e))?, // for debugging
                     _ => (),
