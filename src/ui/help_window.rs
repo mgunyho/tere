@@ -78,6 +78,7 @@ fn get_keyboard_shortcuts_table() -> &'static  str {
 fn get_justified_keyboard_shortcuts_table(
     key_mapping: &HashMap<(KeyEvent, ActionContext), Action>,
 ) -> String {
+    let formatter = crokey::KeyEventFormat::default();
 
     let keyboard_shortcuts = get_keyboard_shortcuts_table();
 
@@ -87,34 +88,57 @@ fn get_justified_keyboard_shortcuts_table(
         .max()
         .unwrap_or(10);
 
+    // Mapping from action names to list of key combinations
+    let key_mapping_inv = invert_key_mapping_sorted(key_mapping);
+
     let mut justified = String::new();
 
     for (i, line) in keyboard_shortcuts.lines().enumerate() {
-        let cols: Vec<&str> = line.split('|').collect();
         // cols[0] is empty, because the lines start with '|'.
-        let mut action = cols[1].trim().to_string();
-        let mut shortcut = cols[2].trim().to_string();
+        let cols: Vec<&str> = line.split('|').map(|c| c.trim()).collect();
 
-        // skip markdown table formatting row
-        if action.starts_with(":--") {
-            continue;
-        }
+        let (action_desc, shortcuts) = match i {
+            0 => {
+                // first row is the headers, add backticks to bold them
+                (
+                    format!("`{}`", cols[1]),
+                    format!("`{}`", cols[2].replace("Default s", "S")),
+                )
+            }
+            1 => continue, // skip row containing markdown table formatting
+            _ => {
+                let action_name = cols[3].replace("`", "").trim().to_string();
+                // add backticks + short description of context to each key combo
+                let shortcuts_formatted: String = match key_mapping_inv.get(&action_name) {
+                    Some(shortcuts) => shortcuts
+                        .iter()
+                        .map(|(keys, ctx)| {
+                            let mut shortcut = format!("`{}`", formatter.to_string(*keys));
+                            let ctx = match ctx {
+                                ActionContext::None => String::new(),
+                                _ => format!(" ({})", ctx.short_description()),
+                            };
+                            shortcut.push_str(&ctx);
+                            shortcut
+                        })
+                        .collect::<Vec<String>>()
+                        .join(", "),
+                    None => "No mapping found".to_string(),
+                };
 
-        if i == 0 {
-            // add backticks so that first line is bolded
-            action = format!("`{}`", &action);
-            shortcut = format!("`{}`", &shortcut);
-        }
+                (cols[1].to_string(), shortcuts_formatted)
+            }
+        };
 
-        justified.push_str(&action);
+        justified.push_str(&action_desc);
 
         // backticks will be removed, so add extra space for them
-        let extra_len = action.chars().filter(|c| *c == '`').count();
-        let padding = first_column_width + extra_len + 2 - action.len();
+        let extra_len = action_desc.chars().filter(|c| *c == '`').count();
+        let padding = first_column_width + extra_len + 2 - action_desc.len();
         justified.push_str(&" ".repeat(padding));
+        justified.push_str(&shortcuts);
         // It's ok to add "\n" at the end of every line, because the split_once() above has
         // eaten too many newlines from the end anyway.
-        justified.push_str(&shortcut);
         justified.push('\n');
     }
 
@@ -122,6 +146,51 @@ fn get_justified_keyboard_shortcuts_table(
     justified.push('\n');
 
     justified
+}
+
+/// Invert a key mapping, so that we have a mapping from action names to list of key combinations.
+/// Each list of key combinations is sorted for display purposes, that is, keys with no modifiers
+/// are placed first (alphabetically), and keys with contexts other than None are placed last.
+fn invert_key_mapping_sorted(
+    key_mapping: &HashMap<(KeyEvent, ActionContext), Action>,
+) -> HashMap<String, Vec<(KeyEvent, ActionContext)>> {
+
+    let mut key_mapping_inv = HashMap::new();
+
+    // compare two key events: put keys without modifiers before those that have modifiers this is
+    // probably not the right place for this, but I'll move
+    // it out if I need it elsewhere.
+    fn cmp_key_events(k1: &KeyEvent, k2: &KeyEvent) -> std::cmp::Ordering {
+        let formatter = crokey::KeyEventFormat::default();
+        match (k1.modifiers.is_empty(), k2.modifiers.is_empty()) {
+            (true, true) | (false, false) => {
+                // both or neither have modifiers, sort alphabetically
+                formatter.to_string(*k1).cmp(&formatter.to_string(*k2))
+            }
+            (true, false) => std::cmp::Ordering::Less,
+            (false, true) => std::cmp::Ordering::Greater,
+        }
+    }
+
+    // Collect all mappings corresponding to a given action
+    for ((k, c), a) in key_mapping {
+        key_mapping_inv
+            .entry(a.to_string())
+            .or_insert(vec![])
+            .push((*k, c.clone()))
+    }
+
+    // Sort the key mappings, they are in a random order because of hashmap
+    for (_, mappings) in key_mapping_inv.iter_mut() {
+        mappings.sort_unstable_by(|(k1, c1), (k2, c2)| match (c1, c2) {
+            (ActionContext::None, ActionContext::None) => cmp_key_events(k1, k2),
+            (_,                   ActionContext::None) => std::cmp::Ordering::Greater,
+            (ActionContext::None,                   _) => std::cmp::Ordering::Less,
+            (_, _) => (c1.to_string().cmp(&c2.to_string())),
+        })
+    }
+
+    key_mapping_inv
 }
 
 /// Return a version of `text`, where all markup has been strippeed, and also return a vector of
