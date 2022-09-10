@@ -16,8 +16,8 @@ pub enum Action {
     CursorDown,
     CursorUpPage,
     CursorDownPage,
-    CursorFirst,
-    CursorLast,
+    CursorTop,
+    CursorBottom,
 
     EraseSearchChar,
     ClearSearch,
