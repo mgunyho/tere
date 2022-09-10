@@ -533,8 +533,8 @@ impl<'a> TereTui<'a> {
         self.redraw_footer()
     }
 
-    // When the 'page up' or 'page down' keys are pressed
-    pub fn on_page_up_down(&mut self, up: bool) -> CTResult<()> {
+    // When scroling up or down by a screenful (i.e. 'page up' or 'page down')
+    fn on_cursor_up_down_screen(&mut self, up: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
             let (_, h) = main_window_size()?;
             let delta = ((h - 1) as isize) * if up { -1 } else { 1 };
@@ -652,8 +652,8 @@ impl<'a> TereTui<'a> {
                             // TODO: rename on_arrow_key to on_cursor_up
                             Action::CursorUp => self.on_arrow_key(true)?,
                             Action::CursorDown => self.on_arrow_key(false)?,
-                            Action::CursorUpScreen => self.on_page_up_down(true)?,
-                            Action::CursorDownScreen => self.on_page_up_down(false)?,
+                            Action::CursorUpScreen => self.on_cursor_up_down_screen(true)?,
+                            Action::CursorDownScreen => self.on_cursor_up_down_screen(false)?,
                             Action::CursorTop => self.on_cursor_top_bottom(true)?,
                             Action::CursorBottom => self.on_cursor_top_bottom(false)?,
 
