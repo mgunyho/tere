@@ -83,34 +83,35 @@ impl TereSettings {
     pub fn parse_cli_args(args: &ArgMatches) -> Result<Self, ClapError> {
         let mut ret = Self::default();
 
-        if args.is_present("folders-only") {
+        if args.contains_id("folders-only") {
             ret.folders_only = true;
         }
 
-        if args.is_present("filter-search") {
+        if args.contains_id("filter-search") {
             ret.filter_search = true;
         }
 
-        if args.is_present("case-sensitive") {
+        if args.contains_id("case-sensitive") {
             ret.case_sensitive = CaseSensitiveMode::CaseSensitive;
-        } else if args.is_present("ignore-case") {
+        } else if args.contains_id("ignore-case") {
             ret.case_sensitive = CaseSensitiveMode::IgnoreCase;
-        } else if args.is_present("smart-case") {
+        } else if args.contains_id("smart-case") {
             ret.case_sensitive = CaseSensitiveMode::SmartCase;
         }
 
-        if args.is_present("gap-search") {
+        if args.contains_id("gap-search") {
             ret.gap_search_mode = GapSearchMode::GapSearchFromStart;
-        } else if args.is_present("gap-search-anywhere") {
+        } else if args.contains_id("gap-search-anywhere") {
             ret.gap_search_mode = GapSearchMode::GapSearchAnywere;
-        } else if args.is_present("no-gap-search") {
+        } else if args.contains_id("no-gap-search") {
             ret.gap_search_mode = GapSearchMode::NoGapSearch;
         }
 
         ret.autocd_timeout = match args
-            .values_of("autocd-timeout")
+            .get_many::<String>("autocd-timeout")
             // ok to unwrap because autocd-timeout has a default value which is always present
             .unwrap()
+            .map(|v| v.as_str())
             .last()
             .unwrap()
         {
@@ -128,7 +129,7 @@ impl TereSettings {
                 .into(),
         };
 
-        if let Some(hist_file) = args.value_of("history-file") {
+        if let Some(hist_file) = args.get_one::<String>("history-file") {
             ret.history_file = if hist_file.is_empty() {
                 None
             } else {
@@ -140,7 +141,7 @@ impl TereSettings {
         }
 
         // ok to unwrap, because mouse has the default value of 'off'
-        if args.values_of("mouse").unwrap().last().unwrap() == "on" {
+        if args.get_many::<String>("mouse").unwrap().map(|v| v.as_str()).last().unwrap() == "on" {
             ret.mouse_enabled = true;
         }
 
