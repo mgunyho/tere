@@ -294,6 +294,16 @@ mod tests {
     }
 
     #[test]
+    fn test_replace_works_as_expected() {
+        // The get_formatted_help_text function does a bunch of replacements. Here we test that all
+        // of the things that are being replaced are found in the README.
+        assert!(README_STR.contains("shortcuts by default"));
+        assert!(README_STR.contains("<kbd>"));
+        assert!(README_STR.contains("</kbd>"));
+        assert!(README_STR.contains("Default s"));
+    }
+
+    #[test]
     fn test_keyboard_shortcuts_table_fond() {
         let table = get_keyboard_shortcuts_table();
         let lines: Vec<_> = table.split("\n").collect();
