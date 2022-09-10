@@ -61,7 +61,7 @@ pub fn get_formatted_help_text(
 
 /// Extract the table of keyboard shortcuts from the README. Panics if the README is incorrectly
 /// formatted.
-fn get_keyboard_shortcuts_table() -> &'static  str {
+fn get_keyboard_shortcuts_table() -> &'static str {
     let keyboard_shortcuts = README_STR
         .split_once("keyboard shortcuts by default:\n\n")
         .expect("Couldn't find table of keyboard shortcuts in README")
