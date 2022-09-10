@@ -70,7 +70,7 @@ impl Action {
 }
 
 /// An extra quantifier on an action, like 'this only applies when searching'
-#[derive(Hash, PartialEq, Eq, Clone, Debug, strum_macros::Display, strum_macros::EnumString)]
+#[derive(Hash, PartialEq, Eq, Clone, Debug, strum_macros::Display, strum_macros::EnumString, strum_macros::EnumIter)]
 pub enum ActionContext {
     /// Signifies that this shortcut should apply if no other condition applies
     None,
@@ -102,11 +102,3 @@ impl ActionContext {
         }
     }
 }
-
-/// A list of all possible action contexts, so that they can be programmatically included in the
-/// help text etc.
-pub const ALL_ACTION_CONTEXTS: &[ActionContext] = &[
-    ActionContext::None,
-    ActionContext::Searching,
-    ActionContext::NotSearching,
-];

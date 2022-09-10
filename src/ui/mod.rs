@@ -13,7 +13,7 @@ use crate::app_state::{
     NO_MATCHES_MSG,
 };
 use help_window::get_formatted_help_text;
-pub use action::{Action, ActionContext, ALL_ACTION_CONTEXTS};
+pub use action::{Action, ActionContext};
 
 use crossterm::{
     execute,
