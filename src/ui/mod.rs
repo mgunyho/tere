@@ -652,8 +652,8 @@ impl<'a> TereTui<'a> {
                             // TODO: rename on_arrow_key to on_cursor_up
                             Action::CursorUp => self.on_arrow_key(true)?,
                             Action::CursorDown => self.on_arrow_key(false)?,
-                            Action::CursorUpPage => self.on_page_up_down(true)?,
-                            Action::CursorDownPage => self.on_page_up_down(false)?,
+                            Action::CursorUpScreen => self.on_page_up_down(true)?,
+                            Action::CursorDownScreen => self.on_page_up_down(false)?,
                             // TODO: rename on_home_end to on_cursor_first (or something)
                             Action::CursorTop => self.on_home_end(true)?,
                             Action::CursorBottom => self.on_home_end(false)?,

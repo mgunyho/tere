@@ -263,13 +263,13 @@ pub const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
     (key!(down),  ActionContext::None, Action::CursorDown),
     (key!(alt-j), ActionContext::None, Action::CursorDown),
 
-    (key!(pageup),  ActionContext::None, Action::CursorUpPage),
-    (key!(alt-u),   ActionContext::None, Action::CursorUpPage),
-    (key!(ctrl-u),  ActionContext::None, Action::CursorUpPage),
+    (key!(pageup),  ActionContext::None, Action::CursorUpScreen),
+    (key!(alt-u),   ActionContext::None, Action::CursorUpScreen),
+    (key!(ctrl-u),  ActionContext::None, Action::CursorUpScreen),
 
-    (key!(pagedown), ActionContext::None, Action::CursorDownPage),
-    (key!(alt-d),    ActionContext::None, Action::CursorDownPage),
-    (key!(ctrl-d),   ActionContext::None, Action::CursorDownPage),
+    (key!(pagedown), ActionContext::None, Action::CursorDownScreen),
+    (key!(alt-d),    ActionContext::None, Action::CursorDownScreen),
+    (key!(ctrl-d),   ActionContext::None, Action::CursorDownScreen),
 
     (key!(home),        ActionContext::None, Action::CursorTop),
     (key!(alt-g),       ActionContext::None, Action::CursorTop), // like vim 'gg'

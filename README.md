@@ -146,8 +146,8 @@ You can navigate folders in `tere` by using the arrow keys and by typing to sear
 |Go to root directory| <kbd>/</kbd> or <kbd>Alt</kbd>-<kbd>r</kbd>| `ChangeDirRoot` |
 |Move cursor up  | <kbd>↑</kbd> or <kbd>Alt</kbd>-<kbd>k</kbd> | `CursorUp` |
 |Move cursor down| <kbd>↓</kbd> or <kbd>Alt</kbd>-<kbd>j</kbd> | `CursorDown` |
-|Move cursor up   by one screen| <kbd>Page Up</kbd>   or <kbd>Ctrl</kbd>-<kbd>u</kbd> or <kbd>Alt</kbd>-<kbd>u</kbd> | `CursorUpPage` |
-|Move cursor down by one screen| <kbd>Page Down</kbd> or <kbd>Ctrl</kbd>-<kbd>d</kbd> or <kbd>Alt</kbd>-<kbd>d</kbd> | `CursorDownPage` |
+|Move cursor up   by one screen| <kbd>Page Up</kbd>   or <kbd>Ctrl</kbd>-<kbd>u</kbd> or <kbd>Alt</kbd>-<kbd>u</kbd> | `CursorUpScreen` |
+|Move cursor down by one screen| <kbd>Page Down</kbd> or <kbd>Ctrl</kbd>-<kbd>d</kbd> or <kbd>Alt</kbd>-<kbd>d</kbd> | `CursorDownScreen` |
 |Move cursor to the top   | <kbd>Home</kbd> or <kbd>Alt</kbd>-<kbd>g</kbd> | `CursorTop` |
 |Move cursor to the bottom| <kbd>End</kbd>  or <kbd>Alt</kbd>-<kbd>Shift</kbd>-<kbd>g</kbd> | `CursorBottom` |
 |Erase a character from the search | <kbd>Backspace</kbd> if searching | `EraseSearchChar` |

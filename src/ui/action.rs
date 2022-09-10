@@ -14,8 +14,8 @@ pub enum Action {
 
     CursorUp,
     CursorDown,
-    CursorUpPage,
-    CursorDownPage,
+    CursorUpScreen,
+    CursorDownScreen,
     CursorTop,
     CursorBottom,
 
@@ -46,8 +46,8 @@ impl Action {
 
             Self::CursorUp => "Move the cursor up by one step",
             Self::CursorDown => "Move the cursor down by one step",
-            Self::CursorUpPage => "Move the cursor up by one screenful",
-            Self::CursorDownPage => "Move the cursor down by one screenful",
+            Self::CursorUpScreen => "Move the cursor up by one screenful",
+            Self::CursorDownScreen => "Move the cursor down by one screenful",
             Self::CursorTop => "Move the cursor to the first item in the listing",
             Self::CursorBottom => "Move the cursor to the last item in the listing",
 
@@ -79,8 +79,8 @@ pub const ALL_ACTIONS: &[Action] = &[
     Action::ChangeDirAndExit,
     Action::CursorUp,
     Action::CursorDown,
-    Action::CursorUpPage,
-    Action::CursorDownPage,
+    Action::CursorUpScreen,
+    Action::CursorDownScreen,
     Action::CursorTop,
     Action::CursorBottom,
     Action::EraseSearchChar,
