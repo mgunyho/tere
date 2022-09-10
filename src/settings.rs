@@ -271,10 +271,10 @@ pub const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
     (key!(alt-d),    ActionContext::None, Action::CursorDownPage),
     (key!(ctrl-d),   ActionContext::None, Action::CursorDownPage),
 
-    (key!(home),        ActionContext::None, Action::CursorFirst),
-    (key!(alt-g),       ActionContext::None, Action::CursorFirst), // like vim 'gg'
-    (key!(end),         ActionContext::None, Action::CursorLast),
-    (key!(alt-shift-g), ActionContext::None, Action::CursorLast), // like vim 'G'
+    (key!(home),        ActionContext::None, Action::CursorTop),
+    (key!(alt-g),       ActionContext::None, Action::CursorTop), // like vim 'gg'
+    (key!(end),         ActionContext::None, Action::CursorBottom),
+    (key!(alt-shift-g), ActionContext::None, Action::CursorBottom), // like vim 'G'
 
     (key!(backspace), ActionContext::Searching, Action::EraseSearchChar),
 
