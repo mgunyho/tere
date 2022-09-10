@@ -40,7 +40,11 @@ pub fn get_formatted_help_text(
     help_str.push_str("\n\n"); // add back newlines eaten by split_once
     help_str = help_str.replace("shortcuts by default", "shortcuts"); // we're going to display the actual shortcuts
     help_str.push_str(&get_justified_keyboard_shortcuts_table(&key_mapping));
-    help_str.push_str(rest);
+
+    let rest = rest
+        // Remove mention of 'vim-like' shortcuts, it might not apply if the user has customized them.
+        .split("\n").filter(|line| !line.contains("should be familiar to")).collect::<Vec<_>>().join("\n");
+    help_str.push_str(&rest);
 
     // We need to get rid of the `<kbd>` tags before wrapping so it works correctly. We're going to
     // bold all words within backticks, so replace the tags with backticks as well.
@@ -142,9 +146,6 @@ fn get_justified_keyboard_shortcuts_table(
         // eaten too many newlines from the end anyway.
         justified.push('\n');
     }
-
-    // add extra newline at end
-    justified.push('\n');
 
     justified
 }
@@ -300,6 +301,7 @@ mod tests {
         assert!(README_STR.contains("<kbd>"));
         assert!(README_STR.contains("</kbd>"));
         assert!(README_STR.contains("Default s"));
+        assert!(README_STR.contains("should be familiar to"));
     }
 
     #[test]
