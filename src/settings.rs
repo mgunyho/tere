@@ -501,6 +501,17 @@ mod tests {
     }
 
     #[test]
+    fn test_clear_default_keymap() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--clear-default-keymap",
+                "--map", "ctrl-x:Exit",
+            ]);
+        assert!(TereSettings::parse_cli_args(&m).unwrap().keymap.len() == 1);
+    }
+
+    #[test]
     fn test_empty_keymap_is_error() {
         let m = crate::cli_args::get_cli_args()
             .get_matches_from(vec![
@@ -511,14 +522,13 @@ mod tests {
     }
 
     #[test]
-    fn test_clear_default_keymap() {
+    fn test_unmap_exit_is_error() {
         let m = crate::cli_args::get_cli_args()
             .get_matches_from(vec![
                 "foo",
-                "--clear-default-keymap",
-                "--map", "ctrl-x:Exit",
+                "--map", "esc:NotSearching:None,alt-q:None",
             ]);
-        assert!(TereSettings::parse_cli_args(&m).unwrap().keymap.len() == 1);
+        assert!(TereSettings::parse_cli_args(&m).is_err());
     }
 
 }
