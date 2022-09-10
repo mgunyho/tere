@@ -290,7 +290,7 @@ mod tests {
     #[test]
     fn test_user_guide_found() {
         // this should panic if the README is incorrectly formatted
-        get_formatted_help_text(100);
+        get_formatted_help_text(100, &HashMap::new());
     }
 
     #[test]
