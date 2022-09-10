@@ -155,7 +155,6 @@ fn get_justified_keyboard_shortcuts_table(
 fn invert_key_mapping_sorted(
     key_mapping: &HashMap<(KeyEvent, ActionContext), Action>,
 ) -> HashMap<String, Vec<(KeyEvent, ActionContext)>> {
-
     let mut key_mapping_inv = HashMap::new();
 
     // compare two key events: put keys without modifiers before those that have modifiers this is
