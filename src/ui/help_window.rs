@@ -79,7 +79,7 @@ fn get_keyboard_shortcuts_table() -> &'static str {
 }
 
 /// Apply justification to the table of keyboard shortcuts in the README and render it to a String
-/// without the markup
+/// with the markdown table markup and <kbd> tags removed.
 fn get_justified_keyboard_shortcuts_table(
     key_mapping: &HashMap<(KeyEvent, ActionContext), Action>,
 ) -> String {
