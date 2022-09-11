@@ -389,6 +389,14 @@ mod tests {
     }
 
     #[test]
+    fn test_strip_markup2() {
+        let input = "## foo bar\n\nlorem ipsum `dolor\nsit` amet";
+        let (output, locs) = strip_markup_and_extract_bold_positions(input);
+        assert_eq!(output, "foo bar\n\nlorem ipsum dolor\nsit amet");
+        assert_eq!(locs, vec![0, 7, 21, 30]);
+    }
+
+    #[test]
     fn test_stylize_wrapped_lines() {
         let lines = vec!["foo bar", "", "lorem ipsum dolor sit amet"];
         let stylized = stylize_wrapped_lines(lines, vec![0, 7, 21, 26]);
@@ -402,4 +410,46 @@ mod tests {
         assert_eq!(stylized[2][1], "dolor".to_string().bold());
         assert_eq!(stylized[2][2], " sit amet".to_string().stylize());
     }
+
+    #[test]
+    fn test_stylize_wrapped_lines2() {
+        let input = "## foo bar\n\nlorem ipsum `dolor` sit amet";
+        let (lines, locs) = strip_markup_and_extract_bold_positions(input);
+        let stylized = stylize_wrapped_lines(lines.split("\n").collect(), locs);
+
+        assert_eq!(
+            stylized[0],
+            vec!["".to_string().stylize(), "foo bar".to_string().bold()]
+        );
+        assert_eq!(stylized[1], vec![]);
+        assert_eq!(stylized[2][0], "lorem ipsum ".to_string().stylize());
+        assert_eq!(stylized[2][1], "dolor".to_string().bold());
+        assert_eq!(stylized[2][2], " sit amet".to_string().stylize());
+    }
+
+    #[test]
+    fn test_stylize_wrapped_lines3() {
+        // test case where textwrap adds an extra newline in the middle of a bold section of text,
+        // where the newline does *not* replace whitespace (i.e. after a special character such as
+        // '/')
+
+        let input = "## foo bar\n\nlorem ipsum `dolor/sit` amet";
+        let (lines, locs) = strip_markup_and_extract_bold_positions(input);
+
+        let opts = Options::new(18).word_splitter(NoHyphenation);
+        let lines_wrapped: Vec<_> = textwrap::wrap(&lines, &opts);
+
+        let stylized: Vec<_> = stylize_wrapped_lines(lines_wrapped, locs);
+
+        assert_eq!(
+            stylized[0],
+            vec!["".to_string().stylize(), "foo bar".to_string().bold()]
+        );
+        assert_eq!(stylized[1], vec![]);
+        assert_eq!(stylized[2][0], "lorem ipsum ".to_string().stylize());
+        assert_eq!(stylized[2][1], "dolor|".to_string().bold());
+        assert_eq!(stylized[3][0], "sit".to_string().bold());
+        assert_eq!(stylized[3][1], " amet".to_string().stylize());
+    }
+
 }
