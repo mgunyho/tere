@@ -9,7 +9,7 @@ macro_rules! case_sensitive_template {
         concat!(
             $help_text,
             "\n\nThis overrides the --", $x, " and --", $y,
-            " options. You can also change the case sensitivity mode while the program is running with the keyboard shortcut ALT+C by default."
+            " options. You can also change the case sensitivity mode while the program is running with the keyboard shortcut Alt-c by default."
             )
     }
 }
@@ -19,7 +19,7 @@ macro_rules! gap_search_mode_template {
         concat!(
             $help_text,
             "\n\nThis overrides the --", $x, " and --", $y,
-            " options. You can also change the search mode while the program is running with the keyboard shortcut CTRL+F by default."
+            " options. You can also change the search mode while the program is running with the keyboard shortcut Ctrl-f by default."
         )
     }
 }
