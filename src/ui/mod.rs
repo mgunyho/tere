@@ -682,12 +682,10 @@ impl<'a> TereTui<'a> {
 
                         }
                     } else {
-                        // If the key is not part of any mapping, advance the search
-                        match k {
-                            KeyEvent { code: KeyCode::Char(c), .. } => self.on_search_char(c)?,
-                            _ => (),
-                            //_ => self.info_message(&format!("{:?}", k))?, // for debugging
-                        }
+                        // The key is not part of any mapping, advance the search if it's a char
+                        if let KeyEvent { code: KeyCode::Char(c), .. } = k {
+                            self.on_search_char(c)?;
+                        } // else { self.info_message(&format!("{:?}", k))? } // for debugging
                     }
                 }
 
