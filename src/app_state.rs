@@ -7,6 +7,7 @@ use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::io::{Error as IOError, ErrorKind, Result as IOResult};
 use std::path::{Component, Path, PathBuf};
+use std::fmt::Write as _;
 
 use regex::Regex;
 
@@ -606,7 +607,7 @@ impl TereAppState {
         // groups which are defined by the format!() parens here...
         let mut regex_str = "".to_string();
         if self.settings.gap_search_mode == GapSearchMode::NoGapSearch {
-            regex_str.push_str(&format!("^({})", regex::escape(&search_string)));
+            let _ = write!(regex_str, "^({})", regex::escape(&search_string));
         } else {
             // enable gap search. Add '^' to the regex to match only from the start if applicable.
             if self.settings.gap_search_mode == GapSearchMode::GapSearchFromStart {
