@@ -4,6 +4,7 @@ mod action;
 use std::convert::TryFrom;
 use std::io::{Stderr, Write};
 use std::path::PathBuf;
+use std::fmt::Write as _;
 
 use crate::error::TereError;
 use crate::app_state::{
@@ -175,8 +176,8 @@ impl<'a> TereTui<'a> {
         let mut win = self.window;
         let mut extra_msg = String::new();
 
-        extra_msg.push_str(&format!("{} - ", self.app_state.settings.gap_search_mode));
-        extra_msg.push_str(&format!("{} - ", self.app_state.settings.case_sensitive));
+        let _ = write!(extra_msg, "{} - ", self.app_state.settings.gap_search_mode);
+        let _ = write!(extra_msg, "{} - ", self.app_state.settings.case_sensitive);
 
         let cursor_idx = self
             .app_state
@@ -190,19 +191,21 @@ impl<'a> TereTui<'a> {
                 .position(|x| *x == cursor_idx)
                 .unwrap_or(0);
 
-            extra_msg.push_str(&format!(
+            let _ = write!(
+                extra_msg,
                 "{} / {} / {}",
                 index_in_matches + 1,
                 self.app_state.num_matching_items(),
                 self.app_state.num_total_items()
-            ));
+            );
         } else {
             //TODO: show no. of files/folders separately? like 'n folders, n files'
-            extra_msg.push_str(&format!(
+            let _ = write!(
+                extra_msg,
                 "{} / {}",
                 cursor_idx + 1,
                 self.app_state.num_visible_items()
-            ));
+            );
         }
 
         // draw extra message first, so that it gets overwritten by the more important search query
@@ -682,12 +685,10 @@ impl<'a> TereTui<'a> {
 
                         }
                     } else {
-                        // If the key is not part of any mapping, advance the search
-                        match k {
-                            KeyEvent { code: KeyCode::Char(c), .. } => self.on_search_char(c)?,
-                            _ => (),
-                            //_ => self.info_message(&format!("{:?}", k))?, // for debugging
-                        }
+                        // The key is not part of any mapping, advance the search if it's a char
+                        if let KeyEvent { code: KeyCode::Char(c), .. } = k {
+                            self.on_search_char(c)?;
+                        } // else { self.info_message(&format!("{:?}", k))? } // for debugging
                     }
                 }
 

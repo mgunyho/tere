@@ -148,7 +148,7 @@ impl TereSettings {
         if !args.is_present("clear-default-keymap") {
             ret.keymap = DEFAULT_KEYMAP
                 .iter()
-                .map(|(k, c, a)| ((k.clone(), c.clone()), a.clone()))
+                .map(|(k, c, a)| ((*k, c.clone()), a.clone()))
                 .collect();
         }
 
@@ -166,7 +166,7 @@ impl TereSettings {
             }
         }
 
-        if !ret.keymap.values().collect::<Vec<_>>().contains(&&Action::Exit) {
+        if !ret.keymap.values().any(|a| a == &Action::Exit) {
             return Err(ClapError::raw(
                 ClapErrorKind::EmptyValue,
                 "No keyboard mapping found for exit!\n",
@@ -178,7 +178,7 @@ impl TereSettings {
 }
 
 fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>, ClapError> {
-    let mappings = arg.split(",");
+    let mappings = arg.split(',');
     let mut ret = Vec::new();
 
     fn parsekey_to_clap(mapping: &str, err: crokey::ParseKeyError) -> ClapError {
@@ -207,22 +207,22 @@ fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>,
         }
 
         //TODO: what if I want to map colon? see how crokey does the hyphen parsing
-        let parts: Vec<&str> = mapping.split(":").collect();
+        let parts: Vec<&str> = mapping.split(':').collect();
         let (k, c, a) = match parts[..] {
             [keys, action] => (
                 crokey::parse(keys).map_err(|e| parsekey_to_clap(mapping, e))?,
                 ActionContext::None,
-                Action::from_str(action).or(Err(strum_to_clap(mapping, action, "action")))?
+                Action::from_str(action).map_err(|_| strum_to_clap(mapping, action, "action"))?
             ),
             [keys, ctx, action] => (
                 crokey::parse(keys).map_err(|e| parsekey_to_clap(mapping, e))?,
-                ActionContext::from_str(ctx).or(Err(strum_to_clap(mapping, &ctx, "context")))?,
-                Action::from_str(action).or(Err(strum_to_clap(mapping, &action, "action")))?
+                ActionContext::from_str(ctx).map_err(|_| strum_to_clap(mapping, ctx, "context"))?,
+                Action::from_str(action).map_err(|_| strum_to_clap(mapping, action, "action"))?
             ),
             _ => return Err(ClapError::raw(
                     ClapErrorKind::InvalidValue,
                     format!("Keyboard mapping is not of the form 'key-combination:action' or 'key-combination:context:action': '{}'\n", &mapping),
-                    ).into())
+                    ))
         };
 
         ret.push((k, c, a));
