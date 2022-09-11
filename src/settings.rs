@@ -212,12 +212,12 @@ fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>,
             [keys, action] => (
                 crokey::parse(keys).map_err(|e| parsekey_to_clap(mapping, e))?,
                 ActionContext::None,
-                Action::from_str(action).or(Err(strum_to_clap(mapping, action, "action")))?
+                Action::from_str(action).map_err(|_| strum_to_clap(mapping, action, "action"))?
             ),
             [keys, ctx, action] => (
                 crokey::parse(keys).map_err(|e| parsekey_to_clap(mapping, e))?,
-                ActionContext::from_str(ctx).or(Err(strum_to_clap(mapping, ctx, "context")))?,
-                Action::from_str(action).or(Err(strum_to_clap(mapping, action, "action")))?
+                ActionContext::from_str(ctx).map_err(|_| strum_to_clap(mapping, ctx, "context"))?,
+                Action::from_str(action).map_err(|_| strum_to_clap(mapping, action, "action"))?
             ),
             _ => return Err(ClapError::raw(
                     ClapErrorKind::InvalidValue,
