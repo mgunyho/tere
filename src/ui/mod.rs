@@ -596,16 +596,27 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    /// Things to do when one of the search modes (filter, gap search, case sensitivty) is changed.
+    fn on_search_mode_change(&mut self) -> CTResult<()> {
+        //TODO: do the other stuff that self.on_search_char does, notably, change dir if only one match. or should it?
+        self.app_state.advance_search("");
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
+    }
+
+    fn toggle_filter_search_mode(&mut self) -> CTResult<()> {
+        self.app_state.settings.filter_search = !self.app_state.settings.filter_search;
+        self.on_search_mode_change()
+    }
+
     fn cycle_case_sensitive_mode(&mut self) -> CTResult<()> {
         self.app_state.settings.case_sensitive = match self.app_state.settings.case_sensitive {
             CaseSensitiveMode::IgnoreCase => CaseSensitiveMode::CaseSensitive,
             CaseSensitiveMode::CaseSensitive => CaseSensitiveMode::SmartCase,
             CaseSensitiveMode::SmartCase => CaseSensitiveMode::IgnoreCase,
         };
-        self.app_state.advance_search("");
-        self.redraw_main_window()?;
-        self.redraw_footer()?;
-        Ok(())
+        self.on_search_mode_change()
     }
 
     fn cycle_gap_search_mode(&mut self) -> CTResult<()> {
@@ -614,11 +625,7 @@ impl<'a> TereTui<'a> {
             GapSearchMode::NoGapSearch => GapSearchMode::GapSearchAnywere,
             GapSearchMode::GapSearchAnywere => GapSearchMode::GapSearchFromStart,
         };
-        //TODO: do the other stuff that self.on_search_char_does, notably, change dir if only one match. or should it?
-        self.app_state.advance_search("");
-        self.redraw_main_window()?;
-        self.redraw_footer()?;
-        Ok(())
+        self.on_search_mode_change()
     }
 
     pub fn main_event_loop(&mut self) -> Result<(), TereError> {
@@ -663,6 +670,7 @@ impl<'a> TereTui<'a> {
 
                             Action::ClearSearch => self.on_clear_search()?,
 
+                            Action::ChangeFilterSearchMode => self.toggle_filter_search_mode()?,
                             Action::ChangeCaseSensitiveMode => self.cycle_case_sensitive_mode()?,
                             Action::ChangeGapSearchMode => self.cycle_gap_search_mode()?,
 
