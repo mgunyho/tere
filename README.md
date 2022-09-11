@@ -259,7 +259,7 @@ To compile `tere` from source, follow the standard procedure:
 
 This will place the `tere` binary in the folder `target/debug`, or `target/release` if you used `--release`.
 
-New features should go on the `develop` branch before they are released.
+New features should go on the `develop` branch before they are released, and they should be mentioned in `CHANGELOG.md`.
 
 ### Making a new release
 
