@@ -1303,4 +1303,52 @@ mod tests {
         assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
     }
+
+    #[test]
+    fn test_filter_search_toggle() {
+        let mut s = create_test_state_with_buf(
+            10,
+            strings_to_ls_buf(vec!["..", "aaa", "aab", "bbb"]),
+        );
+        s.settings.filter_search = false;
+        s.cursor_pos = 1;
+
+        // initial state:
+        //   ..
+        // > aaa
+        //   aab
+        //   bbb
+        assert_eq!(s.cursor_pos, 1);
+
+        s.advance_search("a");
+        s.move_cursor_to_adjacent_match(1);
+
+        // state should now be
+        //   ..
+        //   aaa
+        // > aab
+        //   bbb
+
+        assert_eq!(s.scroll_pos, 0);
+        assert_eq!(s.cursor_pos, 2);
+        assert_eq!(
+            s.visible_items().iter().map(|e| e.file_name_checked()).collect::<Vec<_>>(),
+            vec!["..", "aaa", "aab", "bbb"]
+        );
+
+        // toggle the filter search
+        s.settings.filter_search = true;
+        s.advance_search("");
+
+        // now the state should be
+        //   aaa
+        // > aab
+
+        assert_eq!(s.scroll_pos, 0);
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(
+            s.visible_items().iter().map(|e| e.file_name_checked()).collect::<Vec<_>>(),
+            vec!["aaa", "aab"]
+        );
+    }
 }
