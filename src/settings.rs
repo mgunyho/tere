@@ -178,7 +178,7 @@ impl TereSettings {
 }
 
 fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>, ClapError> {
-    let mappings = arg.split(",");
+    let mappings = arg.split(',');
     let mut ret = Vec::new();
 
     fn parsekey_to_clap(mapping: &str, err: crokey::ParseKeyError) -> ClapError {
@@ -207,7 +207,7 @@ fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>,
         }
 
         //TODO: what if I want to map colon? see how crokey does the hyphen parsing
-        let parts: Vec<&str> = mapping.split(":").collect();
+        let parts: Vec<&str> = mapping.split(':').collect();
         let (k, c, a) = match parts[..] {
             [keys, action] => (
                 crokey::parse(keys).map_err(|e| parsekey_to_clap(mapping, e))?,

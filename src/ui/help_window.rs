@@ -43,7 +43,7 @@ pub fn get_formatted_help_text(
 
     let rest = rest
         // Remove mention of 'vim-like' shortcuts, it might not apply if the user has customized them.
-        .split("\n").filter(|line| !line.contains("should be familiar to")).collect::<Vec<_>>().join("\n");
+        .split('\n').filter(|line| !line.contains("should be familiar to")).collect::<Vec<_>>().join("\n");
     help_str.push_str(&rest);
 
     // We need to get rid of the `<kbd>` tags before wrapping so it works correctly. We're going to
@@ -89,7 +89,7 @@ fn get_justified_keyboard_shortcuts_table(
 
     let first_column_width = keyboard_shortcuts
         .lines()
-        .map(|line| line.split('|').nth(1).unwrap_or("").replace("`", "").len())
+        .map(|line| line.split('|').nth(1).unwrap_or("").replace('`', "").len())
         .max()
         .unwrap_or(10);
 
@@ -112,7 +112,7 @@ fn get_justified_keyboard_shortcuts_table(
             }
             1 => continue, // skip row containing markdown table formatting
             _ => {
-                let action_name = cols[3].replace("`", "").trim().to_string();
+                let action_name = cols[3].replace('`', "").trim().to_string();
                 // add backticks + short description of context to each key combo
                 let shortcuts_formatted: String = match key_mapping_inv.get(&action_name) {
                     Some(shortcuts) => shortcuts
@@ -307,7 +307,7 @@ mod tests {
     #[test]
     fn test_keyboard_shortcuts_table_fond() {
         let table = get_keyboard_shortcuts_table();
-        let lines: Vec<_> = table.split("\n").collect();
+        let lines: Vec<_> = table.split('\n').collect();
         assert_eq!(lines[0].chars().next().unwrap(), '|');
         assert_eq!(lines[0].chars().last().unwrap(), '|');
 
@@ -322,14 +322,14 @@ mod tests {
         use std::str::FromStr;
         use strum::IntoEnumIterator;
 
-        let table_lines: Vec<_> = get_keyboard_shortcuts_table().split("\n").skip(2).collect();
+        let table_lines: Vec<_> = get_keyboard_shortcuts_table().split('\n').skip(2).collect();
 
         let mut key_mappings: HashMap<KeyEvent, Vec<Action>> = HashMap::new();
 
         table_lines.iter().for_each(|line| {
-            let parts: Vec<_> = line.split("|").collect();
+            let parts: Vec<_> = line.split('|').collect();
 
-            let action_name = parts[3].replace("`", "").trim().to_string();
+            let action_name = parts[3].replace('`', "").trim().to_string();
             let action = Action::from_str(&action_name).expect(
                 format!("Invalid action in table row '{}': '{}'", line, action_name).as_ref(),
             );
