@@ -4,6 +4,7 @@ The biggest new feature is the possibility to map custom keyboard shortcuts, usi
 
 Other improvements:
 
+- Add keyboard mapping to select the folder under the cursor and exit immediately. The default keyboard shortcut is `Alt-Enter` or `Ctrl-Space`. (Github #39)
 - Fix exiting with `ctrl-c` with `--mouse=on` (Github #45)
 - Update dependencies
 - Lots of small updates to readme
