@@ -148,7 +148,7 @@ impl TereSettings {
         if !args.is_present("clear-default-keymap") {
             ret.keymap = DEFAULT_KEYMAP
                 .iter()
-                .map(|(k, c, a)| ((k.clone(), c.clone()), a.clone()))
+                .map(|(k, c, a)| ((*k, c.clone()), a.clone()))
                 .collect();
         }
 
