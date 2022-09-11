@@ -39,7 +39,7 @@ pub fn get_formatted_help_text(
     let mut help_str = help_str.to_string();
     help_str.push_str("\n\n"); // add back newlines eaten by split_once
     help_str = help_str.replace("shortcuts by default", "shortcuts"); // we're going to display the actual shortcuts
-    help_str.push_str(&get_justified_keyboard_shortcuts_table(&key_mapping));
+    help_str.push_str(&get_justified_keyboard_shortcuts_table(key_mapping));
 
     let rest = rest
         // Remove mention of 'vim-like' shortcuts, it might not apply if the user has customized them.
