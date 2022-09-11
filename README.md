@@ -117,19 +117,6 @@ To start using `tere`, follow these steps:
 
 `tere` works on Linux, Windows and macOS. For Linux and Windows, binaries are provided in the [releases](https://github.com/mgunyho/tere-rs/releases). For Mac, you can install using Homebrew or Cargo, or build from source.
 
-### Hacking
-
-To compile `tere` from source, follow the standard procedure:
-
-1. [Install the Rust toolchain](https://www.rust-lang.org/tools/install)
-1. `git clone git@github.com:mgunyho/tere.git`
-1. `cd tere`
-1. Run `cargo build` (`--release` for the release version)
-
-This will place the `tere` binary in the folder `target/debug`, or `target/release` if you used `--release`.
-
-New features should go on the `develop` branch before they are released.
-
 ## User guide
 
 You can navigate folders in `tere` by using the arrow keys and by typing to search. Basic navigation works by moving the cursor up or down, and pressing <kbd>Enter</kbd> or the right arrow <kbd>→</kbd> to enter the highlighted folder. You can move to the parent folder by pressing <kbd>Enter</kbd> on the parent folder item `..`, or with the left arrow <kbd>←</kbd>. Below is a full list of keyboard shortcuts.
@@ -260,6 +247,32 @@ keystrokes to search and navigate folders. File management is not in the scope o
 
 - [noice](https://git.2f30.org/noice/file/README.html) - Very similar to `tere`, but there is no option to print the current directory on exit. Filtering/searching directory contents requires two extra keystrokes.
 - [twilight commander](https://github.com/golmman/twilight-commander) - Main goal seems to be a folder tree browser embedded in other apps. No search. No option to go above the initial working directory.
+
+## Hacking
+
+To compile `tere` from source, follow the standard procedure:
+
+1. [Install the Rust toolchain](https://www.rust-lang.org/tools/install)
+1. `git clone git@github.com:mgunyho/tere.git`
+1. `cd tere`
+1. Run `cargo build` (`--release` for the release version)
+
+This will place the `tere` binary in the folder `target/debug`, or `target/release` if you used `--release`.
+
+New features should go on the `develop` branch before they are released, and they should be mentioned in `CHANGELOG.md`.
+
+### Making a new release
+
+Here's a checklist of things to do for a new release.
+
+- Update version in `Cargo.toml`
+- Run `cargo build` so that `Cargo.lock` is also updated
+- `git checkout master && git merge --no-ff develop`. The commit title should be "Version X.Y.Z" and the commit message should contain the changelog.
+- `git tag vX.Y.Z`
+- `git push --tags`
+- `sh ./build-release.sh` to build the binaries. They are zipped and placed in the folder `release/`.
+- Upload binaries to github and copy-paste the changelog from the commit message
+- `cargo publish` to upload to crates.io
 
 
 ## License
