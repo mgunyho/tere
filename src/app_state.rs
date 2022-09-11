@@ -501,7 +501,7 @@ impl TereAppState {
 
         if new_cursor_pos < 0 {
             // attempting to go above the current view, scroll up
-            self.scroll_pos = self.scroll_pos.saturating_sub(new_cursor_pos.abs() as usize);
+            self.scroll_pos = self.scroll_pos.saturating_sub(new_cursor_pos.unsigned_abs());
             self.cursor_pos = 0;
         } else if new_cursor_pos as usize + old_scroll_pos >= n_visible_items {
             // attempting to go below content
