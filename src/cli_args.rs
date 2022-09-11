@@ -216,5 +216,5 @@ fn justify_and_indent(variants: &[String], descriptions: &[String]) -> String {
         .map(|(x, d)| indentation.clone() + x + &" ".repeat(max_len - x.len() + 2) + d)
         .collect();
 
-    return lines.join("\n");
+    lines.join("\n")
 }
