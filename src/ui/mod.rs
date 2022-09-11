@@ -623,7 +623,7 @@ impl<'a> TereTui<'a> {
 
     pub fn main_event_loop(&mut self) -> Result<(), TereError> {
 
-        loop {
+        let loop_result = loop {
             match read_event()? {
                 Event::Key(k) => {
                     let valid_ctx = if self.app_state.is_searching() {
@@ -648,7 +648,7 @@ impl<'a> TereTui<'a> {
 
                             Action::ChangeDirAndExit => {
                                 if self.change_dir("")? {
-                                    break;
+                                    break Ok(());
                                 }
                             },
 
@@ -673,12 +673,12 @@ impl<'a> TereTui<'a> {
 
                             Action::Help => self.help_view_loop()?,
 
-                            Action::Exit => break,
+                            Action::Exit => break Ok(()),
                             Action::ExitWithoutCd => {
                                 // exit with error (ctl+c by default), to avoid cd'ing
                                 let msg = format!("{}: Exited without changing folder",
                                                   env!("CARGO_PKG_NAME"));
-                                return Err(TereError::ExitWithoutCd(msg));
+                                break Err(TereError::ExitWithoutCd(msg));
                             }
 
                             Action::None => (),
@@ -712,12 +712,14 @@ impl<'a> TereTui<'a> {
                     _ => (),
                 },
             }
-        }
+        };
 
         if self.app_state.settings.mouse_enabled {
             execute!(self.window, DisableMouseCapture)?;
         }
+
         self.app_state.on_exit().map_err(TereError::from)
+            .and(loop_result)
     }
 
     fn help_view_loop(&mut self) -> CTResult<()> {
