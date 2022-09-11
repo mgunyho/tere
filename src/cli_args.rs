@@ -160,12 +160,12 @@ Possible contexts:
 {}
 ",
 justify_and_indent(
-    &Action::iter().map(|a| a.to_string()).collect(),
-    &Action::iter().map(|a| a.description().to_string()).collect()
+    &Action::iter().map(|a| a.to_string()).collect::<Vec<_>>(),
+    &Action::iter().map(|a| a.description().to_string()).collect::<Vec<_>>()
     ),
 justify_and_indent(
-    &ActionContext::iter().map(|a| a.to_string()).collect(),
-    &ActionContext::iter().map(|a| a.description().to_string()).collect()
+    &ActionContext::iter().map(|a| a.to_string()).collect::<Vec<_>>(),
+    &ActionContext::iter().map(|a| a.description().to_string()).collect::<Vec<_>>()
     ),
 ).into_boxed_str()))
             .takes_value(true)
@@ -207,7 +207,7 @@ justify_and_indent(
 
 /// Justify the list of enum variants (i.e. `ALL_ACTIONS` or `ALL_CONTEXTS`) and their
 /// descriptions, and indent them to be printed in the help text
-fn justify_and_indent(variants: &Vec<String>, descriptions: &Vec<String>) -> String {
+fn justify_and_indent(variants: &[String], descriptions: &[String]) -> String {
 
     let indentation: String = " ".repeat(4);
     let max_len = variants.iter().map(|x| x.len()).max().expect("list of variants is empty");
