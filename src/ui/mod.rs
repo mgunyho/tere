@@ -1,8 +1,10 @@
 pub mod help_window;
+mod action;
 
 use std::convert::TryFrom;
 use std::io::{Stderr, Write};
 use std::path::PathBuf;
+use std::fmt::Write as _;
 
 use crate::error::TereError;
 use crate::app_state::{
@@ -12,6 +14,7 @@ use crate::app_state::{
     NO_MATCHES_MSG,
 };
 use help_window::get_formatted_help_text;
+pub use action::{Action, ActionContext};
 
 use crossterm::{
     execute,
@@ -22,6 +25,7 @@ use crossterm::{
     event::{
         read as read_event,
         Event,
+        KeyEvent,
         MouseEvent,
         MouseEventKind,
         MouseButton,
@@ -106,7 +110,7 @@ impl<'a> TereTui<'a> {
         )
     }
 
-    pub fn redraw_header(&mut self) -> CTResult<()> {
+    fn redraw_header(&mut self) -> CTResult<()> {
         //TODO: what to do if window is narrower than path?
         // add "..." to beginning? or collapse folder names? make configurable?
         // at least, truncate towards the left instead of to the right
@@ -131,13 +135,13 @@ impl<'a> TereTui<'a> {
         )
     }
 
-    pub fn update_header(&mut self) -> CTResult<()> {
+    fn update_header(&mut self) -> CTResult<()> {
         self.app_state.update_header();
         // TODO: consider removing redraw here... (is inconsistent with the rest of the 'update' functions)
         self.redraw_header()
     }
 
-    pub fn redraw_info_window(&mut self) -> CTResult<()> {
+    fn redraw_info_window(&mut self) -> CTResult<()> {
         let (_, h) = terminal_size_usize()?;
         let info_win_row = h - FOOTER_SIZE - INFO_WIN_SIZE;
 
@@ -152,19 +156,19 @@ impl<'a> TereTui<'a> {
     }
 
     /// Set/update the current info message and redraw the info window
-    pub fn info_message(&mut self, msg: &str) -> CTResult<()> {
+    fn info_message(&mut self, msg: &str) -> CTResult<()> {
         //TODO: add thread with timeout that will clear the info message after x seconds?
         self.app_state.info_msg = msg.to_string();
         self.redraw_info_window()
     }
 
-    pub fn error_message(&mut self, msg: &str) -> CTResult<()> {
+    fn error_message(&mut self, msg: &str) -> CTResult<()> {
         //TODO: red color (also: make it configurable)
         let error_msg = format!("error: {}", &msg);
         self.info_message(&error_msg)
     }
 
-    pub fn redraw_footer(&mut self) -> CTResult<()> {
+    fn redraw_footer(&mut self) -> CTResult<()> {
         let (w, h) = terminal_size_usize()?;
         let footer_win_row = h - FOOTER_SIZE;
         self.queue_clear_row(footer_win_row)?;
@@ -172,8 +176,8 @@ impl<'a> TereTui<'a> {
         let mut win = self.window;
         let mut extra_msg = String::new();
 
-        extra_msg.push_str(&format!("{} - ", self.app_state.settings.gap_search_mode));
-        extra_msg.push_str(&format!("{} - ", self.app_state.settings.case_sensitive));
+        let _ = write!(extra_msg, "{} - ", self.app_state.settings.gap_search_mode);
+        let _ = write!(extra_msg, "{} - ", self.app_state.settings.case_sensitive);
 
         let cursor_idx = self
             .app_state
@@ -187,19 +191,21 @@ impl<'a> TereTui<'a> {
                 .position(|x| *x == cursor_idx)
                 .unwrap_or(0);
 
-            extra_msg.push_str(&format!(
+            let _ = write!(
+                extra_msg,
                 "{} / {} / {}",
                 index_in_matches + 1,
                 self.app_state.num_matching_items(),
                 self.app_state.num_total_items()
-            ));
+            );
         } else {
             //TODO: show no. of files/folders separately? like 'n folders, n files'
-            extra_msg.push_str(&format!(
+            let _ = write!(
+                extra_msg,
                 "{} / {}",
                 cursor_idx + 1,
                 self.app_state.num_visible_items()
-            ));
+            );
         }
 
         // draw extra message first, so that it gets overwritten by the more important search query
@@ -366,11 +372,11 @@ impl<'a> TereTui<'a> {
     }
 
     // redraw row 'row' (relative to the top of the main window) without highlighting
-    pub fn unhighlight_row(&mut self, row: usize) -> CTResult<()> {
+    fn unhighlight_row(&mut self, row: usize) -> CTResult<()> {
         self.draw_main_window_row(row, false)
     }
 
-    pub fn highlight_row(&mut self, row: usize) -> CTResult<()> {
+    fn highlight_row(&mut self, row: usize) -> CTResult<()> {
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
         self.draw_main_window_row(row, true)
@@ -384,14 +390,14 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn highlight_row_exclusive(&mut self, row: usize) -> CTResult<()> {
+    fn highlight_row_exclusive(&mut self, row: usize) -> CTResult<()> {
         // Highlight the row `row` exclusively, and hide all other rows.
         self.queue_clear_main_window()?;
         self.highlight_row(row)?;
         Ok(())
     }
 
-    pub fn redraw_main_window(&mut self) -> CTResult<()> {
+    fn redraw_main_window(&mut self) -> CTResult<()> {
         let (_, max_y) = main_window_size()?;
         let mut win = self.window;
 
@@ -422,7 +428,7 @@ impl<'a> TereTui<'a> {
 
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
-    pub fn move_cursor(&mut self, amount: isize, wrap: bool) -> CTResult<()> {
+    fn move_cursor(&mut self, amount: isize, wrap: bool) -> CTResult<()> {
         let old_cursor_pos = self.app_state.cursor_pos;
         let old_scroll_pos = self.app_state.scroll_pos;
 
@@ -439,27 +445,31 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn change_dir(&mut self, path: &str) -> CTResult<()> {
+    /// Change the working directory. If successful, returns true. If unsuccessful, print an error
+    /// message to the UI and return false.
+    fn change_dir(&mut self, path: &str) -> CTResult<bool> {
         //TODO: if there are no visible items, don't do anything?
-        match self.app_state.change_dir(path) {
+        let res = match self.app_state.change_dir(path) {
             Err(e) => {
                 if cfg!(debug_assertions) {
                     self.error_message(&format!("{:?}", e))?;
                 } else {
                     self.error_message(&format!("{}", e))?;
                 }
+                false
             }
             Ok(()) => {
                 self.update_header()?;
                 self.info_message("")?;
+                true
             }
-        }
+        };
         self.redraw_main_window()?;
         self.redraw_footer()?;
-        Ok(())
+        Ok(res)
     }
 
-    pub fn on_search_char(&mut self, c: char) -> CTResult<()> {
+    fn on_search_char(&mut self, c: char) -> CTResult<()> {
         self.app_state.advance_search(&c.to_string());
         let n_matches = self.app_state.num_matching_items();
         if n_matches == 1 {
@@ -486,7 +496,7 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn erase_search_char(&mut self) -> CTResult<()> {
+    fn erase_search_char(&mut self) -> CTResult<()> {
         self.app_state.erase_search_char();
 
         if self.app_state.num_matching_items() == 0 {
@@ -500,13 +510,21 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn update_main_window_dimensions(&mut self) -> CTResult<()> {
+    fn on_clear_search(&mut self) -> CTResult<()> {
+        self.app_state.clear_search();
+        self.info_message("")?; // clear possible 'no matches' message
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
+    }
+
+    fn update_main_window_dimensions(&mut self) -> CTResult<()> {
         let (w, h) = main_window_size()?;
         self.app_state.update_main_window_dimensions(w, h);
         Ok(())
     }
 
-    pub fn on_arrow_key(&mut self, up: bool) -> CTResult<()> {
+    fn on_cursor_up_down(&mut self, up: bool) -> CTResult<()> {
         let dir = if up { -1 } else { 1 };
         if self.app_state.is_searching() {
             //TODO: handle case where 'is_searching' but there are no matches - move cursor?
@@ -518,8 +536,8 @@ impl<'a> TereTui<'a> {
         self.redraw_footer()
     }
 
-    // When the 'page up' or 'page down' keys are pressed
-    pub fn on_page_up_down(&mut self, up: bool) -> CTResult<()> {
+    // When scroling up or down by a screenful (i.e. 'page up' or 'page down')
+    fn on_cursor_up_down_screen(&mut self, up: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
             let (_, h) = main_window_size()?;
             let delta = ((h - 1) as isize) * if up { -1 } else { 1 };
@@ -539,13 +557,14 @@ impl<'a> TereTui<'a> {
     }
 
     fn on_go_to_root(&mut self) -> CTResult<()> {
-        self.change_dir("/")
+        self.change_dir("/")?;
+        Ok(())
     }
 
-    // on 'home' or 'end'
-    fn on_home_end(&mut self, home: bool) -> CTResult<()> {
+    // When moving the cursor to the top or bottom of the listing
+    fn on_cursor_top_bottom(&mut self, top: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
-            let target = if home {
+            let target = if top {
                 0
             } else {
                 self.app_state.num_visible_items()
@@ -603,136 +622,75 @@ impl<'a> TereTui<'a> {
     }
 
     pub fn main_event_loop(&mut self) -> Result<(), TereError> {
-        #[allow(non_snake_case)]
-        let ALT = KeyModifiers::ALT;
-        #[allow(non_snake_case)]
-        let CONTROL = KeyModifiers::CONTROL;
 
-        loop {
+        let loop_result = loop {
             match read_event()? {
-                Event::Key(k) => match k.code {
-                    KeyCode::Right | KeyCode::Enter => self.change_dir("")?,
-                    KeyCode::Char(' ') if !self.app_state.is_searching() => {
-                        // If the first key is space, treat it like enter. It's probably pretty
-                        // rare to have a folder name starting with space.
-                        self.change_dir("")?;
-                    }
-                    KeyCode::Left => self.change_dir("..")?,
-                    KeyCode::Up if k.modifiers == ALT => {
-                        self.change_dir("..")?;
-                    }
-                    KeyCode::Up => self.on_arrow_key(true)?,
-                    KeyCode::Down if k.modifiers == ALT => {
-                        self.change_dir("")?;
-                    }
-                    KeyCode::Down => self.on_arrow_key(false)?,
+                Event::Key(k) => {
+                    let valid_ctx = if self.app_state.is_searching() {
+                        ActionContext::Searching
+                    } else {
+                        ActionContext::NotSearching
+                    };
 
-                    KeyCode::PageUp => self.on_page_up_down(true)?,
-                    KeyCode::PageDown => self.on_page_up_down(false)?,
+                    let action = self
+                        .app_state
+                        .settings.keymap.get(&(k, valid_ctx))
+                        // If no mapping is found with the currently applying context, look for a
+                        // mapping that applies in any context
+                        .or_else(|| self.app_state.settings.keymap.get(&(k, ActionContext::None)));
 
-                    KeyCode::Home if k.modifiers == CONTROL => {
-                        self.on_go_to_home()?;
-                    }
-                    KeyCode::Char('h') if k.modifiers == CONTROL | ALT => {
-                        self.on_go_to_home()?;
-                    }
-                    KeyCode::Char('~') => {
-                        self.on_go_to_home()?;
-                    }
-                    KeyCode::Char('/') => {
-                        self.on_go_to_root()?;
-                    }
-                    KeyCode::Char('r') if k.modifiers == ALT => {
-                        self.on_go_to_root()?;
-                    }
+                    if let Some(action) = action {
+                        match action {
+                            Action::ChangeDir => { self.change_dir("")?; },
+                            Action::ChangeDirParent => { self.change_dir("..")?; },
+                            Action::ChangeDirHome => self.on_go_to_home()?,
+                            Action::ChangeDirRoot => self.on_go_to_root()?,
 
-                    KeyCode::Home => self.on_home_end(true)?,
-                    KeyCode::End => self.on_home_end(false)?,
+                            Action::ChangeDirAndExit => {
+                                if self.change_dir("")? {
+                                    break Ok(());
+                                }
+                            },
 
-                    KeyCode::Esc => {
-                        if self.app_state.is_searching() {
-                            self.app_state.clear_search();
-                            self.info_message("")?; // clear possible 'no matches' message
-                            self.redraw_main_window()?;
-                            self.redraw_footer()?;
-                        } else {
-                            break;
+                            Action::CursorUp => self.on_cursor_up_down(true)?,
+                            Action::CursorDown => self.on_cursor_up_down(false)?,
+                            Action::CursorUpScreen => self.on_cursor_up_down_screen(true)?,
+                            Action::CursorDownScreen => self.on_cursor_up_down_screen(false)?,
+                            Action::CursorTop => self.on_cursor_top_bottom(true)?,
+                            Action::CursorBottom => self.on_cursor_top_bottom(false)?,
+
+                            Action::EraseSearchChar => self.erase_search_char()?,
+
+                            Action::ClearSearch => self.on_clear_search()?,
+
+                            Action::ChangeCaseSensitiveMode => self.cycle_case_sensitive_mode()?,
+                            Action::ChangeGapSearchMode => self.cycle_gap_search_mode()?,
+
+                            Action::RefreshListing => {
+                                self.change_dir(".")?; //TODO: use 'current dir' instead of hardcoded '.' (?, see also pardir discussion elsewhere)
+                                self.info_message("Refreshed directory listing")?;
+                            }
+
+                            Action::Help => self.help_view_loop()?,
+
+                            Action::Exit => break Ok(()),
+                            Action::ExitWithoutCd => {
+                                // exit with error (ctl+c by default), to avoid cd'ing
+                                let msg = format!("{}: Exited without changing folder",
+                                                  env!("CARGO_PKG_NAME"));
+                                break Err(TereError::ExitWithoutCd(msg));
+                            }
+
+                            Action::None => (),
+
                         }
+                    } else {
+                        // The key is not part of any mapping, advance the search if it's a char
+                        if let KeyEvent { code: KeyCode::Char(c), .. } = k {
+                            self.on_search_char(c)?;
+                        } // else { self.info_message(&format!("{:?}", k))? } // for debugging
                     }
-
-                    KeyCode::Char('?') => {
-                        self.help_view_loop()?;
-                    }
-
-                    // alt + hjkl
-                    KeyCode::Char('h') if k.modifiers == ALT => {
-                        self.change_dir("..")?;
-                    }
-                    KeyCode::Char('j') if k.modifiers == ALT => {
-                        self.on_arrow_key(false)?;
-                    }
-                    KeyCode::Char('k') if k.modifiers == ALT => {
-                        self.on_arrow_key(true)?;
-                    }
-                    KeyCode::Char('l') if k.modifiers == ALT => {
-                        self.change_dir("")?;
-                    }
-
-                    KeyCode::Char('r') if k.modifiers == CONTROL => {
-                        // refresh the current folder
-                        self.change_dir(".")?;
-                        self.info_message("Refreshed directory listing")?;
-                    }
-
-                    // other chars with modifiers
-                    KeyCode::Char('q') if k.modifiers == ALT => {
-                        break;
-                    }
-                    KeyCode::Char('c') if k.modifiers == CONTROL => {
-                        // exit with error on ctl+c, to avoid cd'ing
-                        let msg = format!("{}: Exited without changing folder",
-                                          env!("CARGO_PKG_NAME"));
-                        return Err(TereError::ExitWithoutCd(msg));
-                    }
-                    KeyCode::Char('u') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
-                        self.on_page_up_down(true)?;
-                    }
-                    KeyCode::Char('d') if (k.modifiers == ALT || k.modifiers == CONTROL) => {
-                        self.on_page_up_down(false)?;
-                    }
-                    KeyCode::Char('g') if k.modifiers == ALT => {
-                        // like vim 'gg'
-                        self.on_home_end(true)?;
-                    }
-                    KeyCode::Char('G') if k.modifiers.contains(ALT) => {
-                        self.on_home_end(false)?;
-                    }
-
-                    KeyCode::Char('c') if k.modifiers == ALT => {
-                        self.cycle_case_sensitive_mode()?;
-                    }
-
-                    KeyCode::Char('f') if k.modifiers == CONTROL => {
-                        self.cycle_gap_search_mode()?;
-                    }
-
-                    KeyCode::Char('-') if !self.app_state.is_searching() => {
-                        // go up with '-', like vim does
-                        self.change_dir("..")?;
-                    }
-
-                    KeyCode::Char(c) => self.on_search_char(c)?,
-
-                    KeyCode::Backspace => {
-                        if self.app_state.is_searching() {
-                            self.erase_search_char()?;
-                        } else {
-                            self.change_dir("..")?;
-                        }
-                    }
-
-                    _ => self.info_message(&format!("{:?}", k))?,
-                },
+                }
 
                 Event::Resize(_, _) => {
                     self.update_main_window_dimensions()?;
@@ -744,22 +702,24 @@ impl<'a> TereTui<'a> {
                         | MouseEventKind::Drag(MouseButton::Left)
                         | MouseEventKind::Up(MouseButton::Left)
                         => self.handle_mouse_event(event)?,
-                    MouseEventKind::Up(MouseButton::Right) => self.change_dir("..")?,
+                    MouseEventKind::Up(MouseButton::Right) => { self.change_dir("..")?; },
 
                     //TODO: add configuration to jump multiple items on scroll
-                    MouseEventKind::ScrollUp   => self.on_arrow_key(true)?,
-                    MouseEventKind::ScrollDown => self.on_arrow_key(false)?,
+                    MouseEventKind::ScrollUp   => self.on_cursor_up_down(true)?,
+                    MouseEventKind::ScrollDown => self.on_cursor_up_down(false)?,
 
                     //e => self.info_message(&format!("{:?}", e))?, // for debugging
                     _ => (),
                 },
             }
-        }
+        };
 
         if self.app_state.settings.mouse_enabled {
             execute!(self.window, DisableMouseCapture)?;
         }
+
         self.app_state.on_exit().map_err(TereError::from)
+            .and(loop_result)
     }
 
     fn help_view_loop(&mut self) -> CTResult<()> {
@@ -821,7 +781,7 @@ impl<'a> TereTui<'a> {
         )?;
 
         let (w, h) = main_window_size()?;
-        let help_text = get_formatted_help_text(w);
+        let help_text = get_formatted_help_text(w, &self.app_state.settings.keymap);
         for (i, line) in help_text
             .iter()
             .skip(scroll)

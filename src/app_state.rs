@@ -7,11 +7,12 @@ use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::io::{Error as IOError, ErrorKind, Result as IOResult};
 use std::path::{Component, Path, PathBuf};
+use std::fmt::Write as _;
 
 use regex::Regex;
 
 #[path = "settings.rs"]
-mod settings;
+pub mod settings;
 use settings::TereSettings;
 pub use settings::{CaseSensitiveMode, GapSearchMode};
 
@@ -500,7 +501,7 @@ impl TereAppState {
 
         if new_cursor_pos < 0 {
             // attempting to go above the current view, scroll up
-            self.scroll_pos = self.scroll_pos.saturating_sub(new_cursor_pos.abs() as usize);
+            self.scroll_pos = self.scroll_pos.saturating_sub(new_cursor_pos.unsigned_abs());
             self.cursor_pos = 0;
         } else if new_cursor_pos as usize + old_scroll_pos >= n_visible_items {
             // attempting to go below content
@@ -606,7 +607,7 @@ impl TereAppState {
         // groups which are defined by the format!() parens here...
         let mut regex_str = "".to_string();
         if self.settings.gap_search_mode == GapSearchMode::NoGapSearch {
-            regex_str.push_str(&format!("^({})", regex::escape(&search_string)));
+            let _ = write!(regex_str, "^({})", regex::escape(&search_string));
         } else {
             // enable gap search. Add '^' to the regex to match only from the start if applicable.
             if self.settings.gap_search_mode == GapSearchMode::GapSearchFromStart {
