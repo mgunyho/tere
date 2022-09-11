@@ -35,7 +35,7 @@ pub fn get_cli_args() -> App<'static> {
              //.visible_alias("fs") //TODO: consider
              .short('f')
              .help("Show only items matching the search in listing")
-             .long_help("Show only items matching the current search query in the listing. This overrides the --no-filter-search option.")
+             .long_help("Show only items matching the current search query in the listing. This overrides the --no-filter-search option. You can toggle the filtering with the keyboard shortcut Alt-f by default.")
              .overrides_with("filter-search")
             )
         .arg(Arg::new("no-filter-search")
@@ -43,7 +43,7 @@ pub fn get_cli_args() -> App<'static> {
              //.visible_alias("nfs") //TODO: consider
              .short('F')
              .help("Show all items in the listing even when searching (default)")
-             .long_help("Show all items in the listing even when searching (default). This overrides the --filter-search option.")
+             .long_help("Show all items in the listing even when searching (default). This overrides the --filter-search option. You can toggle the filtering with the keyboard shortcut Alt-f by default.")
              .overrides_with_all(&["filter-search", "no-filter-search"])
             )
         .arg(Arg::new("folders-only")
