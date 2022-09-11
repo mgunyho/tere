@@ -166,7 +166,7 @@ impl TereSettings {
             }
         }
 
-        if !ret.keymap.values().collect::<Vec<_>>().contains(&&Action::Exit) {
+        if !ret.keymap.values().any(|a| a == &Action::Exit) {
             return Err(ClapError::raw(
                 ClapErrorKind::EmptyValue,
                 "No keyboard mapping found for exit!\n",
