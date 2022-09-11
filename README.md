@@ -261,6 +261,19 @@ This will place the `tere` binary in the folder `target/debug`, or `target/relea
 
 New features should go on the `develop` branch before they are released.
 
+### Making a new release
+
+Here's a checklist of things to do for a new release.
+
+- Update version in `Cargo.toml`
+- Run `cargo build` so that `Cargo.lock` is also updated
+- `git checkout master && git merge --no-ff develop`. The commit title should be "Version X.Y.Z" and the commit message should contain the changelog.
+- `git tag vX.Y.Z`
+- `git push --tags`
+- `sh ./build-release.sh` to build the binaries. They are zipped and placed in the folder `release/`.
+- Upload binaries to github and copy-paste the changelog from the commit message
+- `cargo publish` to upload to crates.io
+
 
 ## License
 
