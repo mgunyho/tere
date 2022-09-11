@@ -222,7 +222,7 @@ fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>,
             _ => return Err(ClapError::raw(
                     ClapErrorKind::InvalidValue,
                     format!("Keyboard mapping is not of the form 'key-combination:action' or 'key-combination:context:action': '{}'\n", &mapping),
-                    ).into())
+                    ))
         };
 
         ret.push((k, c, a));
