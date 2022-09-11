@@ -275,6 +275,27 @@ This will place the `tere` binary in the folder `target/debug`, or `target/relea
 
 New features should go on the `develop` branch before they are released, and they should be mentioned in `CHANGELOG.md`.
 
+To set up cross-compilation for other platforms (e.g. when making a release), run (on Ubuntu):
+```shell
+# Support for linux without dependence on glibc
+rustup target add x86_64-unknown-linux-musl
+
+# Windows support
+sudo apt install gcc-mingw-w64
+rustup target add x86_64-pc-windows-gnu
+
+# THESE ARE UNTESTED
+# ARM (raspberry pi) support
+sudo apt install gcc-aarch64-linux-gnu ???
+rustup target add aarch64-unknown-linux-gnu
+
+# MacOS
+rustup target add x86_64-apple-darwin
+```
+Then, the `build-release.sh` script should work.
+
+For further details, see the [`rustup` guide](https://rust-lang.github.io/rustup/cross-compilation.html), and the [`rustc` platform support page](https://doc.rust-lang.org/nightly/rustc/platform-support.html), and consult your favourite search engine for help on cross-compilation.
+
 ### Making a new release
 
 Here's a checklist of things to do for a new release.
