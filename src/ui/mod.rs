@@ -109,7 +109,7 @@ impl<'a> TereTui<'a> {
         )
     }
 
-    pub fn redraw_header(&mut self) -> CTResult<()> {
+    fn redraw_header(&mut self) -> CTResult<()> {
         //TODO: what to do if window is narrower than path?
         // add "..." to beginning? or collapse folder names? make configurable?
         // at least, truncate towards the left instead of to the right
@@ -134,13 +134,13 @@ impl<'a> TereTui<'a> {
         )
     }
 
-    pub fn update_header(&mut self) -> CTResult<()> {
+    fn update_header(&mut self) -> CTResult<()> {
         self.app_state.update_header();
         // TODO: consider removing redraw here... (is inconsistent with the rest of the 'update' functions)
         self.redraw_header()
     }
 
-    pub fn redraw_info_window(&mut self) -> CTResult<()> {
+    fn redraw_info_window(&mut self) -> CTResult<()> {
         let (_, h) = terminal_size_usize()?;
         let info_win_row = h - FOOTER_SIZE - INFO_WIN_SIZE;
 
@@ -155,19 +155,19 @@ impl<'a> TereTui<'a> {
     }
 
     /// Set/update the current info message and redraw the info window
-    pub fn info_message(&mut self, msg: &str) -> CTResult<()> {
+    fn info_message(&mut self, msg: &str) -> CTResult<()> {
         //TODO: add thread with timeout that will clear the info message after x seconds?
         self.app_state.info_msg = msg.to_string();
         self.redraw_info_window()
     }
 
-    pub fn error_message(&mut self, msg: &str) -> CTResult<()> {
+    fn error_message(&mut self, msg: &str) -> CTResult<()> {
         //TODO: red color (also: make it configurable)
         let error_msg = format!("error: {}", &msg);
         self.info_message(&error_msg)
     }
 
-    pub fn redraw_footer(&mut self) -> CTResult<()> {
+    fn redraw_footer(&mut self) -> CTResult<()> {
         let (w, h) = terminal_size_usize()?;
         let footer_win_row = h - FOOTER_SIZE;
         self.queue_clear_row(footer_win_row)?;
@@ -369,11 +369,11 @@ impl<'a> TereTui<'a> {
     }
 
     // redraw row 'row' (relative to the top of the main window) without highlighting
-    pub fn unhighlight_row(&mut self, row: usize) -> CTResult<()> {
+    fn unhighlight_row(&mut self, row: usize) -> CTResult<()> {
         self.draw_main_window_row(row, false)
     }
 
-    pub fn highlight_row(&mut self, row: usize) -> CTResult<()> {
+    fn highlight_row(&mut self, row: usize) -> CTResult<()> {
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
         self.draw_main_window_row(row, true)
@@ -387,14 +387,14 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn highlight_row_exclusive(&mut self, row: usize) -> CTResult<()> {
+    fn highlight_row_exclusive(&mut self, row: usize) -> CTResult<()> {
         // Highlight the row `row` exclusively, and hide all other rows.
         self.queue_clear_main_window()?;
         self.highlight_row(row)?;
         Ok(())
     }
 
-    pub fn redraw_main_window(&mut self) -> CTResult<()> {
+    fn redraw_main_window(&mut self) -> CTResult<()> {
         let (_, max_y) = main_window_size()?;
         let mut win = self.window;
 
@@ -425,7 +425,7 @@ impl<'a> TereTui<'a> {
 
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
-    pub fn move_cursor(&mut self, amount: isize, wrap: bool) -> CTResult<()> {
+    fn move_cursor(&mut self, amount: isize, wrap: bool) -> CTResult<()> {
         let old_cursor_pos = self.app_state.cursor_pos;
         let old_scroll_pos = self.app_state.scroll_pos;
 
@@ -466,7 +466,7 @@ impl<'a> TereTui<'a> {
         Ok(res)
     }
 
-    pub fn on_search_char(&mut self, c: char) -> CTResult<()> {
+    fn on_search_char(&mut self, c: char) -> CTResult<()> {
         self.app_state.advance_search(&c.to_string());
         let n_matches = self.app_state.num_matching_items();
         if n_matches == 1 {
@@ -493,7 +493,7 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn erase_search_char(&mut self) -> CTResult<()> {
+    fn erase_search_char(&mut self) -> CTResult<()> {
         self.app_state.erase_search_char();
 
         if self.app_state.num_matching_items() == 0 {
@@ -515,7 +515,7 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    pub fn update_main_window_dimensions(&mut self) -> CTResult<()> {
+    fn update_main_window_dimensions(&mut self) -> CTResult<()> {
         let (w, h) = main_window_size()?;
         self.app_state.update_main_window_dimensions(w, h);
         Ok(())
