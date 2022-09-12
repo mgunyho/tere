@@ -180,7 +180,7 @@ pub struct TereAppState {
     pub header_msg: String,
     pub info_msg: String,
 
-    pub settings: TereSettings,
+    _settings: TereSettings,
 
     history: HistoryTree,
 }
@@ -254,6 +254,10 @@ impl TereAppState {
     ///////////////////////////////////////////
     // Helpers for reading the current state //
     ///////////////////////////////////////////
+
+    pub fn settings(&self) -> &TereSettings {
+        &self._settings
+    }
 
     pub fn is_searching(&self) -> bool {
         !self.search_string.is_empty()
