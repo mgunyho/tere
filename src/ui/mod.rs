@@ -606,7 +606,7 @@ impl<'a> TereTui<'a> {
     }
 
     fn toggle_filter_search_mode(&mut self) -> CTResult<()> {
-        self.app_state.settings.filter_search = !self.app_state.settings.filter_search;
+        self.app_state.set_filter_search(!self.app_state.settings().filter_search);
         self.on_search_mode_change()
     }
 

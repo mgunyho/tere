@@ -482,6 +482,18 @@ impl TereAppState {
         Ok(())
     }
 
+    /////////////////////////////////////////////
+    // Funcitons for changing the app settings //
+    /////////////////////////////////////////////
+
+    /// Change the filter search mode, and ensure that the app state is valid after that
+    pub fn set_filter_search(&mut self, filter_search: bool) {
+        //TODO: this is very similar to clear_search(), consider factoring out into a function that takes a closure that does whatever the method is supposed to do
+        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
+        self._settings.filter_search = filter_search;
+        previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
+    }
+
     /////////////////////////////////////
     // Functions for moving the cursor //
     /////////////////////////////////////
