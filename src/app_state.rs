@@ -207,12 +207,12 @@ impl TereAppState {
             header_msg: "".into(),
             info_msg: "".into(),
             search_string: "".into(),
-            settings: TereSettings::parse_cli_args(cli_args)?,
+            _settings: TereSettings::parse_cli_args(cli_args)?,
             history: HistoryTree::from_abs_path(cwd.clone()),
         };
 
         //read history tree from file, if applicable
-        if let Some(hist_file) = &ret.settings.history_file {
+        if let Some(hist_file) = &ret.settings().history_file {
             match std::fs::read_to_string(hist_file) {
                 Ok(file_contents) => {
                     let mut tree: HistoryTree = serde_json::from_str(&file_contents)?;
@@ -239,7 +239,7 @@ impl TereAppState {
 
     /// Things to do when the app is about to exit.
     pub fn on_exit(&self) -> IOResult<()> {
-        if let Some(hist_file) = &self.settings.history_file {
+        if let Some(hist_file) = &self.settings().history_file {
             let parent_dir = hist_file.parent().ok_or_else(|| {
                 IOError::new(ErrorKind::NotFound, "history file has no parent folder")
             })?;
@@ -280,7 +280,7 @@ impl TereAppState {
     /// Return a vector that contains the indices into the currently visible
     /// items that contain a match
     pub fn visible_match_indices(&self) -> Vec<usize> {
-        if self.is_searching() && self.settings.filter_search {
+        if self.is_searching() && self.settings().filter_search {
             (0..self.ls_output_buf.matches.len()).collect()
         } else {
             // it's ok to clone here, the kept_indices will be usually quite short.
@@ -291,7 +291,7 @@ impl TereAppState {
     /// All items that are visible with the current settings in the current search state. This
     /// includes items that might fall outside the window.
     pub fn visible_items(&self) -> Vec<&CustomDirEntry> {
-        if self.is_searching() && self.settings.filter_search {
+        if self.is_searching() && self.settings().filter_search {
             self.ls_output_buf.kept_items()
         } else {
             self.ls_output_buf.all_items.iter().collect()
@@ -300,7 +300,7 @@ impl TereAppState {
 
     /// Shorthand to get the number of items without having to clone / iterate over all of them
     pub fn num_visible_items(&self) -> usize {
-        if self.is_searching() && self.settings.filter_search {
+        if self.is_searching() && self.settings().filter_search {
             self.num_matching_items()
         } else {
             self.num_total_items()
@@ -334,7 +334,7 @@ impl TereAppState {
 
     pub fn get_match_locations_at_cursor_pos(&self, cursor_pos: usize) -> Option<&MatchesLocType> {
         let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
-        if self.settings.filter_search {
+        if self.settings().filter_search {
             // NOTE: we assume that the matches is a sorted map
             self.ls_output_buf.matches.values().nth(idx)
         } else {
@@ -371,7 +371,7 @@ impl TereAppState {
             entries.filter_map(|e| e.ok()).map(CustomDirEntry::from),
         );
 
-        if self.settings.folders_only {
+        if self.settings().folders_only {
             entries = Box::new(entries.filter(|e| e.path().is_dir()));
         }
 
@@ -556,7 +556,7 @@ impl TereAppState {
                 return;
             }
 
-            if self.settings.filter_search {
+            if self.settings().filter_search {
                 // the only visible items are the matches, so we can just move the cursor
                 self.move_cursor(dir.signum(), true);
             } else {
@@ -596,7 +596,7 @@ impl TereAppState {
     ////////////
 
     fn update_search_matches(&mut self) {
-        let is_case_sensitive = match self.settings.case_sensitive {
+        let is_case_sensitive = match self.settings().case_sensitive {
             CaseSensitiveMode::IgnoreCase => false,
             CaseSensitiveMode::CaseSensitive => true,
             CaseSensitiveMode::SmartCase => self.search_string.chars().any(|c| c.is_uppercase()),
@@ -610,11 +610,11 @@ impl TereAppState {
         // TODO: construct regex pattern inside MatchesVec instead? - it relies now on capture
         // groups which are defined by the format!() parens here...
         let mut regex_str = "".to_string();
-        if self.settings.gap_search_mode == GapSearchMode::NoGapSearch {
+        if self.settings().gap_search_mode == GapSearchMode::NoGapSearch {
             let _ = write!(regex_str, "^({})", regex::escape(&search_string));
         } else {
             // enable gap search. Add '^' to the regex to match only from the start if applicable.
-            if self.settings.gap_search_mode == GapSearchMode::GapSearchFromStart {
+            if self.settings().gap_search_mode == GapSearchMode::GapSearchFromStart {
                 regex_str.push('^');
             }
             regex_str.push_str(
@@ -644,7 +644,7 @@ impl TereAppState {
 
         self.update_search_matches();
 
-        if self.settings.filter_search {
+        if self.settings().filter_search {
             if let Some(item) = previous_item_under_cursor {
                 if !self.move_cursor_to_filename(item.file_name_checked()) {
                     self.move_cursor_to(0);
@@ -663,7 +663,7 @@ impl TereAppState {
 
             self.update_search_matches();
 
-            if self.settings.filter_search {
+            if self.settings().filter_search {
                 if let Some(item) = previous_item_under_cursor {
                     if !self.move_cursor_to_filename(item.file_name_checked()) {
                         self.move_cursor_to(0);

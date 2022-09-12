@@ -78,7 +78,7 @@ impl<'a> TereTui<'a> {
             app_state: state,
         };
 
-        if ret.app_state.settings.mouse_enabled {
+        if ret.app_state.settings().mouse_enabled {
             execute!(ret.window, EnableMouseCapture)?;
         }
 
@@ -176,8 +176,8 @@ impl<'a> TereTui<'a> {
         let mut win = self.window;
         let mut extra_msg = String::new();
 
-        let _ = write!(extra_msg, "{} - ", self.app_state.settings.gap_search_mode);
-        let _ = write!(extra_msg, "{} - ", self.app_state.settings.case_sensitive);
+        let _ = write!(extra_msg, "{} - ", self.app_state.settings().gap_search_mode);
+        let _ = write!(extra_msg, "{} - ", self.app_state.settings().case_sensitive);
 
         let cursor_idx = self
             .app_state
@@ -234,7 +234,7 @@ impl<'a> TereTui<'a> {
             style::Print(
                 &format!(
                     "{}: {}",
-                    if self.app_state.settings.filter_search {
+                    if self.app_state.settings().filter_search {
                         "filter"
                     } else {
                         "search"
@@ -474,7 +474,7 @@ impl<'a> TereTui<'a> {
         let n_matches = self.app_state.num_matching_items();
         if n_matches == 1 {
             // There's only one match, highlight it and then change dir if applicable
-            if let Some(timeout) = self.app_state.settings.autocd_timeout {
+            if let Some(timeout) = self.app_state.settings().autocd_timeout {
                 self.highlight_row_exclusive(self.app_state.cursor_pos)?;
 
                 std::thread::sleep(std::time::Duration::from_millis(timeout));
@@ -641,10 +641,10 @@ impl<'a> TereTui<'a> {
 
                     let action = self
                         .app_state
-                        .settings.keymap.get(&(k, valid_ctx))
+                        .settings().keymap.get(&(k, valid_ctx))
                         // If no mapping is found with the currently applying context, look for a
                         // mapping that applies in any context
-                        .or_else(|| self.app_state.settings.keymap.get(&(k, ActionContext::None)));
+                        .or_else(|| self.app_state.settings().keymap.get(&(k, ActionContext::None)));
 
                     if let Some(action) = action {
                         match action {
@@ -722,7 +722,7 @@ impl<'a> TereTui<'a> {
             }
         };
 
-        if self.app_state.settings.mouse_enabled {
+        if self.app_state.settings().mouse_enabled {
             execute!(self.window, DisableMouseCapture)?;
         }
 
@@ -789,7 +789,7 @@ impl<'a> TereTui<'a> {
         )?;
 
         let (w, h) = main_window_size()?;
-        let help_text = get_formatted_help_text(w, &self.app_state.settings.keymap);
+        let help_text = get_formatted_help_text(w, &self.app_state.settings().keymap);
         for (i, line) in help_text
             .iter()
             .skip(scroll)
