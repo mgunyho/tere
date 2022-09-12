@@ -708,7 +708,7 @@ mod tests {
             header_msg: "".into(),
             info_msg: "".into(),
             search_string: "".into(),
-            settings: Default::default(),
+            _settings: Default::default(),
             history: HistoryTree::from_abs_path("/"),
         }
     }
@@ -999,7 +999,7 @@ mod tests {
             6,
             strings_to_ls_buf(vec!["..", "bar", "baz", "foo", "frob"]),
         );
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
 
         // current state:
         // > ..
@@ -1046,7 +1046,7 @@ mod tests {
             6,
             strings_to_ls_buf(vec!["..", "bar", "baz", "foo", "forb"]),
         );
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
 
         // current state:
         // > ..
@@ -1100,7 +1100,7 @@ mod tests {
             3,
             strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
 
         s.move_cursor_to(3);
 
@@ -1137,7 +1137,7 @@ mod tests {
             6,
             strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
         s.move_cursor_to(2);
 
         // current state:
@@ -1194,7 +1194,7 @@ mod tests {
             6,
             strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
         s.move_cursor_to(4);
 
         // current state:
@@ -1239,7 +1239,7 @@ mod tests {
             2,
             strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
 
         // current state:
         // > ..   |
@@ -1284,7 +1284,7 @@ mod tests {
             3,
             strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
         s.move_cursor_to(4);
 
         // current state:
@@ -1314,7 +1314,7 @@ mod tests {
             10,
             strings_to_ls_buf(vec!["..", "aaa", "aab", "bbb"]),
         );
-        s.settings.filter_search = false;
+        s._settings.filter_search = false;
         s.cursor_pos = 1;
 
         // initial state:
@@ -1341,7 +1341,7 @@ mod tests {
         );
 
         // toggle the filter search
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
         s.advance_search("");
 
         // now the state should be
