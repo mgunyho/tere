@@ -281,7 +281,7 @@ Here's a checklist of things to do for a new release.
 - Run `cargo build` so that `Cargo.lock` is also updated, and make a commit with the updated versions.
 - `git checkout master && git merge --no-ff develop`. The commit title should be "Version X.Y.Z" and the commit message should contain the changelog.
 - `git tag vX.Y.Z`
-- `git push --tags`
+- `git push && git push --tags`
 - `sh ./build-release.sh` to build the binaries. They are zipped and placed in the folder `release/`.
 - Upload binaries to github and copy-paste the changelog from the commit message
 - `cargo publish` to upload to crates.io
