@@ -611,20 +611,20 @@ impl<'a> TereTui<'a> {
     }
 
     fn cycle_case_sensitive_mode(&mut self) -> CTResult<()> {
-        self.app_state.settings.case_sensitive = match self.app_state.settings.case_sensitive {
+        self.app_state.set_case_sensitive(match self.app_state.settings().case_sensitive {
             CaseSensitiveMode::IgnoreCase => CaseSensitiveMode::CaseSensitive,
             CaseSensitiveMode::CaseSensitive => CaseSensitiveMode::SmartCase,
             CaseSensitiveMode::SmartCase => CaseSensitiveMode::IgnoreCase,
-        };
+        });
         self.on_search_mode_change()
     }
 
     fn cycle_gap_search_mode(&mut self) -> CTResult<()> {
-        self.app_state.settings.gap_search_mode = match self.app_state.settings.gap_search_mode {
+        self.app_state.set_gap_search_mode(match self.app_state.settings().gap_search_mode {
             GapSearchMode::GapSearchFromStart => GapSearchMode::NoGapSearch,
             GapSearchMode::NoGapSearch => GapSearchMode::GapSearchAnywere,
             GapSearchMode::GapSearchAnywere => GapSearchMode::GapSearchFromStart,
-        };
+        });
         self.on_search_mode_change()
     }
 

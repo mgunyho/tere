@@ -494,6 +494,18 @@ impl TereAppState {
         previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
     }
 
+    pub fn set_case_sensitive(&mut self, case_sensitive: CaseSensitiveMode) {
+        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
+        self._settings.case_sensitive = case_sensitive;
+        previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
+    }
+
+    pub fn set_gap_search_mode(&mut self, gap_search_mode: GapSearchMode) {
+        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
+        self._settings.gap_search_mode = gap_search_mode;
+        previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
+    }
+
     /////////////////////////////////////
     // Functions for moving the cursor //
     /////////////////////////////////////
