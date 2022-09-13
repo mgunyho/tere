@@ -494,7 +494,7 @@ impl TereAppState {
     }
 
     /////////////////////////////////////////////
-    // Funcitons for changing the app settings //
+    // Functions for changing the app settings //
     /////////////////////////////////////////////
 
     /// Change the filter search mode, and ensure that the app state is valid after that
