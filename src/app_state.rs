@@ -342,6 +342,17 @@ impl TereAppState {
         }
     }
 
+    /// Perform an operation (op), while making sure that the cursor stays on the item where it
+    /// was initially.
+    fn with_cursor_fixed_at_current_item<F>(&mut self, op: F)
+    where
+        F: FnOnce(&mut Self),
+    {
+        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
+        op(self);
+        previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
+    }
+
     //////////////////////////////////////
     // Functions for updating the state //
     //////////////////////////////////////
@@ -488,22 +499,21 @@ impl TereAppState {
 
     /// Change the filter search mode, and ensure that the app state is valid after that
     pub fn set_filter_search(&mut self, filter_search: bool) {
-        //TODO: this is very similar to clear_search(), consider factoring out into a function that takes a closure that does whatever the method is supposed to do
-        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
-        self._settings.filter_search = filter_search;
-        previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
+        self.with_cursor_fixed_at_current_item(
+            |self_| self_._settings.filter_search = filter_search
+        );
     }
 
     pub fn set_case_sensitive(&mut self, case_sensitive: CaseSensitiveMode) {
-        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
-        self._settings.case_sensitive = case_sensitive;
-        previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
+        self.with_cursor_fixed_at_current_item(|self_|
+            self_._settings.case_sensitive = case_sensitive
+        );
     }
 
     pub fn set_gap_search_mode(&mut self, gap_search_mode: GapSearchMode) {
-        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
-        self._settings.gap_search_mode = gap_search_mode;
-        previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
+        self.with_cursor_fixed_at_current_item(|self_|
+            self_._settings.gap_search_mode = gap_search_mode
+        );
     }
 
     /////////////////////////////////////
@@ -656,12 +666,14 @@ impl TereAppState {
     }
 
     pub fn clear_search(&mut self) {
-        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
-        self.search_string.clear();
-        previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
+        self.with_cursor_fixed_at_current_item(|self_|
+            self_.search_string.clear()
+        );
     }
 
     pub fn advance_search(&mut self, query: &str) {
+        // Can't use with_cursor_fixed_at_current_item, because the current item might not be a
+        // match any more after updating the search string.
         let previous_item_under_cursor = self.get_item_under_cursor().cloned();
 
         self.search_string.push_str(query);
