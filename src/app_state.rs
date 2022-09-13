@@ -1353,8 +1353,7 @@ mod tests {
         );
 
         // toggle the filter search
-        s._settings.filter_search = true;
-        s.advance_search("");
+        s.set_filter_search(true);
 
         // now the state should be
         //   aaa
