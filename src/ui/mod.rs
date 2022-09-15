@@ -248,6 +248,7 @@ impl<'a> TereTui<'a> {
 
     fn draw_main_window_row(&mut self, row: usize, highlight: bool) -> CTResult<()> {
         let row_abs = row + HEADER_SIZE;
+        let width: usize = main_window_size()?.0;
 
         //TODO: make customizable...
         let highlight_fg = style::Color::Black;
@@ -298,6 +299,8 @@ impl<'a> TereTui<'a> {
             // above byte offsets, and determine whether they should be underlined.
             let letters_underlining: Vec<(&str, bool)> =
                 UnicodeSegmentation::grapheme_indices(fname.as_str(), true)
+                    // print only up to as many characters as the screen width
+                    .take(width)
                     // this contains() could probably be optimized, but shouldn't be too bad.
                     .map(|(i, c)| (c, underline_locs.contains(&i)))
                     .collect();
@@ -353,21 +356,26 @@ impl<'a> TereTui<'a> {
         };
 
         // color the rest of the line if applicable
-        let width: usize = main_window_size()?.0;
-        if highlight && width > item_size {
-            queue!(
-                self.window,
-                style::SetAttribute(Attribute::Reset), // so that the rest of the line isn't underlined
-                style::SetBackgroundColor(highlight_bg),
-                style::Print(" ".repeat(width.saturating_sub(item_size))),
-            )?;
+        if item_size < width {
+            if highlight {
+                queue!(
+                    self.window,
+                    style::SetAttribute(Attribute::Reset), // so that the rest of the line isn't underlined
+                    style::SetBackgroundColor(highlight_bg),
+                    style::Print(" ".repeat(width.saturating_sub(item_size))),
+                )?;
+            } else {
+                queue!(
+                    self.window,
+                    terminal::Clear(terminal::ClearType::UntilNewLine),
+                )?;
+            }
         }
 
         execute!(
             self.window,
             style::ResetColor,
             style::SetAttribute(Attribute::Reset),
-            terminal::Clear(terminal::ClearType::UntilNewLine),
         )
     }
 
