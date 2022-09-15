@@ -802,19 +802,23 @@ impl<'a> TereTui<'a> {
                 cursor::MoveTo(0, u16::try_from(i + HEADER_SIZE).unwrap_or(u16::MAX)),
             )?;
 
+            let mut col = 0; // manually count how many columns we're printing
             // Print the fragments (which can have different styles)
             for fragment in line {
                 queue!(
                     self.window,
                     style::PrintStyledContent(fragment.clone()),
                 )?;
+                col += UnicodeSegmentation::graphemes(fragment.content().as_str(), true).count();
             }
 
-            // Clear the rest of the row
-            queue!(
-                self.window,
-                terminal::Clear(terminal::ClearType::UntilNewLine),
-            )?;
+            // Clear the rest of the row if applicable
+            if col < width {
+                queue!(
+                    self.window,
+                    terminal::Clear(terminal::ClearType::UntilNewLine),
+                )?;
+            }
         }
 
         execute!(self.window)?;
