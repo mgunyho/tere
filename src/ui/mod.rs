@@ -783,7 +783,6 @@ impl<'a> TereTui<'a> {
     fn draw_help_view(&mut self, scroll: usize) -> CTResult<()> {
         queue!(
             self.window,
-            cursor::MoveTo(0, u16::try_from(HEADER_SIZE).unwrap_or(u16::MAX)),
             style::SetAttribute(Attribute::Reset),
             style::ResetColor,
         )?;
@@ -800,10 +799,7 @@ impl<'a> TereTui<'a> {
             // Set up cursor position
             queue!(
                 self.window,
-                // have to do MoveToColumn(0) manually because we're in raw mode
-                cursor::MoveToColumn(0),
-                // don't print newline before first line
-                style::Print(if i == 0 { "" } else { "\n" }),
+                cursor::MoveTo(0, u16::try_from(i + HEADER_SIZE).unwrap_or(u16::MAX)),
             )?;
 
             // Print the fragments (which can have different styles)
