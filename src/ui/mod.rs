@@ -787,13 +787,13 @@ impl<'a> TereTui<'a> {
             style::ResetColor,
         )?;
 
-        let (w, h) = main_window_size()?;
-        let help_text = get_formatted_help_text(w, &self.app_state.settings.keymap);
+        let (width, height) = main_window_size()?;
+        let help_text = get_formatted_help_text(width, &self.app_state.settings.keymap);
         for (i, line) in help_text
             .iter()
             .skip(scroll)
             .chain(vec![vec![]].iter().cycle()) // add empty lines at the end
-            .take(h as usize)
+            .take(height as usize)
             .enumerate()
         {
             // Set up cursor position
