@@ -598,7 +598,6 @@ impl<'a> TereTui<'a> {
 
     /// Things to do when one of the search modes (filter, gap search, case sensitivty) is changed.
     fn on_search_mode_change(&mut self) -> CTResult<()> {
-        //TODO: do the other stuff that self.on_search_char does, notably, change dir if only one match. or should it?
         self.redraw_main_window()?;
         self.redraw_footer()?;
         Ok(())
