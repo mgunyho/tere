@@ -92,6 +92,8 @@ pub struct TereSettings {
 
     pub case_sensitive: CaseSensitiveMode,
 
+    pub attr_sort_mode: AttributeSortMode,
+
     pub autocd_timeout: Option<u64>,
 
     pub history_file: Option<PathBuf>,
@@ -197,6 +199,13 @@ impl TereSettings {
                 "No keyboard mapping found for exit!\n",
             ));
         }
+
+        ret.attr_sort_mode = match args.get_many::<String>("sort").unwrap().map(|v| v.as_str()).last().unwrap() {
+            "adate"     => AttributeSortMode::AccessedDate,
+            "cdate"     => AttributeSortMode::CreatedDate,
+            "mdate"     => AttributeSortMode::ModifiedDate,
+            "name" | _  => AttributeSortMode::Name,
+        };
 
         Ok(ret)
     }
