@@ -8,6 +8,7 @@ use std::ffi::OsStr;
 use std::io::{Error as IOError, ErrorKind, Result as IOResult};
 use std::path::{Component, Path, PathBuf};
 use std::fmt::Write as _;
+use std::time::SystemTime;
 
 use regex::Regex;
 
@@ -120,6 +121,27 @@ impl CustomDirEntry {
         match &self.metadata {
             Some(m) => m.is_dir(),
             None => false,
+        }
+    }
+
+    pub fn accessed(&self) -> SystemTime {
+        match &self.metadata {
+            Some(m) => if let Ok(time) = m.accessed() { time } else { SystemTime::UNIX_EPOCH },
+            None => SystemTime::UNIX_EPOCH,
+        }
+    }
+
+    pub fn created(&self) -> SystemTime {
+        match &self.metadata {
+            Some(m) => if let Ok(time) = m.created() { time } else { SystemTime::UNIX_EPOCH },
+            None => SystemTime::UNIX_EPOCH,
+        }
+    }
+
+    pub fn modified(&self) -> SystemTime {
+        match &self.metadata {
+            Some(m) => if let Ok(time) = m.modified() { time } else { SystemTime::UNIX_EPOCH },
+            None => SystemTime::UNIX_EPOCH,
         }
     }
 }
