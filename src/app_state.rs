@@ -1390,4 +1390,41 @@ mod tests {
             vec!["aaa", "aab"]
         );
     }
+
+    #[test]
+    fn test_gap_search_mode_change() {
+        let mut s = create_test_state_with_buf(
+            10,
+            strings_to_ls_buf(vec!["..", "aaa", "aba", "aab"]),
+        );
+        s.cursor_pos = 1;
+        s.advance_search("a");
+        s.advance_search("b");
+
+        // the state should now be
+        //   ...
+        //   aaa
+        // > aab *
+        //   aba *
+
+        assert_eq!(s.visible_match_indices(), vec![2, 3]);
+        assert_eq!(s.cursor_pos, 2);
+
+        s.set_gap_search_mode(GapSearchMode::NoGapSearch);
+
+        // now it should be
+        //   ...
+        //   aaa
+        //   aab
+        // > aba *
+
+        assert_eq!(s.visible_match_indices(), vec![3]);
+        assert_eq!(s.cursor_pos, 3);
+    }
+
+    #[test]
+    fn test_case_sensitive_mode_change() {
+        todo!("do the same here as in the gap search test");
+    }
+
 }
