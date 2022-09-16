@@ -15,7 +15,7 @@ use regex::Regex;
 #[path = "settings.rs"]
 pub mod settings;
 use settings::TereSettings;
-pub use settings::{CaseSensitiveMode, GapSearchMode};
+pub use settings::{CaseSensitiveMode, GapSearchMode, AttributeSortMode};
 
 #[path = "history.rs"]
 mod history;
@@ -414,12 +414,25 @@ impl TereAppState {
         new_output_buf.sort_by(|a, b| {
             match (a.is_dir(), b.is_dir()) {
                 (true, true) | (false, false) => {
-                    // both are dirs or files, compare by name.
-                    // partial_cmp for strings always returns Some, so unwrap is ok here
-                    a.file_name_checked()
-                        .to_lowercase()
-                        .partial_cmp(&b.file_name_checked().to_lowercase())
-                        .unwrap()
+                    match &self.settings().attr_sort_mode {
+                        AttributeSortMode::Name => {
+                            // both are dirs or files, compare by name.
+                            // partial_cmp for strings always returns Some, so unwrap is ok here
+                            a.file_name_checked()
+                                .to_lowercase()
+                                .partial_cmp(&b.file_name_checked().to_lowercase())
+                                .unwrap()
+                        }
+                        AttributeSortMode::AccessedDate => {
+                            b.accessed().partial_cmp(&a.accessed()).unwrap()
+                        }
+                        AttributeSortMode::CreatedDate => {
+                            b.created().partial_cmp(&a.created()).unwrap()
+                        }
+                        AttributeSortMode::ModifiedDate => {
+                            b.modified().partial_cmp(&a.modified()).unwrap()
+                        }
+                    }
                 }
                 // Otherwise, put folders first
                 (true, false) => std::cmp::Ordering::Less,
