@@ -58,6 +58,31 @@ impl fmt::Display for GapSearchMode {
     }
 }
 
+pub enum AttributeSortMode {
+    Name,
+    AccessedDate,
+    CreatedDate,
+    ModifiedDate,
+}
+
+impl Default for AttributeSortMode {
+    fn default() -> Self {
+        Self::Name
+    }
+}
+
+impl fmt::Display for AttributeSortMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let text = match self {
+            AttributeSortMode::Name         => "name",
+            AttributeSortMode::AccessedDate => "accessed",
+            AttributeSortMode::CreatedDate  => "created",
+            AttributeSortMode::ModifiedDate => "modified",
+        };
+        write!(f, "{}", text)
+    }
+}
+
 #[derive(Default)]
 pub struct TereSettings {
     /// If true, show only folders, not files in the listing
