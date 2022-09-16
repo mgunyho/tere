@@ -203,6 +203,17 @@ justify_and_indent(
              .default_value("off")
              .multiple_occurrences(true)
             )
+        .arg(Arg::new("sort")
+             .long("sort")
+             .help("Enable alternate sorting")
+             .long_help("Enable sorting based on dates such as last accessed, created, or modified")
+             .takes_value(true)
+             .value_name("'name', 'adate', 'cdate', or 'mdate'")
+             .possible_values(&["name", "adate", "cdate", "mdate"])
+             .hide_possible_values(true)
+             .default_value("name")
+             .multiple_occurrences(true)
+            )
 }
 
 /// Justify the list of enum variants (i.e. `ALL_ACTIONS` or `ALL_CONTEXTS`) and their
