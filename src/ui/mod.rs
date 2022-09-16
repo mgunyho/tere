@@ -11,6 +11,7 @@ use crate::app_state::{
     TereAppState,
     CaseSensitiveMode,
     GapSearchMode,
+    AttributeSortMode,
     NO_MATCHES_MSG,
 };
 use help_window::get_formatted_help_text;
@@ -637,6 +638,18 @@ impl<'a> TereTui<'a> {
         self.on_matches_changed()
     }
 
+    fn cycle_attr_sort_mode(&mut self) -> CTResult<()> {
+        self.app_state.settings.attr_sort_mode = match self.app_state.settings.attr_sort_mode {
+            AttributeSortMode::Name => AttributeSortMode::AccessedDate,
+            AttributeSortMode::AccessedDate => AttributeSortMode::CreatedDate,
+            AttributeSortMode::CreatedDate => AttributeSortMode::ModifiedDate,
+            AttributeSortMode::ModifiedDate => AttributeSortMode::Name,
+        };
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
+    }
+
     pub fn main_event_loop(&mut self) -> Result<(), TereError> {
 
         let loop_result = loop {
@@ -682,6 +695,7 @@ impl<'a> TereTui<'a> {
                             Action::ChangeFilterSearchMode => self.toggle_filter_search_mode()?,
                             Action::ChangeCaseSensitiveMode => self.cycle_case_sensitive_mode()?,
                             Action::ChangeGapSearchMode => self.cycle_gap_search_mode()?,
+                            Action::ChangeAttributeSortMode => self.cycle_attr_sort_mode()?,
 
                             Action::RefreshListing => {
                                 self.change_dir(".")?; //TODO: use 'current dir' instead of hardcoded '.' (?, see also pardir discussion elsewhere)
