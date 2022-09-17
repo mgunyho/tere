@@ -184,8 +184,6 @@ pub struct TereAppState {
     // including ".." (the parent folder).
     ls_output_buf: LsBufType,
 
-    //sort_mode: SortMode // TODO: sort by date etc
-
     // Have to manually keep track of the logical absolute path of our app, see https://stackoverflow.com/a/70309860/5208725
     pub current_path: PathBuf,
 
