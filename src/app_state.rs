@@ -500,9 +500,10 @@ impl TereAppState {
 
     /// Change the filter search mode, and ensure that the app state is valid after that
     pub fn set_filter_search(&mut self, filter_search: bool) {
-        self.with_cursor_fixed_at_current_item(
-            |self_| self_._settings.filter_search = filter_search
-        );
+        // Toggling filter search doesn't affect the current match, so we can use set_filter_search
+        self.with_cursor_fixed_at_current_item(|self_| {
+            self_._settings.filter_search = filter_search;
+        });
     }
 
     pub fn set_case_sensitive(&mut self, case_sensitive: CaseSensitiveMode) {
