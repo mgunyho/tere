@@ -343,7 +343,8 @@ impl TereAppState {
     }
 
     /// Perform an operation (op), while making sure that the cursor stays on the item where it
-    /// was initially.
+    /// was initially. Note: If `op` removes the previous item from the list of matches (i.e. list
+    /// of valid cursor positions), this may leave the cursor position in an inconsistent state.
     fn with_cursor_fixed_at_current_item<F>(&mut self, op: F)
     where
         F: FnOnce(&mut Self),
