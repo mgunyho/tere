@@ -1395,14 +1395,14 @@ mod tests {
     fn test_gap_search_mode_change() {
         let mut s = create_test_state_with_buf(
             10,
-            strings_to_ls_buf(vec!["..", "aaa", "aba", "aab"]),
+            strings_to_ls_buf(vec!["..", "aaa", "aab", "aba"]),
         );
         s.cursor_pos = 1;
         s.advance_search("a");
         s.advance_search("b");
 
         // the state should now be
-        //   ...
+        //   ..
         //   aaa
         // > aab *
         //   aba *
