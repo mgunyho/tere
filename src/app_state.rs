@@ -1394,6 +1394,28 @@ mod tests {
     }
 
     #[test]
+    fn test_case_sensitive_mode_change() {
+        let mut s = create_test_state_with_buf(
+            10,
+            strings_to_ls_buf(vec!["..", "a", "A"]),
+        );
+        s.cursor_pos = 2;
+        s.advance_search("a");
+
+        // current state:
+        //   ..
+        //   a  *
+        // > A  *
+
+        assert_eq!(s.visible_match_indices(), vec![1, 2]);
+        assert_eq!(s.cursor_pos, 2);
+
+        s.set_case_sensitive(CaseSensitiveMode::CaseSensitive);
+        assert_eq!(s.visible_match_indices(), vec![1]);
+        assert_eq!(s.cursor_pos, 1);
+    }
+
+    #[test]
     fn test_gap_search_mode_change() {
         let mut s = create_test_state_with_buf(
             10,
@@ -1422,11 +1444,6 @@ mod tests {
 
         assert_eq!(s.visible_match_indices(), vec![3]);
         assert_eq!(s.cursor_pos, 3);
-    }
-
-    #[test]
-    fn test_case_sensitive_mode_change() {
-        todo!("do the same here as in the gap search test");
     }
 
 }
