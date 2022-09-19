@@ -507,15 +507,15 @@ impl TereAppState {
     }
 
     pub fn set_case_sensitive(&mut self, case_sensitive: CaseSensitiveMode) {
-        self.with_cursor_fixed_at_current_item(|self_|
-            self_._settings.case_sensitive = case_sensitive
-        );
+        self._settings.case_sensitive = case_sensitive;
+        // a bit of a hack, but this is the easiest way to force the cursor to be on a valid match
+        // after changing the mode.
+        self.advance_search("");
     }
 
     pub fn set_gap_search_mode(&mut self, gap_search_mode: GapSearchMode) {
-        self.with_cursor_fixed_at_current_item(|self_|
-            self_._settings.gap_search_mode = gap_search_mode
-        );
+        self._settings.gap_search_mode = gap_search_mode;
+        self.advance_search(""); // hacky, see the comment above in set_case_sensitive
     }
 
     /////////////////////////////////////
