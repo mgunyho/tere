@@ -435,18 +435,13 @@ mod tests {
     }
 
     #[test]
-    fn test_stylize_wrapped_lines3() {
+    fn test_wrap_and_stylize() {
         // test case where textwrap adds an extra newline in the middle of a bold section of text,
         // where the newline does *not* replace whitespace (i.e. after a special character such as
         // '/')
 
         let input = "## foo bar\n\nlorem ipsum `dolor/sit` amet";
-        let (lines, locs) = strip_markup_and_extract_bold_positions(input);
-
-        let opts = Options::new(18).word_splitter(NoHyphenation);
-        let lines_wrapped: Vec<_> = textwrap::wrap(&lines, &opts);
-
-        let stylized: Vec<_> = stylize_wrapped_lines(lines_wrapped, locs);
+        let stylized = wrap_and_stylize(input, 18);
 
         assert_eq!(
             stylized[0],
@@ -454,7 +449,7 @@ mod tests {
         );
         assert_eq!(stylized[1], vec![]);
         assert_eq!(stylized[2][0], "lorem ipsum ".to_string().stylize());
-        assert_eq!(stylized[2][1], "dolor|".to_string().bold());
+        assert_eq!(stylized[2][1], "dolor/".to_string().bold());
         assert_eq!(stylized[3][0], "sit".to_string().bold());
         assert_eq!(stylized[3][1], " amet".to_string().stylize());
     }
