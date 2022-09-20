@@ -78,7 +78,7 @@ impl<'a> TereTui<'a> {
             app_state: state,
         };
 
-        if ret.app_state.settings.mouse_enabled {
+        if ret.app_state.settings().mouse_enabled {
             execute!(ret.window, EnableMouseCapture)?;
         }
 
@@ -176,8 +176,8 @@ impl<'a> TereTui<'a> {
         let mut win = self.window;
         let mut extra_msg = String::new();
 
-        let _ = write!(extra_msg, "{} - ", self.app_state.settings.gap_search_mode);
-        let _ = write!(extra_msg, "{} - ", self.app_state.settings.case_sensitive);
+        let _ = write!(extra_msg, "{} - ", self.app_state.settings().gap_search_mode);
+        let _ = write!(extra_msg, "{} - ", self.app_state.settings().case_sensitive);
 
         let cursor_idx = self
             .app_state
@@ -234,7 +234,7 @@ impl<'a> TereTui<'a> {
             style::Print(
                 &format!(
                     "{}: {}",
-                    if self.app_state.settings.filter_search {
+                    if self.app_state.settings().filter_search {
                         "filter"
                     } else {
                         "search"
@@ -482,7 +482,7 @@ impl<'a> TereTui<'a> {
         let n_matches = self.app_state.num_matching_items();
         if n_matches == 1 {
             // There's only one match, highlight it and then change dir if applicable
-            if let Some(timeout) = self.app_state.settings.autocd_timeout {
+            if let Some(timeout) = self.app_state.settings().autocd_timeout {
                 self.highlight_row_exclusive(self.app_state.cursor_pos)?;
 
                 std::thread::sleep(std::time::Duration::from_millis(timeout));
@@ -494,33 +494,29 @@ impl<'a> TereTui<'a> {
 
                 self.change_dir("")?;
             }
-        } else if n_matches == 0 {
-            self.info_message(NO_MATCHES_MSG)?;
-        } else {
-            self.info_message("")?;
         }
-        self.redraw_main_window()?;
-        self.redraw_footer()?;
-        Ok(())
+        self.on_matches_changed()
     }
 
     fn erase_search_char(&mut self) -> CTResult<()> {
         self.app_state.erase_search_char();
+        self.on_matches_changed()
+    }
 
-        if self.app_state.num_matching_items() == 0 {
+
+    fn on_clear_search(&mut self) -> CTResult<()> {
+        self.app_state.clear_search();
+        self.on_matches_changed()
+    }
+
+    /// Things to do when the matches are possibly changed
+    fn on_matches_changed(&mut self) -> CTResult<()> {
+        if self.app_state.is_searching() && self.app_state.num_matching_items() == 0 {
             self.info_message(NO_MATCHES_MSG)?;
         } else {
             self.info_message("")?;
         }
 
-        self.redraw_main_window()?;
-        self.redraw_footer()?;
-        Ok(())
-    }
-
-    fn on_clear_search(&mut self) -> CTResult<()> {
-        self.app_state.clear_search();
-        self.info_message("")?; // clear possible 'no matches' message
         self.redraw_main_window()?;
         self.redraw_footer()?;
         Ok(())
@@ -604,29 +600,27 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    fn toggle_filter_search_mode(&mut self) -> CTResult<()> {
+        self.app_state.set_filter_search(!self.app_state.settings().filter_search);
+        self.on_matches_changed()
+    }
+
     fn cycle_case_sensitive_mode(&mut self) -> CTResult<()> {
-        self.app_state.settings.case_sensitive = match self.app_state.settings.case_sensitive {
+        self.app_state.set_case_sensitive(match self.app_state.settings().case_sensitive {
             CaseSensitiveMode::IgnoreCase => CaseSensitiveMode::CaseSensitive,
             CaseSensitiveMode::CaseSensitive => CaseSensitiveMode::SmartCase,
             CaseSensitiveMode::SmartCase => CaseSensitiveMode::IgnoreCase,
-        };
-        self.app_state.advance_search("");
-        self.redraw_main_window()?;
-        self.redraw_footer()?;
-        Ok(())
+        });
+        self.on_matches_changed()
     }
 
     fn cycle_gap_search_mode(&mut self) -> CTResult<()> {
-        self.app_state.settings.gap_search_mode = match self.app_state.settings.gap_search_mode {
+        self.app_state.set_gap_search_mode(match self.app_state.settings().gap_search_mode {
             GapSearchMode::GapSearchFromStart => GapSearchMode::NoGapSearch,
             GapSearchMode::NoGapSearch => GapSearchMode::GapSearchAnywere,
             GapSearchMode::GapSearchAnywere => GapSearchMode::GapSearchFromStart,
-        };
-        //TODO: do the other stuff that self.on_search_char_does, notably, change dir if only one match. or should it?
-        self.app_state.advance_search("");
-        self.redraw_main_window()?;
-        self.redraw_footer()?;
-        Ok(())
+        });
+        self.on_matches_changed()
     }
 
     pub fn main_event_loop(&mut self) -> Result<(), TereError> {
@@ -642,10 +636,10 @@ impl<'a> TereTui<'a> {
 
                     let action = self
                         .app_state
-                        .settings.keymap.get(&(k, valid_ctx))
+                        .settings().keymap.get(&(k, valid_ctx))
                         // If no mapping is found with the currently applying context, look for a
                         // mapping that applies in any context
-                        .or_else(|| self.app_state.settings.keymap.get(&(k, ActionContext::None)));
+                        .or_else(|| self.app_state.settings().keymap.get(&(k, ActionContext::None)));
 
                     if let Some(action) = action {
                         match action {
@@ -671,6 +665,7 @@ impl<'a> TereTui<'a> {
 
                             Action::ClearSearch => self.on_clear_search()?,
 
+                            Action::ChangeFilterSearchMode => self.toggle_filter_search_mode()?,
                             Action::ChangeCaseSensitiveMode => self.cycle_case_sensitive_mode()?,
                             Action::ChangeGapSearchMode => self.cycle_gap_search_mode()?,
 
@@ -722,7 +717,7 @@ impl<'a> TereTui<'a> {
             }
         };
 
-        if self.app_state.settings.mouse_enabled {
+        if self.app_state.settings().mouse_enabled {
             execute!(self.window, DisableMouseCapture)?;
         }
 
@@ -788,7 +783,7 @@ impl<'a> TereTui<'a> {
         )?;
 
         let (width, height) = main_window_size()?;
-        let help_text = get_formatted_help_text(width, &self.app_state.settings.keymap);
+        let help_text = get_formatted_help_text(width, &self.app_state.settings().keymap);
         for (i, line) in help_text
             .iter()
             .skip(scroll)

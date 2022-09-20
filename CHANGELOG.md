@@ -1,3 +1,7 @@
+## 1.3.0 (unreleased)
+
+- Add option to toggle filter search mode while the app is running, the default shortcut is `Alt-f` (Github #59)
+
 ## 1.2.0 (2022-09-11)
 
 The biggest new feature is the possibility to map custom keyboard shortcuts, using a syntax like `--map key-combination:action`.
