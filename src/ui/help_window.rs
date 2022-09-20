@@ -60,14 +60,18 @@ pub fn get_formatted_help_text(
 fn wrap_and_stylize(text: &str, width: usize) -> Vec<Vec<StyledContent<String>>> {
 
     // Strip out markup and extract the locations where we need to toggle bold on/off.
-    let (text, bold_toggle_locs) = strip_markup_and_extract_bold_positions(&text);
+    let (mut text, bold_toggle_locs) = strip_markup_and_extract_bold_positions(&text);
 
     // apply text wrapping
-    let opts = Options::new(width).word_splitter(NoHyphenation);
-    let text = textwrap::wrap(&text, opts);
+    textwrap::fill_inplace(&mut text, width);
 
-    // apply bold at the toggle locations and return
-    stylize_wrapped_lines(text, bold_toggle_locs)
+    // Apply bold at the toggle locations. Have to be mut so that the drain/filter below works.
+    let mut result = stylize_wrapped_lines(text.split("\n").collect(), bold_toggle_locs);
+
+    // remove empty items (e.g. if the line started with a bold item).
+    result.drain(..)
+        .map(|mut line| line.drain(..).filter(|item| !item.content().is_empty()).collect())
+        .collect()
 }
 
 /// Extract the table of keyboard shortcuts from the README. Panics if the README is incorrectly
