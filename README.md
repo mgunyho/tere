@@ -141,6 +141,7 @@ You can navigate folders in `tere` by moving the cursor around and by typing to 
 |Move cursor to the bottom| <kbd>End</kbd>  or <kbd>Alt</kbd>-<kbd>Shift</kbd>-<kbd>g</kbd> | `CursorBottom` |
 |Erase a character from the search | <kbd>Backspace</kbd> if searching | `EraseSearchChar` |
 |Clear the search | <kbd>Esc</kbd> if searching | `ClearSearch` |
+|Toggle filter search| <kbd>Alt</kbd>-<kbd>f</kbd> | `ChangeFilterSearchMode` |
 |Change case sensitivity mode| <kbd>Alt</kbd>-<kbd>c</kbd> | `ChangeCaseSensitiveMode` |
 |Change gap search mode| <kbd>Ctrl</kbd>-<kbd>f</kbd> | `ChangeGapSearchMode` |
 |Refresh current directory| <kbd>Ctrl</kbd>-<kbd>r</kbd>| `RefreshListing` |

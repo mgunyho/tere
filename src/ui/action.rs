@@ -27,6 +27,7 @@ pub enum Action {
     EraseSearchChar,
     ClearSearch,
 
+    ChangeFilterSearchMode,
     ChangeCaseSensitiveMode,
     ChangeGapSearchMode,
 
@@ -59,6 +60,7 @@ impl Action {
             Self::EraseSearchChar => "Erase one character from the search",
             Self::ClearSearch => "Clear the search",
 
+            Self::ChangeFilterSearchMode => "Toggle the filter-search mode",
             Self::ChangeCaseSensitiveMode => "Change the case-sensitive mode",
             Self::ChangeGapSearchMode => "Change the gap-search mode",
 
