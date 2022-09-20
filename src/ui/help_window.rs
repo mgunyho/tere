@@ -52,15 +52,22 @@ pub fn get_formatted_help_text(
         .replace("<kbd>",  "`")
         .replace("</kbd>", "`");
 
+    wrap_and_stylize(&help_str, width)
+}
+
+/// Strip the markup (markdown) from some text and wrap it to a given width. The result is a
+/// vector of lines, where each line is a vector of styled elements.
+fn wrap_and_stylize(text: &str, width: usize) -> Vec<Vec<StyledContent<String>>> {
+
     // Strip out markup and extract the locations where we need to toggle bold on/off.
-    let (help_str, bold_toggle_locs) = strip_markup_and_extract_bold_positions(&help_str);
+    let (text, bold_toggle_locs) = strip_markup_and_extract_bold_positions(&text);
 
     // apply text wrapping
     let opts = Options::new(width).word_splitter(NoHyphenation);
-    let help_str = textwrap::wrap(&help_str, opts);
+    let text = textwrap::wrap(&text, opts);
 
     // apply bold at the toggle locations and return
-    stylize_wrapped_lines(help_str, bold_toggle_locs)
+    stylize_wrapped_lines(text, bold_toggle_locs)
 }
 
 /// Extract the table of keyboard shortcuts from the README. Panics if the README is incorrectly
