@@ -486,33 +486,29 @@ impl<'a> TereTui<'a> {
 
                 self.change_dir("")?;
             }
-        } else if n_matches == 0 {
-            self.info_message(NO_MATCHES_MSG)?;
-        } else {
-            self.info_message("")?;
         }
-        self.redraw_main_window()?;
-        self.redraw_footer()?;
-        Ok(())
+        self.on_matches_changed()
     }
 
     fn erase_search_char(&mut self) -> CTResult<()> {
         self.app_state.erase_search_char();
+        self.on_matches_changed()
+    }
 
-        if self.app_state.num_matching_items() == 0 {
+
+    fn on_clear_search(&mut self) -> CTResult<()> {
+        self.app_state.clear_search();
+        self.on_matches_changed()
+    }
+
+    /// Things to do when the matches are possibly changed
+    fn on_matches_changed(&mut self) -> CTResult<()> {
+        if self.app_state.is_searching() && self.app_state.num_matching_items() == 0 {
             self.info_message(NO_MATCHES_MSG)?;
         } else {
             self.info_message("")?;
         }
 
-        self.redraw_main_window()?;
-        self.redraw_footer()?;
-        Ok(())
-    }
-
-    fn on_clear_search(&mut self) -> CTResult<()> {
-        self.app_state.clear_search();
-        self.info_message("")?; // clear possible 'no matches' message
         self.redraw_main_window()?;
         self.redraw_footer()?;
         Ok(())
