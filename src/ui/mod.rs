@@ -592,16 +592,9 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    /// Things to do when one of the search modes (filter, gap search, case sensitivty) is changed.
-    fn on_search_mode_change(&mut self) -> CTResult<()> {
-        self.redraw_main_window()?;
-        self.redraw_footer()?;
-        Ok(())
-    }
-
     fn toggle_filter_search_mode(&mut self) -> CTResult<()> {
         self.app_state.set_filter_search(!self.app_state.settings().filter_search);
-        self.on_search_mode_change()
+        self.on_matches_changed()
     }
 
     fn cycle_case_sensitive_mode(&mut self) -> CTResult<()> {
@@ -610,7 +603,7 @@ impl<'a> TereTui<'a> {
             CaseSensitiveMode::CaseSensitive => CaseSensitiveMode::SmartCase,
             CaseSensitiveMode::SmartCase => CaseSensitiveMode::IgnoreCase,
         });
-        self.on_search_mode_change()
+        self.on_matches_changed()
     }
 
     fn cycle_gap_search_mode(&mut self) -> CTResult<()> {
@@ -619,7 +612,7 @@ impl<'a> TereTui<'a> {
             GapSearchMode::NoGapSearch => GapSearchMode::GapSearchAnywere,
             GapSearchMode::GapSearchAnywere => GapSearchMode::GapSearchFromStart,
         });
-        self.on_search_mode_change()
+        self.on_matches_changed()
     }
 
     pub fn main_event_loop(&mut self) -> Result<(), TereError> {
