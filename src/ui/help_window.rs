@@ -445,12 +445,11 @@ mod tests {
 
         assert_eq!(
             stylized[0],
-            vec!["".to_string().stylize(), "foo bar".to_string().bold()]
+            vec!["foo bar".to_string().bold()]
         );
         assert_eq!(stylized[1], vec![]);
-        assert_eq!(stylized[2][0], "lorem ipsum ".to_string().stylize());
-        assert_eq!(stylized[2][1], "dolor/".to_string().bold());
-        assert_eq!(stylized[3][0], "sit".to_string().bold());
+        assert_eq!(stylized[2][0], "lorem ipsum".to_string().stylize());
+        assert_eq!(stylized[3][0], "dolor/sit".to_string().bold());
         assert_eq!(stylized[3][1], " amet".to_string().stylize());
     }
 
