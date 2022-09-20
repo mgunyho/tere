@@ -4,7 +4,7 @@ use crossterm::{
     style::{StyledContent, Stylize},
     event::KeyEvent,
 };
-use textwrap::{self, word_splitters::WordSplitter::NoHyphenation, Options};
+use textwrap;
 use crate::ui::{Action, ActionContext};
 
 const README_STR: &str = include_str!("../../README.md");
