@@ -248,6 +248,7 @@ impl<'a> TereTui<'a> {
 
     fn draw_main_window_row(&mut self, row: usize, highlight: bool) -> CTResult<()> {
         let row_abs = row + HEADER_SIZE;
+        let width: usize = main_window_size()?.0;
 
         //TODO: make customizable...
         let highlight_fg = style::Color::Black;
@@ -298,6 +299,8 @@ impl<'a> TereTui<'a> {
             // above byte offsets, and determine whether they should be underlined.
             let letters_underlining: Vec<(&str, bool)> =
                 UnicodeSegmentation::grapheme_indices(fname.as_str(), true)
+                    // print only up to as many characters as the screen width
+                    .take(width)
                     // this contains() could probably be optimized, but shouldn't be too bad.
                     .map(|(i, c)| (c, underline_locs.contains(&i)))
                     .collect();
@@ -342,7 +345,13 @@ impl<'a> TereTui<'a> {
                 // use it for anything else.
                 //TODO: different color for target?
                 let target_text = format!(" -> {}", target.display());
-                queue!(self.window, style::Print(&target_text))?;
+                queue!(
+                    self.window,
+                    style::SetAttribute(Attribute::Reset),
+                    style::SetForegroundColor(symlink_color),
+                    style::SetBackgroundColor(if highlight { highlight_bg } else { style::Color::Reset }),
+                    style::Print(&target_text),
+                )?;
 
                 letters_underlining.len() + UnicodeSegmentation::graphemes(target_text.as_str(), true).count()
             } else {
@@ -353,21 +362,26 @@ impl<'a> TereTui<'a> {
         };
 
         // color the rest of the line if applicable
-        let width: usize = main_window_size()?.0;
-        if highlight && width > item_size {
-            queue!(
-                self.window,
-                style::SetAttribute(Attribute::Reset), // so that the rest of the line isn't underlined
-                style::SetBackgroundColor(highlight_bg),
-                style::Print(" ".repeat(width.saturating_sub(item_size))),
-            )?;
+        if item_size < width {
+            if highlight {
+                queue!(
+                    self.window,
+                    style::SetAttribute(Attribute::Reset), // so that the rest of the line isn't underlined
+                    style::SetBackgroundColor(highlight_bg),
+                    style::Print(" ".repeat(width.saturating_sub(item_size))),
+                )?;
+            } else {
+                queue!(
+                    self.window,
+                    terminal::Clear(terminal::ClearType::UntilNewLine),
+                )?;
+            }
         }
 
         execute!(
             self.window,
             style::ResetColor,
             style::SetAttribute(Attribute::Reset),
-            terminal::Clear(terminal::ClearType::UntilNewLine),
         )
     }
 
@@ -770,42 +784,42 @@ impl<'a> TereTui<'a> {
     fn draw_help_view(&mut self, scroll: usize) -> CTResult<()> {
         queue!(
             self.window,
-            cursor::MoveTo(0, u16::try_from(HEADER_SIZE).unwrap_or(u16::MAX)),
             style::SetAttribute(Attribute::Reset),
             style::ResetColor,
         )?;
 
-        let (w, h) = main_window_size()?;
-        let help_text = get_formatted_help_text(w, &self.app_state.settings().keymap);
+        let (width, height) = main_window_size()?;
+        let help_text = get_formatted_help_text(width, &self.app_state.settings().keymap);
         for (i, line) in help_text
             .iter()
             .skip(scroll)
             .chain(vec![vec![]].iter().cycle()) // add empty lines at the end
-            .take(h as usize)
+            .take(height as usize)
             .enumerate()
         {
             // Set up cursor position
             queue!(
                 self.window,
-                // have to do MoveToColumn(0) manually because we're in raw mode
-                cursor::MoveToColumn(0),
-                // don't print newline before first line
-                style::Print(if i == 0 { "" } else { "\n" }),
+                cursor::MoveTo(0, u16::try_from(i + HEADER_SIZE).unwrap_or(u16::MAX)),
             )?;
 
+            let mut col = 0; // manually count how many columns we're printing
             // Print the fragments (which can have different styles)
             for fragment in line {
                 queue!(
                     self.window,
                     style::PrintStyledContent(fragment.clone()),
                 )?;
+                col += UnicodeSegmentation::graphemes(fragment.content().as_str(), true).count();
             }
 
-            // Clear the rest of the row
-            queue!(
-                self.window,
-                terminal::Clear(terminal::ClearType::UntilNewLine),
-            )?;
+            // Clear the rest of the row if applicable
+            if col < width {
+                queue!(
+                    self.window,
+                    terminal::Clear(terminal::ClearType::UntilNewLine),
+                )?;
+            }
         }
 
         execute!(self.window)?;
