@@ -60,13 +60,13 @@ pub fn get_formatted_help_text(
 fn wrap_and_stylize(text: &str, width: usize) -> Vec<Vec<StyledContent<String>>> {
 
     // Strip out markup and extract the locations where we need to toggle bold on/off.
-    let (mut text, bold_toggle_locs) = strip_markup_and_extract_bold_positions(&text);
+    let (mut text, bold_toggle_locs) = strip_markup_and_extract_bold_positions(text);
 
     // apply text wrapping
     textwrap::fill_inplace(&mut text, width);
 
     // Apply bold at the toggle locations. Have to be mut so that the drain/filter below works.
-    let mut result = stylize_wrapped_lines(text.split("\n").collect(), bold_toggle_locs);
+    let mut result = stylize_wrapped_lines(text.split('\n').collect(), bold_toggle_locs);
 
     // remove empty items (e.g. if the line started with a bold item).
     result.drain(..)
