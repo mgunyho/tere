@@ -345,7 +345,13 @@ impl<'a> TereTui<'a> {
                 // use it for anything else.
                 //TODO: different color for target?
                 let target_text = format!(" -> {}", target.display());
-                queue!(self.window, style::Print(&target_text))?;
+                queue!(
+                    self.window,
+                    style::SetAttribute(Attribute::Reset),
+                    style::SetForegroundColor(symlink_color),
+                    style::SetBackgroundColor(if highlight { highlight_bg } else { style::Color::Reset }),
+                    style::Print(&target_text),
+                )?;
 
                 letters_underlining.len() + UnicodeSegmentation::graphemes(target_text.as_str(), true).count()
             } else {
