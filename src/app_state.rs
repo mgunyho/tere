@@ -140,7 +140,7 @@ impl CustomDirEntry {
 
     pub fn modified(&self) -> SystemTime {
         match &self.metadata {
-            Some(m) => if let Ok(time) = m.modified() { time } else { SystemTime::UNIX_EPOCH },
+            Some(m) => m.modified().unwrap_or(SystemTime::UNIX_EPOCH),
             None => SystemTime::UNIX_EPOCH,
         }
     }
