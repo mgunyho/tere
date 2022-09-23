@@ -126,14 +126,14 @@ impl CustomDirEntry {
 
     pub fn accessed(&self) -> SystemTime {
         match &self.metadata {
-            Some(m) => if let Ok(time) = m.accessed() { time } else { SystemTime::UNIX_EPOCH },
+            Some(m) => m.accessed().unwrap_or(SystemTime::UNIX_EPOCH),
             None => SystemTime::UNIX_EPOCH,
         }
     }
 
     pub fn created(&self) -> SystemTime {
         match &self.metadata {
-            Some(m) => if let Ok(time) = m.created() { time } else { SystemTime::UNIX_EPOCH },
+            Some(m) => m.created().unwrap_or(SystemTime::UNIX_EPOCH),
             None => SystemTime::UNIX_EPOCH,
         }
     }
