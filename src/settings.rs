@@ -200,7 +200,14 @@ impl TereSettings {
             ));
         }
 
-        ret.attr_sort_mode = match args.get_many::<String>("sort").unwrap().map(|v| v.as_str()).last().unwrap() {
+        ret.attr_sort_mode = match args
+            .get_many::<String>("sort")
+            .unwrap()
+            .map(|v| v.as_str())
+            .last()
+            .unwrap()
+        {
+
             "adate"     => AttributeSortMode::AccessedDate,
             "cdate"     => AttributeSortMode::CreatedDate,
             "mdate"     => AttributeSortMode::ModifiedDate,
