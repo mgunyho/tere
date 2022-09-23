@@ -58,26 +58,26 @@ impl fmt::Display for GapSearchMode {
     }
 }
 
-pub enum AttributeSortMode {
+pub enum SortMode {
     Name,
-    AccessedDate,
-    CreatedDate,
-    ModifiedDate,
+    Accessed,
+    Created,
+    Modified,
 }
 
-impl Default for AttributeSortMode {
+impl Default for SortMode {
     fn default() -> Self {
         Self::Name
     }
 }
 
-impl fmt::Display for AttributeSortMode {
+impl fmt::Display for SortMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let text = match self {
-            AttributeSortMode::Name         => "name",
-            AttributeSortMode::AccessedDate => "accessed",
-            AttributeSortMode::CreatedDate  => "created",
-            AttributeSortMode::ModifiedDate => "modified",
+            SortMode::Name         => "name",
+            SortMode::Accessed => "accessed",
+            SortMode::Created => "created",
+            SortMode::Modified => "modified",
         };
         write!(f, "{}", text)
     }
@@ -92,7 +92,7 @@ pub struct TereSettings {
 
     pub case_sensitive: CaseSensitiveMode,
 
-    pub attr_sort_mode: AttributeSortMode,
+    pub sort_mode: SortMode,
 
     pub autocd_timeout: Option<u64>,
 
@@ -200,7 +200,7 @@ impl TereSettings {
             ));
         }
 
-        ret.attr_sort_mode = match args
+        ret.sort_mode = match args
             .get_many::<String>("sort")
             .unwrap()
             .map(|v| v.as_str())
@@ -208,10 +208,11 @@ impl TereSettings {
             .unwrap()
         {
 
-            "adate"     => AttributeSortMode::AccessedDate,
-            "cdate"     => AttributeSortMode::CreatedDate,
-            "mdate"     => AttributeSortMode::ModifiedDate,
-            "name" | _  => AttributeSortMode::Name,
+            "adate" => SortMode::Accessed,
+            "cdate" => SortMode::Created,
+            "mdate" => SortMode::Modified,
+            "name"  => SortMode::Name,
+            _       => unreachable!(),
         };
 
         Ok(ret)

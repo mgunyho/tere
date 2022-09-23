@@ -15,7 +15,7 @@ use regex::Regex;
 #[path = "settings.rs"]
 pub mod settings;
 use settings::TereSettings;
-pub use settings::{CaseSensitiveMode, GapSearchMode, AttributeSortMode};
+pub use settings::{CaseSensitiveMode, GapSearchMode, SortMode};
 
 #[path = "history.rs"]
 mod history;
@@ -412,8 +412,8 @@ impl TereAppState {
         new_output_buf.sort_by(|a, b| {
             match (a.is_dir(), b.is_dir()) {
                 (true, true) | (false, false) => {
-                    match &self.settings().attr_sort_mode {
-                        AttributeSortMode::Name => {
+                    match &self.settings().sort_mode {
+                        SortMode::Name => {
                             // both are dirs or files, compare by name.
                             // partial_cmp for strings always returns Some, so unwrap is ok here
                             a.file_name_checked()
@@ -421,13 +421,16 @@ impl TereAppState {
                                 .partial_cmp(&b.file_name_checked().to_lowercase())
                                 .unwrap()
                         }
-                        AttributeSortMode::AccessedDate => {
+                        SortMode::Accessed => {
+                            // b>a for sorting most recently accessed first
                             b.accessed().partial_cmp(&a.accessed()).unwrap()
                         }
-                        AttributeSortMode::CreatedDate => {
+                        SortMode::Created => {
+                            // b>a for sorting most recently created first
                             b.created().partial_cmp(&a.created()).unwrap()
                         }
-                        AttributeSortMode::ModifiedDate => {
+                        SortMode::Modified => {
+                            // b>a for sorting most recently modified first
                             b.modified().partial_cmp(&a.modified()).unwrap()
                         }
                     }

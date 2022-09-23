@@ -11,7 +11,7 @@ use crate::app_state::{
     TereAppState,
     CaseSensitiveMode,
     GapSearchMode,
-    AttributeSortMode,
+    SortMode,
     NO_MATCHES_MSG,
 };
 use help_window::get_formatted_help_text;
@@ -640,11 +640,11 @@ impl<'a> TereTui<'a> {
     }
 
     fn cycle_attr_sort_mode(&mut self) -> CTResult<()> {
-        self.app_state.settings.attr_sort_mode = match self.app_state.settings.attr_sort_mode {
-            AttributeSortMode::Name => AttributeSortMode::AccessedDate,
-            AttributeSortMode::AccessedDate => AttributeSortMode::CreatedDate,
-            AttributeSortMode::CreatedDate => AttributeSortMode::ModifiedDate,
-            AttributeSortMode::ModifiedDate => AttributeSortMode::Name,
+        self.app_state.settings.sort_mode = match self.app_state.settings.sort_mode {
+            SortMode::Name => SortMode::Accessed,
+            SortMode::Accessed => SortMode::Created,
+            SortMode::Created => SortMode::Modified,
+            SortMode::Modified => SortMode::Name,
         };
         self.redraw_main_window()?;
         self.redraw_footer()?;
