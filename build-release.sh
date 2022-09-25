@@ -18,7 +18,7 @@ for target in \
     "x86_64-unknown-linux-musl" \
     "x86_64-pc-windows-gnu" \
     "aarch64-unknown-linux-gnu" #\
-    # TODO: mac support ... probably requires getting the Apple SDK, which I can't do.
+    # TODO: mac support requires a lot of fiddling and getting the Apple SDK. see https://wapl.es/rust/2019/02/17/rust-cross-compile-linux-to-macos.html
     #"x86_64-apple-darwin"
 do
     echo "Building $target"
