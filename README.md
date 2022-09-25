@@ -7,7 +7,7 @@ provides a TUI for efficiently navigating to a folder, and then prints the path
 to that folder when you exit. By configuring your shell to `cd` to the printed
 folder, you can move around in your filesystem very quickly.
 
-![A gif showing what tere using looks like](./demo/tere-demo-2022-07-10-2027-e2-O3.gif)
+![A gif showing what using tere looks like](./demo/tere-demo-2022-07-10-2027-e2-O3.gif)
 
 Note that `tere` is not a file _manager_, it
 can only be used to browse folders, not to create, rename or delete them.
