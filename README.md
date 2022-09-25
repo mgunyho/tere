@@ -284,12 +284,11 @@ rustup target add x86_64-unknown-linux-musl
 sudo apt install gcc-mingw-w64
 rustup target add x86_64-pc-windows-gnu
 
-# THESE ARE UNTESTED
 # ARM (raspberry pi) support
-sudo apt install gcc-aarch64-linux-gnu ???
+sudo apt install gcc-aarch64-linux-gnu
 rustup target add aarch64-unknown-linux-gnu
 
-# MacOS
+# MacOS (UNTESTED)
 rustup target add x86_64-apple-darwin
 ```
 Then, the `build-release.sh` script should work.

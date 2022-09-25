@@ -16,9 +16,9 @@ echo "Building $BIN_NAME version $version"
 for target in \
     "x86_64-unknown-linux-gnu" \
     "x86_64-unknown-linux-musl" \
-    "x86_64-pc-windows-gnu" #\
-    # not tested yet (TODO: test)
-    #"aarch64-unknown-linux-gnu" \
+    "x86_64-pc-windows-gnu" \
+    "aarch64-unknown-linux-gnu" #\
+    # TODO: mac support ... probably requires getting the Apple SDK, which I can't do.
     #"x86_64-apple-darwin"
 do
     echo "Building $target"
