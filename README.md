@@ -2,9 +2,10 @@
 
 
 `tere` is a terminal file explorer. It is a faster alternative to using `cd`
-and `ls` to browse folders in your terminal. It only really does one thing: it
-allows you to navigate to a folder efficiently using a TUI, and then prints the
-path to that folder when you exit.
+and `ls` to browse folders in your terminal. `tere` only really does one thing: it
+provides a TUI for efficiently navigating to a folder, and then prints the path
+to that folder when you exit. By configuring your shell to `cd` to the printed
+folder, you can move around in your filesystem very quickly.
 
 ![A gif showing what tere using looks like](./demo/tere-demo-2022-07-10-2027-e2-O3.gif)
 
@@ -20,7 +21,9 @@ functionality found in many GUI file managers.
 
 ## Setup
 
-To start using `tere`, follow these steps:
+To use `tere` for changing directories, you need to install it, and then
+configure your shell to `cd` to the folder `tere` prints when it exits. Here's
+how to do it:
 
 1. Obtain a copy of `tere`. This can be done in various ways:
 
@@ -30,7 +33,7 @@ To start using `tere`, follow these steps:
    - Install `tere` with [Cargo](https://www.rust-lang.org/tools/install) by running `cargo install tere`.
    - Build from source, see [below](#hacking).
 
-1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent. See instructions for your shell below.
+1. Configure your shell to `cd` to the folder printed by `tere` when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent. See instructions for your shell below.
 
     <details>
     <summary>Bash/Zsh</summary>
