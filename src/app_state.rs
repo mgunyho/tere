@@ -3,7 +3,6 @@
 use clap::ArgMatches;
 
 use std::collections::BTreeMap;
-use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::io::{Error as IOError, ErrorKind, Result as IOResult};
 use std::path::{Component, Path, PathBuf};
@@ -526,41 +525,46 @@ impl TereAppState {
     /// currently visible items, and update the scroll position as necessary
     pub fn move_cursor(&mut self, amount: isize, wrap: bool) {
         let old_cursor_pos = self.cursor_pos;
+        let n_visible_items = self.visible_items().len();
+        let max_cursor_pos = self.main_win_h - 1;
         let old_scroll_pos = self.scroll_pos;
-        let visible_items = self.visible_items();
-        let n_visible_items = visible_items.len();
-        let max_y = self.main_win_h;
 
-        let mut new_cursor_pos: isize = (old_cursor_pos as isize).saturating_add(amount);
+        // pointer_pos: the global location of the cursor in ls_output_buf
+        let old_pointer_pos: usize = old_cursor_pos + old_scroll_pos;
 
-        if wrap && !visible_items.is_empty() {
-            let offset = self.scroll_pos as isize;
-            new_cursor_pos =
-                (offset + new_cursor_pos).rem_euclid(n_visible_items as isize) - offset;
-        }
-
-        if new_cursor_pos < 0 {
-            // attempting to go above the current view, scroll up
-            self.scroll_pos = self.scroll_pos.saturating_sub(new_cursor_pos.unsigned_abs());
-            self.cursor_pos = 0;
-        } else if new_cursor_pos as usize + old_scroll_pos >= n_visible_items {
-            // attempting to go below content
-            //TODO: wrap, but only if cursor is starting off at the last row
-            // i.e. if pressing pgdown before the end, jump only to the end,
-            // but if pressing pgdown at the very end, wrap and start from top
-            self.scroll_pos = n_visible_items.saturating_sub(max_y);
-            self.cursor_pos = n_visible_items.saturating_sub(self.scroll_pos + 1);
-        } else if new_cursor_pos as usize >= max_y {
-            // Attempting to go below current view, scroll down.
-            self.cursor_pos = max_y.saturating_sub(1);
-            self.scroll_pos = std::cmp::min(
-                n_visible_items,
-                old_scroll_pos + new_cursor_pos as usize
-            ).saturating_sub(self.cursor_pos);
+        let new_pointer_pos: usize = if amount < 0 {
+            //NOTE: should use saturating_add_signed instead, but it's not stabilized as of 2022-09-27
+            old_pointer_pos.saturating_sub(amount.unsigned_abs())
         } else {
-            // scrolling within view
-            self.cursor_pos = usize::try_from(new_cursor_pos).unwrap_or(0);
+            old_pointer_pos.saturating_add(amount.unsigned_abs())
+        };
+
+        // handle wrapping or saturation if applicable
+        let new_pointer_pos: usize = match (n_visible_items, wrap) {
+            (0, _) => old_pointer_pos,
+            (_, true) => new_pointer_pos.rem_euclid(n_visible_items),
+            (_, false) => new_pointer_pos.min(n_visible_items - 1),
+        };
+
+        // update scroll position and calculate new cursor position
+        if n_visible_items <= max_cursor_pos {
+            // all items fit on screen, set scroll to 0
+            self.scroll_pos = 0;
+            self.cursor_pos = new_pointer_pos;
+        } else if new_pointer_pos <= old_scroll_pos {
+            // new cursor position is above screen, scroll up
+            self.scroll_pos = new_pointer_pos;
+            self.cursor_pos = 0;
+        } else if new_pointer_pos >= old_scroll_pos + max_cursor_pos {
+            // new cursor position is below screen, scroll down
+            self.cursor_pos = max_cursor_pos;
+            self.scroll_pos = new_pointer_pos.saturating_sub(max_cursor_pos);
+        } else {
+            // cursor stays within view, no need to change scroll position
+            self.cursor_pos = new_pointer_pos.saturating_sub(self.scroll_pos);
         }
+
+
     }
 
     /// Move the cursor so that it is at the location `row` in the
@@ -582,7 +586,7 @@ impl TereAppState {
 
     /// Move the cursor to the next or previous match in the current list of
     /// matches. If dir is positive, move to the next match, if it's negative,
-    /// move to the previous match, and if it's zero, move to the cursor to the
+    /// move to the previous match, and if it's zero, move the cursor to the
     /// current match.
     pub fn move_cursor_to_adjacent_match(&mut self, dir: isize) {
         if self.is_searching() {
@@ -1269,6 +1273,57 @@ mod tests {
 
         s.erase_search_char();
         assert_eq!(s.cursor_pos, 4);
+    }
+
+    #[ignore]
+    #[test]
+    fn test_advance_and_erase_search_with_filter_and_cursor_on_match3() {
+        // idea: the cursor should not move if it's not necessary
+
+        let mut s = create_test_state_with_buf(
+            3,
+            strings_to_ls_buf(vec!["..", "aaa", "baa", "bab", "bba", "caa", "cab"]),
+        );
+        s._settings.filter_search = true;
+        s.move_cursor_to(1);
+
+        // current state:
+        //   ..  |
+        // > aaa |
+        //   baa |
+        //   bab
+        //   bba
+        //   caa
+        //   cab
+
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("b");
+
+        // current state:
+        // > baa |
+        //   bab |
+        //   bba |
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 0);
+        assert_eq!(s.visible_items().len(), 3);
+
+        s.erase_search_char();
+
+        // current state should be:
+        //   ..
+        //   aa
+        // > baa |
+        //   bab |
+        //   bba |
+        //   caa
+        //   cab
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 2);
+        assert_eq!(s.visible_items().len(), 7);
     }
 
     #[test]
