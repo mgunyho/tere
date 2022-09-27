@@ -527,10 +527,10 @@ impl TereAppState {
     pub fn move_cursor(&mut self, amount: isize, wrap: bool) {
         let old_cursor_pos = self.cursor_pos;
         let n_visible_items = self.visible_items().len();
-        let max_y = self.main_win_h;
+        let max_cursor_pos = self.main_win_h - 1;
         let old_scroll_pos = self.scroll_pos;
 
-        // pointer_pos: the location of the cursor in ls_output_buf
+        // pointer_pos: the global location of the cursor in ls_output_buf
         let old_pointer_pos: usize = old_cursor_pos + old_scroll_pos;
 
         let new_pointer_pos: usize = if amount < 0 {
@@ -544,23 +544,23 @@ impl TereAppState {
         let new_pointer_pos: usize = match (n_visible_items, wrap) {
             (0, _) => old_pointer_pos,
             (_, true) => new_pointer_pos.rem_euclid(n_visible_items),
-            (_, false) => new_pointer_pos.min(max_y + 1),
+            (_, false) => new_pointer_pos.min(n_visible_items - 1),
         };
 
         // update scroll position and calculate new cursor position
-        if n_visible_items <= max_y {
+        if n_visible_items <= max_cursor_pos {
             // all items fit on screen, set scroll to 0
             self.scroll_pos = 0;
             self.cursor_pos = new_pointer_pos;
         } else {
-            if new_pointer_pos < old_scroll_pos {
+            if new_pointer_pos <= old_scroll_pos {
                 // cursor is below screen, scroll up
                 self.scroll_pos = new_pointer_pos;
                 self.cursor_pos = 0;
-            } else if new_pointer_pos >= old_scroll_pos + max_y {
+            } else if new_pointer_pos >= old_scroll_pos + max_cursor_pos {
                 // cursor is below screen, scroll down
-                self.cursor_pos = max_y.saturating_sub(1);
-                self.scroll_pos = new_pointer_pos.saturating_sub(max_y) + 1;
+                self.cursor_pos = max_cursor_pos;
+                self.scroll_pos = new_pointer_pos.saturating_sub(max_cursor_pos);
             } else {
                 // cursor stays within view, no need to change scroll position
                 self.cursor_pos = new_pointer_pos.saturating_sub(self.scroll_pos);
