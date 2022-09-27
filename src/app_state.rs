@@ -1279,6 +1279,56 @@ mod tests {
     }
 
     #[test]
+    fn test_advance_and_erase_search_with_filter_and_cursor_on_match3() {
+        // idea: the cursor should not move if it's not necessary
+
+        let mut s = create_test_state_with_buf(
+            3,
+            strings_to_ls_buf(vec!["..", "aaa", "baa", "bab", "bba", "caa", "cab"]),
+        );
+        s._settings.filter_search = true;
+        s.move_cursor_to(1);
+
+        // current state:
+        //   ..  |
+        // > aaa |
+        //   baa |
+        //   bab
+        //   bba
+        //   caa
+        //   cab
+
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("b");
+
+        // current state:
+        // > baa |
+        //   bab |
+        //   bba |
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 0);
+        assert_eq!(s.visible_items().len(), 3);
+
+        s.erase_search_char();
+
+        // current state should be:
+        //   ..
+        //   aa
+        // > baa |
+        //   bab |
+        //   bba |
+        //   caa
+        //   cab
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 2);
+        assert_eq!(s.visible_items().len(), 7);
+    }
+
+    #[test]
     fn test_advance_and_erase_search_with_filter_and_scrolling() {
         let mut s = create_test_state_with_buf(
             2,
