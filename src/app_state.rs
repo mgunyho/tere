@@ -582,7 +582,7 @@ impl TereAppState {
 
     /// Move the cursor to the next or previous match in the current list of
     /// matches. If dir is positive, move to the next match, if it's negative,
-    /// move to the previous match, and if it's zero, move to the cursor to the
+    /// move to the previous match, and if it's zero, move the cursor to the
     /// current match.
     pub fn move_cursor_to_adjacent_match(&mut self, dir: isize) {
         if self.is_searching() {
