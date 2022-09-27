@@ -373,6 +373,8 @@ impl<'a> TereTui<'a> {
             } else {
                 queue!(
                     self.window,
+                    style::ResetColor,
+                    style::SetAttribute(Attribute::Reset),
                     terminal::Clear(terminal::ClearType::UntilNewLine),
                 )?;
             }
