@@ -3,7 +3,6 @@
 use clap::ArgMatches;
 
 use std::collections::BTreeMap;
-use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::io::{Error as IOError, ErrorKind, Result as IOResult};
 use std::path::{Component, Path, PathBuf};
@@ -552,19 +551,17 @@ impl TereAppState {
             // all items fit on screen, set scroll to 0
             self.scroll_pos = 0;
             self.cursor_pos = new_pointer_pos;
+        } else if new_pointer_pos <= old_scroll_pos {
+            // cursor is below screen, scroll up
+            self.scroll_pos = new_pointer_pos;
+            self.cursor_pos = 0;
+        } else if new_pointer_pos >= old_scroll_pos + max_cursor_pos {
+            // cursor is below screen, scroll down
+            self.cursor_pos = max_cursor_pos;
+            self.scroll_pos = new_pointer_pos.saturating_sub(max_cursor_pos);
         } else {
-            if new_pointer_pos <= old_scroll_pos {
-                // cursor is below screen, scroll up
-                self.scroll_pos = new_pointer_pos;
-                self.cursor_pos = 0;
-            } else if new_pointer_pos >= old_scroll_pos + max_cursor_pos {
-                // cursor is below screen, scroll down
-                self.cursor_pos = max_cursor_pos;
-                self.scroll_pos = new_pointer_pos.saturating_sub(max_cursor_pos);
-            } else {
-                // cursor stays within view, no need to change scroll position
-                self.cursor_pos = new_pointer_pos.saturating_sub(self.scroll_pos);
-            }
+            // cursor stays within view, no need to change scroll position
+            self.cursor_pos = new_pointer_pos.saturating_sub(self.scroll_pos);
         }
 
 
