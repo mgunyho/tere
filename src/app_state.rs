@@ -1278,6 +1278,7 @@ mod tests {
         assert_eq!(s.cursor_pos, 4);
     }
 
+    #[ignore]
     #[test]
     fn test_advance_and_erase_search_with_filter_and_cursor_on_match3() {
         // idea: the cursor should not move if it's not necessary
