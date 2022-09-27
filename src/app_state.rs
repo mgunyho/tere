@@ -803,6 +803,31 @@ mod tests {
     }
 
     #[test]
+    fn test_scrolling_bufsize_less_than_window_size_wrap() {
+        let mut state = create_test_state(5, 4);
+
+        state.move_cursor_to(0);
+        for i in 0..3 {
+            state.move_cursor(1, true);
+            assert_eq!(state.cursor_pos, i+1);
+            assert_eq!(state.scroll_pos, 0);
+        }
+        // cursor should be at the bottom of the listing
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 0);
+
+        // wrap around
+        state.move_cursor(1, true);
+        assert_eq!(state.cursor_pos, 0);
+        assert_eq!(state.scroll_pos, 0);
+
+        // wrap around backwards
+        state.move_cursor(-1, true);
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 0);
+    }
+
+    #[test]
     fn test_scrolling_bufsize_equal_to_window_size() {
         let mut state = create_test_state(4, 4);
 
