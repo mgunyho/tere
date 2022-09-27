@@ -552,11 +552,11 @@ impl TereAppState {
             self.scroll_pos = 0;
             self.cursor_pos = new_pointer_pos;
         } else if new_pointer_pos <= old_scroll_pos {
-            // cursor is below screen, scroll up
+            // new cursor position is above screen, scroll up
             self.scroll_pos = new_pointer_pos;
             self.cursor_pos = 0;
         } else if new_pointer_pos >= old_scroll_pos + max_cursor_pos {
-            // cursor is below screen, scroll down
+            // new cursor position is below screen, scroll down
             self.cursor_pos = max_cursor_pos;
             self.scroll_pos = new_pointer_pos.saturating_sub(max_cursor_pos);
         } else {
