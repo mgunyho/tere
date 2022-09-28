@@ -75,9 +75,9 @@ impl fmt::Display for SortMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let text = match self {
             SortMode::Name         => "name",
-            SortMode::Accessed => "accessed",
-            SortMode::Created => "created",
-            SortMode::Modified => "modified",
+            SortMode::Accessed => "acc",
+            SortMode::Created => "cre",
+            SortMode::Modified => "mod",
         };
         write!(f, "{}", text)
     }
