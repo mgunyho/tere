@@ -960,6 +960,23 @@ mod tests {
     }
 
     #[test]
+    fn test_scrolling_bufsize_larger_than_window_size_wrap() {
+        let mut state = create_test_state(4, 5);
+
+        state.move_cursor_to(5);
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 1);
+
+        state.move_cursor(1, true);
+        assert_eq!(state.cursor_pos, 0);
+        assert_eq!(state.scroll_pos, 0);
+
+        state.move_cursor(-1, true);
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 1);
+    }
+
+    #[test]
     fn test_basic_advance_search() {
         let mut s = create_test_state_with_buf(
             5,
