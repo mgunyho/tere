@@ -208,9 +208,9 @@ impl TereSettings {
             .unwrap()
         {
 
-            "adate" => SortMode::Accessed,
-            "cdate" => SortMode::Created,
-            "mdate" => SortMode::Modified,
+            "accessed" => SortMode::Accessed,
+            "created" => SortMode::Created,
+            "modified" => SortMode::Modified,
             "name"  => SortMode::Name,
             _       => unreachable!(),
         };
