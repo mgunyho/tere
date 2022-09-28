@@ -3,6 +3,7 @@
 use clap::ArgMatches;
 
 use std::collections::BTreeMap;
+use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::io::{Error as IOError, ErrorKind, Result as IOResult};
 use std::path::{Component, Path, PathBuf};
@@ -532,18 +533,17 @@ impl TereAppState {
         // pointer_pos: the global location of the cursor in ls_output_buf
         let old_pointer_pos: usize = old_cursor_pos + old_scroll_pos;
 
-        let new_pointer_pos: usize = if amount < 0 {
-            //NOTE: should use saturating_add_signed instead, but it's not stabilized as of 2022-09-27
-            old_pointer_pos.saturating_sub(amount.unsigned_abs())
+        let new_pointer_pos = if n_visible_items == 0 {
+            old_pointer_pos
         } else {
-            old_pointer_pos.saturating_add(amount.unsigned_abs())
-        };
-
-        // handle wrapping or saturation if applicable
-        let new_pointer_pos: usize = match (n_visible_items, wrap) {
-            (0, _) => old_pointer_pos,
-            (_, true) => new_pointer_pos.rem_euclid(n_visible_items),
-            (_, false) => new_pointer_pos.min(n_visible_items - 1),
+            let pointer_pos_signed = isize::try_from(old_pointer_pos).unwrap_or(isize::MAX);
+            let n_visible_signed = isize::try_from(n_visible_items).unwrap_or(isize::MAX);
+            let result = pointer_pos_signed + amount;
+            if wrap {
+                usize::try_from(result.rem_euclid(n_visible_signed)).unwrap_or(usize::MAX)
+            } else {
+                usize::try_from(result.max(0).min(n_visible_signed - 1)).unwrap_or(usize::MAX)
+            }
         };
 
         // update scroll position and calculate new cursor position
@@ -803,6 +803,31 @@ mod tests {
     }
 
     #[test]
+    fn test_scrolling_bufsize_less_than_window_size_wrap() {
+        let mut state = create_test_state(5, 4);
+
+        state.move_cursor_to(0);
+        for i in 0..3 {
+            state.move_cursor(1, true);
+            assert_eq!(state.cursor_pos, i+1);
+            assert_eq!(state.scroll_pos, 0);
+        }
+        // cursor should be at the bottom of the listing
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 0);
+
+        // wrap around
+        state.move_cursor(1, true);
+        assert_eq!(state.cursor_pos, 0);
+        assert_eq!(state.scroll_pos, 0);
+
+        // wrap around backwards
+        state.move_cursor(-1, true);
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 0);
+    }
+
+    #[test]
     fn test_scrolling_bufsize_equal_to_window_size() {
         let mut state = create_test_state(4, 4);
 
@@ -933,6 +958,23 @@ mod tests {
     #[test]
     fn test_scrolling_bufsize_larger_than_window_size5() {
         test_scrolling_bufsize_larger_than_window_size_helper(4, 10);
+    }
+
+    #[test]
+    fn test_scrolling_bufsize_larger_than_window_size_wrap() {
+        let mut state = create_test_state(4, 5);
+
+        state.move_cursor_to(5);
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 1);
+
+        state.move_cursor(1, true);
+        assert_eq!(state.cursor_pos, 0);
+        assert_eq!(state.scroll_pos, 0);
+
+        state.move_cursor(-1, true);
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 1);
     }
 
     #[test]
