@@ -325,7 +325,7 @@ pub const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
     (key!(alt-f),  ActionContext::None, Action::ChangeFilterSearchMode),
     (key!(alt-c),  ActionContext::None, Action::ChangeCaseSensitiveMode),
     (key!(ctrl-f), ActionContext::None, Action::ChangeGapSearchMode),
-    (key!(alt-s),  ActionContext::None, Action::ChangeAttributeSortMode),
+    (key!(alt-s),  ActionContext::None, Action::ChangeSortMode),
 
     (key!(ctrl-r), ActionContext::None, Action::RefreshListing),
 

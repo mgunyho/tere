@@ -696,7 +696,7 @@ impl<'a> TereTui<'a> {
                             Action::ChangeFilterSearchMode => self.toggle_filter_search_mode()?,
                             Action::ChangeCaseSensitiveMode => self.cycle_case_sensitive_mode()?,
                             Action::ChangeGapSearchMode => self.cycle_gap_search_mode()?,
-                            Action::ChangeAttributeSortMode => self.cycle_attr_sort_mode()?,
+                            Action::ChangeSortMode => self.cycle_attr_sort_mode()?,
 
                             Action::RefreshListing => {
                                 self.change_dir(".")?; //TODO: use 'current dir' instead of hardcoded '.' (?, see also pardir discussion elsewhere)

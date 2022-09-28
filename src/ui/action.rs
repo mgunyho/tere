@@ -30,7 +30,7 @@ pub enum Action {
     ChangeFilterSearchMode,
     ChangeCaseSensitiveMode,
     ChangeGapSearchMode,
-    ChangeAttributeSortMode,
+    ChangeSortMode,
 
     RefreshListing,
 
@@ -64,7 +64,7 @@ impl Action {
             Self::ChangeFilterSearchMode => "Toggle the filter-search mode",
             Self::ChangeCaseSensitiveMode => "Change the case-sensitive mode",
             Self::ChangeGapSearchMode => "Change the gap-search mode",
-            Self::ChangeAttributeSortMode => "Change the sorting mode",
+            Self::ChangeSortMode => "Change the sorting mode",
 
             Self::RefreshListing => "Refresh the directory listing",
 
