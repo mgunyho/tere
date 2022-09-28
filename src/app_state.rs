@@ -532,18 +532,17 @@ impl TereAppState {
         // pointer_pos: the global location of the cursor in ls_output_buf
         let old_pointer_pos: usize = old_cursor_pos + old_scroll_pos;
 
-        let new_pointer_pos: usize = if amount < 0 {
-            //NOTE: should use saturating_add_signed instead, but it's not stabilized as of 2022-09-27
-            old_pointer_pos.saturating_sub(amount.unsigned_abs())
+        let new_pointer_pos = if n_visible_items == 0 {
+            old_pointer_pos
         } else {
-            old_pointer_pos.saturating_add(amount.unsigned_abs())
-        };
-
-        // handle wrapping or saturation if applicable
-        let new_pointer_pos: usize = match (n_visible_items, wrap) {
-            (0, _) => old_pointer_pos,
-            (_, true) => new_pointer_pos.rem_euclid(n_visible_items),
-            (_, false) => new_pointer_pos.min(n_visible_items - 1),
+            let amount_abs = amount.unsigned_abs();
+            // NOTE: could probably use wrapping_add_signed, but it's not stabilized as of 2022-09-28
+            match (amount.signum(), wrap) {
+                (-1, true)  => old_pointer_pos.wrapping_sub(amount_abs).rem_euclid(n_visible_items),
+                (-1, false) => old_pointer_pos.saturating_sub(amount_abs),
+                (_, true) => old_pointer_pos.wrapping_add(amount_abs).rem_euclid(n_visible_items),
+                (_, false) => old_pointer_pos.saturating_add(amount_abs).min(n_visible_items - 1),
+            }
         };
 
         // update scroll position and calculate new cursor position
