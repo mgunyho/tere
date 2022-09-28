@@ -3,6 +3,7 @@
 use clap::ArgMatches;
 
 use std::collections::BTreeMap;
+use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::io::{Error as IOError, ErrorKind, Result as IOResult};
 use std::path::{Component, Path, PathBuf};
@@ -535,13 +536,13 @@ impl TereAppState {
         let new_pointer_pos = if n_visible_items == 0 {
             old_pointer_pos
         } else {
-            let amount_abs = amount.unsigned_abs();
-            // NOTE: could probably use wrapping_add_signed, but it's not stabilized as of 2022-09-28
-            match (amount.signum(), wrap) {
-                (-1, true)  => old_pointer_pos.wrapping_sub(amount_abs).rem_euclid(n_visible_items),
-                (-1, false) => old_pointer_pos.saturating_sub(amount_abs),
-                (_, true) => old_pointer_pos.wrapping_add(amount_abs).rem_euclid(n_visible_items),
-                (_, false) => old_pointer_pos.saturating_add(amount_abs).min(n_visible_items - 1),
+            let pointer_pos_signed = isize::try_from(old_pointer_pos).unwrap_or(isize::MAX);
+            let n_visible_signed = isize::try_from(n_visible_items).unwrap_or(isize::MAX);
+            let result = pointer_pos_signed + amount;
+            if wrap {
+                usize::try_from(result.rem_euclid(n_visible_signed)).unwrap_or(usize::MAX)
+            } else {
+                usize::try_from(result.max(0).min(n_visible_signed - 1)).unwrap_or(usize::MAX)
             }
         };
 
