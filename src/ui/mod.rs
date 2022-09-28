@@ -639,16 +639,15 @@ impl<'a> TereTui<'a> {
         self.on_matches_changed()
     }
 
-    fn cycle_attr_sort_mode(&mut self) -> CTResult<()> {
-        self.app_state.settings.sort_mode = match self.app_state.settings.sort_mode {
+    fn cycle_sort_mode(&mut self) -> CTResult<()> {
+        //let ss = self.app_state.search_string();
+        self.app_state.set_sort_mode(match self.app_state.settings().sort_mode {
             SortMode::Name => SortMode::Accessed,
             SortMode::Accessed => SortMode::Created,
             SortMode::Created => SortMode::Modified,
             SortMode::Modified => SortMode::Name,
-        };
-        self.redraw_main_window()?;
-        self.redraw_footer()?;
-        Ok(())
+        });
+        self.on_matches_changed()
     }
 
     pub fn main_event_loop(&mut self) -> Result<(), TereError> {
@@ -696,7 +695,7 @@ impl<'a> TereTui<'a> {
                             Action::ChangeFilterSearchMode => self.toggle_filter_search_mode()?,
                             Action::ChangeCaseSensitiveMode => self.cycle_case_sensitive_mode()?,
                             Action::ChangeGapSearchMode => self.cycle_gap_search_mode()?,
-                            Action::ChangeSortMode => self.cycle_attr_sort_mode()?,
+                            Action::ChangeSortMode => self.cycle_sort_mode()?,
 
                             Action::RefreshListing => {
                                 self.change_dir(".")?; //TODO: use 'current dir' instead of hardcoded '.' (?, see also pardir discussion elsewhere)

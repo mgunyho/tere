@@ -555,6 +555,14 @@ impl TereAppState {
         self.advance_search(""); // hacky, see the comment above in set_case_sensitive
     }
 
+    pub fn set_sort_mode(&mut self, sort_mode: SortMode) {
+        self.with_cursor_fixed_at_current_item(|self_| {
+            self_._settings.sort_mode = sort_mode;
+            self_.update_ls_output_buf().ok();
+            self_.advance_search("");
+        });
+    }
+
     /////////////////////////////////////
     // Functions for moving the cursor //
     /////////////////////////////////////
