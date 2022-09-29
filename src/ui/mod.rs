@@ -185,6 +185,7 @@ impl<'a> TereTui<'a> {
 
         let _ = write!(extra_msg, "{} - ", self.app_state.settings().gap_search_mode);
         let _ = write!(extra_msg, "{} - ", self.app_state.settings().case_sensitive);
+        let _ = write!(extra_msg, "sort:{} - ", self.app_state.settings().sort_mode);
 
         let cursor_idx = self
             .app_state
