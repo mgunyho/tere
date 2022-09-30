@@ -567,20 +567,6 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    fn on_go_to_home(&mut self) -> CTResult<()> {
-        if let Some(path) = home_dir() {
-            if let Some(path) = path.to_str() {
-                self.change_dir(path)?;
-            }
-        }
-        Ok(())
-    }
-
-    fn on_go_to_root(&mut self) -> CTResult<()> {
-        self.change_dir("/")?;
-        Ok(())
-    }
-
     // When moving the cursor to the top or bottom of the listing
     fn on_cursor_top_bottom(&mut self, top: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
@@ -593,6 +579,20 @@ impl<'a> TereTui<'a> {
             self.redraw_main_window()?;
         } // TODO: else jump to first/last match
         self.redraw_footer()?;
+        Ok(())
+    }
+
+    fn on_go_to_home(&mut self) -> CTResult<()> {
+        if let Some(path) = home_dir() {
+            if let Some(path) = path.to_str() {
+                self.change_dir(path)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn on_go_to_root(&mut self) -> CTResult<()> {
+        self.change_dir("/")?;
         Ok(())
     }
 
