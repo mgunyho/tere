@@ -592,6 +592,7 @@ impl<'a> TereTui<'a> {
             self.app_state.move_cursor_to(target);
             self.redraw_main_window()?;
         } // TODO: else jump to first/last match
+        self.redraw_footer()?;
         Ok(())
     }
 
