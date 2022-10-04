@@ -399,7 +399,6 @@ impl TereAppState {
         let entries = std::fs::read_dir(std::path::Component::CurDir)?;
 
         let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> = Box::new(
-            //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
             entries.filter_map(|e| e.ok()).map(CustomDirEntry::from),
         );
 
