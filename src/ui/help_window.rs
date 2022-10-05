@@ -198,7 +198,7 @@ fn invert_key_mapping_sorted(
             (ActionContext::None, ActionContext::None) => cmp_key_events(k1, k2),
             (_,                   ActionContext::None) => std::cmp::Ordering::Greater,
             (ActionContext::None,                   _) => std::cmp::Ordering::Less,
-            (_, _) => (c1.to_string().cmp(&c2.to_string())),
+            (_, _) => c1.to_string().cmp(&c2.to_string()),
         })
     }
 
