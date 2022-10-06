@@ -641,8 +641,7 @@ impl<'a> TereTui<'a> {
 
     fn cycle_sort_mode(&mut self) -> CTResult<()> {
         self.app_state.set_sort_mode(match self.app_state.settings().sort_mode {
-            SortMode::Name => SortMode::Accessed,
-            SortMode::Accessed => SortMode::Created,
+            SortMode::Name => SortMode::Created,
             SortMode::Created => SortMode::Modified,
             SortMode::Modified => SortMode::Name,
         });

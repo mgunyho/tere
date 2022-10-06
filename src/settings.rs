@@ -60,7 +60,6 @@ impl fmt::Display for GapSearchMode {
 
 pub enum SortMode {
     Name,
-    Accessed,
     Created,
     Modified,
 }
@@ -75,7 +74,6 @@ impl fmt::Display for SortMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let text = match self {
             SortMode::Name         => "name",
-            SortMode::Accessed => "acc",
             SortMode::Created => "cre",
             SortMode::Modified => "mod",
         };
@@ -207,7 +205,6 @@ impl TereSettings {
             .last()
             .unwrap()
         {
-            "accessed" => SortMode::Accessed,
             "created" => SortMode::Created,
             "modified" => SortMode::Modified,
             "name"  => SortMode::Name,

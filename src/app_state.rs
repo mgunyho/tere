@@ -124,13 +124,6 @@ impl CustomDirEntry {
         }
     }
 
-    pub fn accessed(&self) -> SystemTime {
-        match &self.metadata {
-            Some(m) => m.accessed().unwrap_or(SystemTime::UNIX_EPOCH),
-            None => SystemTime::UNIX_EPOCH,
-        }
-    }
-
     pub fn created(&self) -> SystemTime {
         match &self.metadata {
             Some(m) => m.created().unwrap_or(SystemTime::UNIX_EPOCH),
@@ -419,10 +412,6 @@ impl TereAppState {
                                 .to_lowercase()
                                 .partial_cmp(&b.file_name_checked().to_lowercase())
                                 .unwrap()
-                        }
-                        SortMode::Accessed => {
-                            // b>a for sorting most recently accessed first
-                            b.accessed().partial_cmp(&a.accessed()).unwrap()
                         }
                         SortMode::Created => {
                             // b>a for sorting most recently created first
