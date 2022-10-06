@@ -207,7 +207,6 @@ impl TereSettings {
             .last()
             .unwrap()
         {
-
             "accessed" => SortMode::Accessed,
             "created" => SortMode::Created,
             "modified" => SortMode::Modified,
