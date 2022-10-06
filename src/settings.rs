@@ -73,8 +73,8 @@ impl Default for SortMode {
 impl fmt::Display for SortMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let text = match self {
-            SortMode::Name         => "name",
-            SortMode::Created => "cre",
+            SortMode::Name     => "name",
+            SortMode::Created  => "cre",
             SortMode::Modified => "mod",
         };
         write!(f, "{}", text)
