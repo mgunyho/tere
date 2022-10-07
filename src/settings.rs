@@ -36,8 +36,8 @@ impl fmt::Display for CaseSensitiveMode {
 
 #[derive(PartialEq, Eq)]
 pub enum GapSearchMode {
+    NormalSearch,
     GapSearchFromStart,
-    NoGapSearch,
     GapSearchAnywere,
 }
 
@@ -51,7 +51,7 @@ impl fmt::Display for GapSearchMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let text = match self {
             GapSearchMode::GapSearchFromStart => "gap search from start",
-            GapSearchMode::NoGapSearch        => "normal search",
+            GapSearchMode::NormalSearch       => "normal search",
             GapSearchMode::GapSearchAnywere   => "gap search anywhere",
         };
         write!(f, "{}", text)
@@ -132,7 +132,7 @@ impl TereSettings {
         } else if args.contains_id("gap-search-anywhere") {
             ret.gap_search_mode = GapSearchMode::GapSearchAnywere;
         } else if args.contains_id("no-gap-search") {
-            ret.gap_search_mode = GapSearchMode::NoGapSearch;
+            ret.gap_search_mode = GapSearchMode::NormalSearch;
         }
 
         ret.autocd_timeout = match args

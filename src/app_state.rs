@@ -696,7 +696,7 @@ impl TereAppState {
         // TODO: construct regex pattern inside MatchesVec instead? - it relies now on capture
         // groups which are defined by the format!() parens here...
         let mut regex_str = "".to_string();
-        if self.settings().gap_search_mode == GapSearchMode::NoGapSearch {
+        if self.settings().gap_search_mode == GapSearchMode::NormalSearch {
             let _ = write!(regex_str, "^({})", regex::escape(&search_string));
         } else {
             // enable gap search. Add '^' to the regex to match only from the start if applicable.
@@ -1577,7 +1577,7 @@ mod tests {
         assert_eq!(s.visible_match_indices(), vec![2, 3]);
         assert_eq!(s.cursor_pos, 2);
 
-        s.set_gap_search_mode(GapSearchMode::NoGapSearch);
+        s.set_gap_search_mode(GapSearchMode::NormalSearch);
 
         // now it should be
         //   ...

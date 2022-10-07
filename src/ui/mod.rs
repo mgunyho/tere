@@ -642,8 +642,8 @@ impl<'a> TereTui<'a> {
 
     fn cycle_gap_search_mode(&mut self) -> CTResult<()> {
         self.app_state.set_gap_search_mode(match self.app_state.settings().gap_search_mode {
-            GapSearchMode::GapSearchFromStart => GapSearchMode::NoGapSearch,
-            GapSearchMode::NoGapSearch => GapSearchMode::GapSearchAnywere,
+            GapSearchMode::GapSearchFromStart => GapSearchMode::NormalSearch,
+            GapSearchMode::NormalSearch => GapSearchMode::GapSearchAnywere,
             GapSearchMode::GapSearchAnywere => GapSearchMode::GapSearchFromStart,
         });
         self.on_matches_changed()
