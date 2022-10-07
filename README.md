@@ -144,6 +144,7 @@ You can navigate folders in `tere` by moving the cursor around and by typing to 
 |Toggle filter search| <kbd>Alt</kbd>-<kbd>f</kbd> | `ChangeFilterSearchMode` |
 |Change case sensitivity mode| <kbd>Alt</kbd>-<kbd>c</kbd> | `ChangeCaseSensitiveMode` |
 |Change gap search mode| <kbd>Ctrl</kbd>-<kbd>f</kbd> | `ChangeGapSearchMode` |
+|Change sorting mode| <kbd>Alt</kbd>-<kbd>s</kbd> | `ChangeSortMode` |
 |Refresh current directory| <kbd>Ctrl</kbd>-<kbd>r</kbd>| `RefreshListing` |
 |Show help screen| <kbd>?</kbd> | `Help` |
 |Exit `tere`| <kbd>Esc</kbd> or <kbd>Alt</kbd>-<kbd>q</kbd> | `Exit` |
@@ -186,6 +187,7 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 - `--folders-only` or `-d` / `--no-folders-only` or `-D`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
 - `--smart-case` or `-S` / `--ignore-case` or `-i` / `--case-sensitive` or `-s`: Set the case sensitivity mode. The default mode is smart case, which is case insensitive if the query contains only lowercase letters and case sensitive otherwise.
 - `--gap-search` or `-g` / `--gap-search-anywhere` or `-G` / `--no-gap-search` or `-n`: Configure whether to allow matches with gaps in them (see above).
+- `--sort name` / `created` / `modified`: Change the sorting order of the listing.
 - `--autocd-timeout` - If the current search matches only one folder, automatically change to that folder after this many milliseconds. Can also be set to `off`, which disables this behaviour.
 - `--history-file`: To make browsing more convenient, `tere` saves a history of folders you have visited to this file in JSON format. It should be an absolute path. Defaults to `$CACHE_DIR/tere/history.json`, where `$CACHE_DIR` is `$XDG_CACHE_HOME` or `~/.cache`. Set to the empty string `''` to disable saving the history. Note that the history reveals parts of your folder structure if it can be read by someone else.
 - `--mouse=on` or `--mouse=off`: Enable or disable navigating with the mouse. If enabled, you can left-click to enter folders and right-click to go to the parent folder. Off by default.
