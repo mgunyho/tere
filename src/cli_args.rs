@@ -180,7 +180,7 @@ justify_and_indent(
         .arg(Arg::new("sort")
              .long("sort")
              .help("Select sorting mode")
-             .long_help("Choose whether to sort the listing by name, or the time of last access, creation, or modification")
+             .long_help("Choose whether to sort the listing by name, or the time of creation or modification. You can change the sort order with the keyboard shortcut Alt-s by default.")
              .takes_value(true)
              .value_name("'name', 'accessed', 'created', or 'modified'")
              .possible_values(&["name", "accessed", "created", "modified"])
