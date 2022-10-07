@@ -510,6 +510,7 @@ impl TereAppState {
         self._settings.case_sensitive = case_sensitive;
         // a bit of a hack, but this is the easiest way to force the cursor to be on a valid match
         // after changing the mode.
+        // TODO: check if with_cursor_fixed_at_current_item + update_search_matches() is enough?
         self.advance_search("");
     }
 
