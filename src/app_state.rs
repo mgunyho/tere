@@ -696,11 +696,14 @@ impl TereAppState {
         // TODO: construct regex pattern inside MatchesVec instead? - it relies now on capture
         // groups which are defined by the format!() parens here...
         let mut regex_str = "".to_string();
-        if self.settings().gap_search_mode == GapSearchMode::NormalSearch {
+        let gap_search_mode = &self.settings().gap_search_mode;
+        if gap_search_mode == &GapSearchMode::NormalSearch {
             let _ = write!(regex_str, "^({})", regex::escape(&search_string));
+        } else if gap_search_mode == &GapSearchMode::NormalSearchAnywhere {
+            let _ = write!(regex_str, "({})", regex::escape(&search_string));
         } else {
             // enable gap search. Add '^' to the regex to match only from the start if applicable.
-            if self.settings().gap_search_mode == GapSearchMode::GapSearchFromStart {
+            if gap_search_mode == &GapSearchMode::GapSearchFromStart {
                 regex_str.push('^');
             }
             regex_str.push_str(

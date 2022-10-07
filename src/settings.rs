@@ -37,6 +37,7 @@ impl fmt::Display for CaseSensitiveMode {
 #[derive(PartialEq, Eq)]
 pub enum GapSearchMode {
     NormalSearch,
+    NormalSearchAnywhere,
     GapSearchFromStart,
     GapSearchAnywere,
 }
@@ -52,6 +53,7 @@ impl fmt::Display for GapSearchMode {
         let text = match self {
             GapSearchMode::GapSearchFromStart => "gap search from start",
             GapSearchMode::NormalSearch       => "normal search",
+            GapSearchMode::NormalSearchAnywhere => "normal search anywhere",
             GapSearchMode::GapSearchAnywere   => "gap search anywhere",
         };
         write!(f, "{}", text)

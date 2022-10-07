@@ -644,7 +644,8 @@ impl<'a> TereTui<'a> {
         self.app_state.set_gap_search_mode(match self.app_state.settings().gap_search_mode {
             GapSearchMode::GapSearchFromStart => GapSearchMode::NormalSearch,
             GapSearchMode::NormalSearch => GapSearchMode::GapSearchAnywere,
-            GapSearchMode::GapSearchAnywere => GapSearchMode::GapSearchFromStart,
+            GapSearchMode::GapSearchAnywere => GapSearchMode::NormalSearchAnywhere,
+            GapSearchMode::NormalSearchAnywhere => GapSearchMode::GapSearchFromStart,
         });
         self.on_matches_changed()
     }
