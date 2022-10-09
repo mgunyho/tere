@@ -210,7 +210,18 @@ impl TereAppState {
         let cwd = std::env::var("PWD")
             .map(PathBuf::from)
             .or_else(|_| std::env::current_dir())?;
+
         let (settings, warnings) = TereSettings::parse_cli_args(cli_args)?;
+        let info_msg = if warnings.is_empty() {
+            format!(
+                "{} {} - Type something to search, press '?' to view help or Esc to exit.",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_VERSION"),
+            )
+        } else {
+            format!("Warning: {}", warnings.join(" "))
+        };
+
         let mut ret = Self {
             main_win_w: window_w,
             main_win_h: window_h,
@@ -219,11 +230,7 @@ impl TereAppState {
             cursor_pos: 0,
             scroll_pos: 0,
             header_msg: "".into(),
-            info_msg: format!(
-                "{} {} - Type something to search, press '?' to view help or Esc to exit.",
-                env!("CARGO_PKG_NAME"),
-                env!("CARGO_PKG_VERSION")
-            ),
+            info_msg: info_msg,
             search_string: "".into(),
             _settings: settings,
             history: HistoryTree::from_abs_path(cwd.clone()),
