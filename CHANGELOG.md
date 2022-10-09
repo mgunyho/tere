@@ -4,7 +4,7 @@
 - Bugfixes related to drawing (Github #65)
    - Fixed last character of rows not being drawn, both in the main screen and help screen (at least on some terminal emulators)
    - Fixed broken bolding in the help screen if the wrapping happens at `/`
-   - Fixed broken highlightin if the last character of a symlink is matched in a search
+   - Fixed broken highlighting if the last character of a symlink is matched in a search
    - Fixed drawing bug when info message is longer than the terminal window width
 - Improved scrolling / cursor position behavior in filter search mode
 
