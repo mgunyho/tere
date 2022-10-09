@@ -106,6 +106,14 @@ pub struct TereSettings {
 
 pub type DeprecationWarnings = Vec<&'static str>;
 
+macro_rules! option_deprecation_message {
+    ($opt:tt, $instead:tt) => {
+        concat!(
+            "Option '", $opt, "' is deprecated, use '", $instead, "' instead.",
+        )
+    }
+}
+
 impl TereSettings {
     pub fn parse_cli_args(args: &ArgMatches) -> Result<(Self, DeprecationWarnings), ClapError> {
         let mut ret = Self::default();
