@@ -34,7 +34,7 @@ impl fmt::Display for CaseSensitiveMode {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum GapSearchMode {
     GapSearchFromStart,
     NoGapSearch,
@@ -303,7 +303,7 @@ mod tests {
 
         DEFAULT_KEYMAP
             .iter()
-            .for_each(|(k, c, _)| *key_counts.entry((k.clone(), c.clone())).or_default() += 1);
+            .for_each(|(k, c, _)| *key_counts.entry((*k, c.clone())).or_default() += 1);
 
         for (k, v) in key_counts {
             assert_eq!(v, 1, "found {} entries for key {:?} in context {:?}", v, k.0, k.1);
