@@ -218,7 +218,11 @@ impl TereAppState {
             cursor_pos: 0,
             scroll_pos: 0,
             header_msg: "".into(),
-            info_msg: "".into(),
+            info_msg: format!(
+                "{} {} - Type something to search, press '?' to view help or Esc to exit.",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_VERSION")
+            ),
             search_string: "".into(),
             _settings: TereSettings::parse_cli_args(cli_args)?,
             history: HistoryTree::from_abs_path(cwd.clone()),
