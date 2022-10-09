@@ -142,16 +142,22 @@ impl<'a> TereTui<'a> {
     }
 
     fn redraw_info_window(&mut self) -> CTResult<()> {
-        let (_, h) = terminal_size_usize()?;
+        let (w, h) = terminal_size_usize()?;
         let info_win_row = h - FOOTER_SIZE - INFO_WIN_SIZE;
 
         self.queue_clear_row(info_win_row)?;
         let mut win = self.window;
+        let msg = UnicodeSegmentation::graphemes(self.app_state.info_msg.as_str(), true)
+            .take(w)
+            .collect::<Vec<&str>>()
+            .as_slice()
+            .concat();
+
         execute!(
             win,
             cursor::MoveTo(0, u16::try_from(info_win_row).unwrap_or(u16::MAX)),
             style::SetAttribute(Attribute::Reset),
-            style::Print(&self.app_state.info_msg.clone().bold()),
+            style::Print(msg.bold()),
         )
     }
 
