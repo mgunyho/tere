@@ -210,6 +210,7 @@ impl TereAppState {
         let cwd = std::env::var("PWD")
             .map(PathBuf::from)
             .or_else(|_| std::env::current_dir())?;
+        let (settings, warnings) = TereSettings::parse_cli_args(cli_args)?;
         let mut ret = Self {
             main_win_w: window_w,
             main_win_h: window_h,
@@ -224,7 +225,7 @@ impl TereAppState {
                 env!("CARGO_PKG_VERSION")
             ),
             search_string: "".into(),
-            _settings: TereSettings::parse_cli_args(cli_args)?,
+            _settings: settings,
             history: HistoryTree::from_abs_path(cwd.clone()),
         };
 

@@ -104,9 +104,12 @@ pub struct TereSettings {
     pub keymap: HashMap<(KeyEvent, ActionContext), Action>,
 }
 
+pub type DeprecationWarnings = Vec<&'static str>;
+
 impl TereSettings {
-    pub fn parse_cli_args(args: &ArgMatches) -> Result<Self, ClapError> {
+    pub fn parse_cli_args(args: &ArgMatches) -> Result<(Self, DeprecationWarnings), ClapError> {
         let mut ret = Self::default();
+        let mut warnings = vec![];
 
         if args.contains_id("folders-only") {
             ret.folders_only = true;
@@ -211,7 +214,7 @@ impl TereSettings {
             _ => unreachable!(),
         };
 
-        Ok(ret)
+        Ok((ret, warnings))
     }
 }
 
