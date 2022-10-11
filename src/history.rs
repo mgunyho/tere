@@ -308,9 +308,9 @@ mod tests_for_history_tree {
     fn test_tree_pointer_counts() {
         let mut tree = init_history_tree();
         tree.visit("foo");
-        let foo = Rc::downgrade(&tree.current_entry());
+        let foo = Rc::downgrade(tree.current_entry());
         tree.visit("bar");
-        let bar = Rc::downgrade(&tree.current_entry());
+        let bar = Rc::downgrade(tree.current_entry());
 
         assert_eq!(Rc::weak_count(&tree.root), 1); // the child (foo)
 
@@ -382,7 +382,7 @@ mod tests_for_history_tree {
         assert_eq!(tree.current_entry().last_visited_child_label(), Some("baz".to_string()));
 
         tree.change_dir("/");
-        assert!(Rc::ptr_eq(&tree.current_entry(), &tree.root));
+        assert!(Rc::ptr_eq(tree.current_entry(), &tree.root));
 
         tree.change_dir("/foo/bax");
 

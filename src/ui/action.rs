@@ -9,7 +9,7 @@ use strum_macros::{
 /// The possible actions that the user can do
 
 
-#[derive(Debug, PartialEq, Clone, StrumDisplay, EnumString, EnumIter)]
+#[derive(Debug, PartialEq, Eq, Clone, StrumDisplay, EnumString, EnumIter)]
 pub enum Action {
     ChangeDir,
     ChangeDirParent,
