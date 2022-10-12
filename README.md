@@ -2,11 +2,12 @@
 
 
 `tere` is a terminal file explorer. It is a faster alternative to using `cd`
-and `ls` to browse folders in your terminal. It only really does one thing: it
-allows you to navigate to a folder efficiently using a TUI, and then prints the
-path to that folder when you exit.
+and `ls` to browse folders in your terminal. `tere` only really does one thing: it
+provides a TUI for efficiently navigating to a folder, and then prints the path
+to that folder when you exit. By configuring your shell to `cd` to the printed
+folder, you can move around in your filesystem very quickly.
 
-![A gif showing what tere using looks like](./demo/tere-demo-2022-07-10-2027-e2-O3.gif)
+![A gif showing what using tere looks like](./demo/tere-demo-2022-07-10-2027-e2-O3.gif)
 
 Note that `tere` is not a file _manager_, it
 can only be used to browse folders, not to create, rename or delete them.
@@ -20,7 +21,9 @@ functionality found in many GUI file managers.
 
 ## Setup
 
-To start using `tere`, follow these steps:
+To use `tere` for changing directories, you need to install it, and then
+configure your shell to `cd` to the folder `tere` prints when it exits. Here's
+how to do it:
 
 1. Obtain a copy of `tere`. This can be done in various ways:
 
@@ -30,7 +33,7 @@ To start using `tere`, follow these steps:
    - Install `tere` with [Cargo](https://www.rust-lang.org/tools/install) by running `cargo install tere`.
    - Build from source, see [below](#hacking).
 
-1. Configure your shell to `cd` to the folder which `tere` prints when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent. See instructions for your shell below.
+1. Configure your shell to `cd` to the folder printed by `tere` when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent. See instructions for your shell below.
 
     <details>
     <summary>Bash/Zsh</summary>
@@ -275,15 +278,35 @@ This will place the `tere` binary in the folder `target/debug`, or `target/relea
 
 New features should go on the `develop` branch before they are released, and they should be mentioned in `CHANGELOG.md`.
 
+To set up cross-compilation for other platforms (e.g. when making a release), run (on Ubuntu):
+```shell
+# Support for linux without dependence on glibc
+rustup target add x86_64-unknown-linux-musl
+
+# Windows support
+sudo apt install gcc-mingw-w64
+rustup target add x86_64-pc-windows-gnu
+
+# ARM (raspberry pi) support
+sudo apt install gcc-aarch64-linux-gnu
+rustup target add aarch64-unknown-linux-gnu
+
+# NOTE: macOS is not available
+```
+Then, the `build-release.sh` script should work.
+
+For further details, see the [`rustup` guide](https://rust-lang.github.io/rustup/cross-compilation.html), and the [`rustc` platform support page](https://doc.rust-lang.org/nightly/rustc/platform-support.html), and consult your favourite search engine for help on cross-compilation.
+
 ### Making a new release
 
 Here's a checklist of things to do for a new release.
 
+- Run `cargo test` and verify that all tests pass
 - Update version in `Cargo.toml`
-- Run `cargo build` so that `Cargo.lock` is also updated
+- Run `cargo build` so that `Cargo.lock` is also updated, and make a commit with the updated versions.
 - `git checkout master && git merge --no-ff develop`. The commit title should be "Version X.Y.Z" and the commit message should contain the changelog.
 - `git tag vX.Y.Z`
-- `git push --tags`
+- `git push && git push --tags`
 - `sh ./build-release.sh` to build the binaries. They are zipped and placed in the folder `release/`.
 - Upload binaries to github and copy-paste the changelog from the commit message
 - `cargo publish` to upload to crates.io
