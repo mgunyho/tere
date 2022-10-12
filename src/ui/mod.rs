@@ -572,13 +572,13 @@ impl<'a> TereTui<'a> {
         let searching = self.app_state.is_searching();
         let match_indices = self.app_state.visible_match_indices();
 
-        let target_idx = if !searching || (searching && match_indices.len() == 0) {
+        let target_idx = if !searching || match_indices.is_empty() {
             Some(if top {
                 0
             } else {
                 self.app_state.num_visible_items()
             })
-        } else if searching && match_indices.len() > 0 {
+        } else if searching && !match_indices.is_empty() {
             let mut it = match_indices.iter();
             Some(if top {
                 // OK to unwrap, we've checked that the len is > 0
