@@ -341,15 +341,15 @@ mod tests {
             let parts: Vec<_> = line.split('|').collect();
 
             let action_name = parts[3].replace('`', "").trim().to_string();
-            let action = Action::from_str(&action_name).expect(
-                format!("Invalid action in table row '{}': '{}'", line, action_name).as_ref(),
-            );
+            let action = Action::from_str(&action_name).unwrap_or_else(|_| {
+                panic!("Invalid action in table row '{}': '{}'", line, action_name)
+            });
 
             let key_combos: Vec<_> = parts[2]
                 .replace("if not searching,", "").replace("if searching", "")
                 .replace("<kbd>", "").replace("</kbd>", "")
-                .replace("+", "-")
-                .replace("↑", "up").replace("↓", "down").replace("←", "left").replace("→", "right")
+                .replace('+', "-")
+                .replace('↑', "up").replace('↓', "down").replace('←', "left").replace('→', "right")
                 .replace("Page Up", "pageup").replace("Page Down", "pagedown")
                 .split(" or ")
                 .map(|k| crokey::parse(k.trim()).unwrap())
@@ -358,7 +358,7 @@ mod tests {
                 key_mappings
                     .entry(k)
                     .and_modify(|a| a.push(action.clone()))
-                    .or_insert(vec![action.clone()]);
+                    .or_insert_with(|| vec![action.clone()]);
             }
         });
 
@@ -377,10 +377,12 @@ mod tests {
         // Check that default keymaps match the ones listed in the README
         for (key_combo, _, expected_action) in crate::app_state::settings::DEFAULT_KEYMAP {
             let key_combo_str = crokey::KeyEventFormat::default().to_string(*key_combo);
-            let actions = key_mappings.get(&key_combo).expect(&format!(
-                "Key mapping {}:{} not found in README",
-                key_combo_str, expected_action,
-            ));
+            let actions = key_mappings.get(key_combo).unwrap_or_else(|| {
+                panic!(
+                    "Key mapping {}:{} not found in README",
+                    key_combo_str, expected_action,
+                )
+            });
             assert!(
                 actions.contains(expected_action),
                 "Key mapping '{}:{}' in default keymap doesn't match README: '{:?}'",
@@ -426,7 +428,7 @@ mod tests {
     fn test_stylize_wrapped_lines2() {
         let input = "## foo bar\n\nlorem ipsum `dolor` sit amet";
         let (lines, locs) = strip_markup_and_extract_bold_positions(input);
-        let stylized = stylize_wrapped_lines(lines.split("\n").collect(), locs);
+        let stylized = stylize_wrapped_lines(lines.split('\n').collect(), locs);
 
         assert_eq!(
             stylized[0],
