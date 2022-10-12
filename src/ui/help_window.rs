@@ -358,7 +358,7 @@ mod tests {
                 key_mappings
                     .entry(k)
                     .and_modify(|a| a.push(action.clone()))
-                    .or_insert(vec![action.clone()]);
+                    .or_insert_with(|| vec![action.clone()]);
             }
         });
 
