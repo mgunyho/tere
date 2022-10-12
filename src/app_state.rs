@@ -414,11 +414,11 @@ impl TereAppState {
                                 .unwrap()
                         }
                         SortMode::Created => {
-                            // b>a for sorting most recently created first
+                            // b > a for sorting most recently created first
                             b.created().partial_cmp(&a.created()).unwrap()
                         }
                         SortMode::Modified => {
-                            // b>a for sorting most recently modified first
+                            // b > a for sorting most recently modified first
                             b.modified().partial_cmp(&a.modified()).unwrap()
                         }
                     }
