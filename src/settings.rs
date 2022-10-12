@@ -207,8 +207,8 @@ impl TereSettings {
         {
             "created" => SortMode::Created,
             "modified" => SortMode::Modified,
-            "name"  => SortMode::Name,
-            _       => unreachable!(),
+            "name" => SortMode::Name,
+            _ => unreachable!(),
         };
 
         Ok(ret)
