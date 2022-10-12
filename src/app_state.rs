@@ -547,7 +547,8 @@ impl TereAppState {
         self.with_cursor_fixed_at_current_item(|self_| {
             self_._settings.sort_mode = sort_mode;
             self_.update_ls_output_buf().ok();
-            self_.advance_search("");
+            //TODO: should probably have a separate method for re-sorting the matches vector...
+            self_.update_search_matches();
         });
     }
 
