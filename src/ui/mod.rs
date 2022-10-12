@@ -569,16 +569,33 @@ impl<'a> TereTui<'a> {
 
     // When moving the cursor to the top or bottom of the listing
     fn on_cursor_top_bottom(&mut self, top: bool) -> CTResult<()> {
-        if !self.app_state.is_searching() {
-            let target = if top {
+        let searching = self.app_state.is_searching();
+        let match_indices = self.app_state.visible_match_indices();
+
+        let target_idx = if !searching || match_indices.is_empty() {
+            Some(if top {
                 0
             } else {
                 self.app_state.num_visible_items()
-            };
-            self.app_state.move_cursor_to(target);
+            })
+        } else if searching && !match_indices.is_empty() {
+            let mut it = match_indices.iter();
+            Some(if top {
+                // OK to unwrap, we've checked that the len is > 0
+                *it.next().unwrap()
+            } else {
+                *it.last().unwrap()
+            })
+        } else {
+            None
+        };
+
+        if let Some(idx) = target_idx {
+            self.app_state.move_cursor_to(idx);
             self.redraw_main_window()?;
-        } // TODO: else jump to first/last match
-        self.redraw_footer()?;
+            self.redraw_footer()?;
+        }
+
         Ok(())
     }
 
