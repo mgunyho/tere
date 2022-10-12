@@ -8,6 +8,7 @@
    - Fixed broken highlighting if the last character of a symlink is matched in a search
    - Fixed drawing bug when info message is longer than the terminal window width
 - Improved scrolling / cursor position behavior in filter search mode
+- Fix footer not updating when pressing home / end
 
 ## 1.2.0 (2022-09-11)
 
