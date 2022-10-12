@@ -58,6 +58,29 @@ impl fmt::Display for GapSearchMode {
     }
 }
 
+pub enum SortMode {
+    Name,
+    Created,
+    Modified,
+}
+
+impl Default for SortMode {
+    fn default() -> Self {
+        Self::Name
+    }
+}
+
+impl fmt::Display for SortMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let text = match self {
+            SortMode::Name     => "name",
+            SortMode::Created  => "cre",
+            SortMode::Modified => "mod",
+        };
+        write!(f, "{}", text)
+    }
+}
+
 #[derive(Default)]
 pub struct TereSettings {
     /// If true, show only folders, not files in the listing
@@ -66,6 +89,8 @@ pub struct TereSettings {
     pub filter_search: bool,
 
     pub case_sensitive: CaseSensitiveMode,
+
+    pub sort_mode: SortMode,
 
     pub autocd_timeout: Option<u64>,
 
@@ -172,6 +197,19 @@ impl TereSettings {
                 "No keyboard mapping found for exit!\n",
             ));
         }
+
+        ret.sort_mode = match args
+            .get_many::<String>("sort")
+            .unwrap()
+            .map(|v| v.as_str())
+            .last()
+            .unwrap()
+        {
+            "created" => SortMode::Created,
+            "modified" => SortMode::Modified,
+            "name" => SortMode::Name,
+            _ => unreachable!(),
+        };
 
         Ok(ret)
     }
@@ -283,6 +321,7 @@ pub const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
     (key!(alt-f),  ActionContext::None, Action::ChangeFilterSearchMode),
     (key!(alt-c),  ActionContext::None, Action::ChangeCaseSensitiveMode),
     (key!(ctrl-f), ActionContext::None, Action::ChangeGapSearchMode),
+    (key!(alt-s),  ActionContext::None, Action::ChangeSortMode),
 
     (key!(ctrl-r), ActionContext::None, Action::RefreshListing),
 

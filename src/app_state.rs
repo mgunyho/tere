@@ -8,13 +8,14 @@ use std::ffi::OsStr;
 use std::io::{Error as IOError, ErrorKind, Result as IOResult};
 use std::path::{Component, Path, PathBuf};
 use std::fmt::Write as _;
+use std::time::SystemTime;
 
 use regex::Regex;
 
 #[path = "settings.rs"]
 pub mod settings;
 use settings::TereSettings;
-pub use settings::{CaseSensitiveMode, GapSearchMode};
+pub use settings::{CaseSensitiveMode, GapSearchMode, SortMode};
 
 #[path = "history.rs"]
 mod history;
@@ -122,6 +123,20 @@ impl CustomDirEntry {
             None => false,
         }
     }
+
+    pub fn created(&self) -> SystemTime {
+        match &self.metadata {
+            Some(m) => m.created().unwrap_or(SystemTime::UNIX_EPOCH),
+            None => SystemTime::UNIX_EPOCH,
+        }
+    }
+
+    pub fn modified(&self) -> SystemTime {
+        match &self.metadata {
+            Some(m) => m.modified().unwrap_or(SystemTime::UNIX_EPOCH),
+            None => SystemTime::UNIX_EPOCH,
+        }
+    }
 }
 
 impl From<std::fs::DirEntry> for CustomDirEntry {
@@ -161,8 +176,6 @@ pub struct TereAppState {
     // This vector will hold the list of files/folders in the current directory,
     // including ".." (the parent folder).
     ls_output_buf: LsBufType,
-
-    //sort_mode: SortMode // TODO: sort by date etc
 
     // Have to manually keep track of the logical absolute path of our app, see https://stackoverflow.com/a/70309860/5208725
     pub current_path: PathBuf,
@@ -379,7 +392,6 @@ impl TereAppState {
         let entries = std::fs::read_dir(std::path::Component::CurDir)?;
 
         let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> = Box::new(
-            //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
             entries.filter_map(|e| e.ok()).map(CustomDirEntry::from),
         );
 
@@ -392,12 +404,24 @@ impl TereAppState {
         new_output_buf.sort_by(|a, b| {
             match (a.is_dir(), b.is_dir()) {
                 (true, true) | (false, false) => {
-                    // both are dirs or files, compare by name.
-                    // partial_cmp for strings always returns Some, so unwrap is ok here
-                    a.file_name_checked()
-                        .to_lowercase()
-                        .partial_cmp(&b.file_name_checked().to_lowercase())
-                        .unwrap()
+                    match &self.settings().sort_mode {
+                        SortMode::Name => {
+                            // both are dirs or files, compare by name.
+                            // partial_cmp for strings always returns Some, so unwrap is ok here
+                            a.file_name_checked()
+                                .to_lowercase()
+                                .partial_cmp(&b.file_name_checked().to_lowercase())
+                                .unwrap()
+                        }
+                        SortMode::Created => {
+                            // b > a for sorting most recently created first
+                            b.created().partial_cmp(&a.created()).unwrap()
+                        }
+                        SortMode::Modified => {
+                            // b > a for sorting most recently modified first
+                            b.modified().partial_cmp(&a.modified()).unwrap()
+                        }
+                    }
                 }
                 // Otherwise, put folders first
                 (true, false) => std::cmp::Ordering::Less,
@@ -517,6 +541,15 @@ impl TereAppState {
     pub fn set_gap_search_mode(&mut self, gap_search_mode: GapSearchMode) {
         self._settings.gap_search_mode = gap_search_mode;
         self.advance_search(""); // hacky, see the comment above in set_case_sensitive
+    }
+
+    pub fn set_sort_mode(&mut self, sort_mode: SortMode) {
+        self.with_cursor_fixed_at_current_item(|self_| {
+            self_._settings.sort_mode = sort_mode;
+            self_.update_ls_output_buf().ok();
+            //TODO: should probably have a separate method for re-sorting the matches vector...
+            self_.update_search_matches();
+        });
     }
 
     /////////////////////////////////////

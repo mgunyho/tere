@@ -11,6 +11,7 @@ use crate::app_state::{
     TereAppState,
     CaseSensitiveMode,
     GapSearchMode,
+    SortMode,
     NO_MATCHES_MSG,
 };
 use help_window::get_formatted_help_text;
@@ -184,6 +185,7 @@ impl<'a> TereTui<'a> {
 
         let _ = write!(extra_msg, "{} - ", self.app_state.settings().gap_search_mode);
         let _ = write!(extra_msg, "{} - ", self.app_state.settings().case_sensitive);
+        let _ = write!(extra_msg, "sort:{} - ", self.app_state.settings().sort_mode);
 
         let cursor_idx = self
             .app_state
@@ -637,6 +639,15 @@ impl<'a> TereTui<'a> {
         self.on_matches_changed()
     }
 
+    fn cycle_sort_mode(&mut self) -> CTResult<()> {
+        self.app_state.set_sort_mode(match self.app_state.settings().sort_mode {
+            SortMode::Name => SortMode::Created,
+            SortMode::Created => SortMode::Modified,
+            SortMode::Modified => SortMode::Name,
+        });
+        self.on_matches_changed()
+    }
+
     pub fn main_event_loop(&mut self) -> Result<(), TereError> {
 
         let loop_result = loop {
@@ -682,6 +693,7 @@ impl<'a> TereTui<'a> {
                             Action::ChangeFilterSearchMode => self.toggle_filter_search_mode()?,
                             Action::ChangeCaseSensitiveMode => self.cycle_case_sensitive_mode()?,
                             Action::ChangeGapSearchMode => self.cycle_gap_search_mode()?,
+                            Action::ChangeSortMode => self.cycle_sort_mode()?,
 
                             Action::RefreshListing => {
                                 self.change_dir(".")?; //TODO: use 'current dir' instead of hardcoded '.' (?, see also pardir discussion elsewhere)

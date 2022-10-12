@@ -1,6 +1,7 @@
 ## 1.3.0 (unreleased)
 
 - Add option to toggle filter search mode while the app is running, the default shortcut is `Alt-f` (Github #59)
+- Added option to sort directory listing by creation and modification date in addition to the name. Can be changed with the `--sort` CLI option and with the default shortcut `Alt-s`. (Thanks @joshrdane, Github #64)
 - Bugfixes related to drawing (Github #65)
    - Fixed last character of rows not being drawn, both in the main screen and help screen (at least on some terminal emulators)
    - Fixed broken bolding in the help screen if the wrapping happens at `/`
