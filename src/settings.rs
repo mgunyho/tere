@@ -584,4 +584,16 @@ mod tests {
         assert!(TereSettings::parse_cli_args(&m).is_err());
     }
 
+    #[test]
+    fn test_no_gap_search_deprecated() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--no-gap-search"
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(!warnings.is_empty());
+        assert!(settings.gap_search_mode == GapSearchMode::NormalSearch);
+    }
+
 }
