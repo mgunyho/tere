@@ -133,7 +133,10 @@ pub fn get_cli_args() -> App<'static> {
                      ))
              .overrides_with("no-gap-search")
             )
-        //TODO: if somebody wants this: '-N', '--no-gap-search-anywhere - don't allow gaps, but can start anywhere. maybe have to come up with a better long name.
+        .arg(Arg::new("normal-search-anywhere")
+             .long("normal-search-anywhere")
+             .short('N')
+            )
         .arg(Arg::new("map")
              .long("map")
              .short('m')
