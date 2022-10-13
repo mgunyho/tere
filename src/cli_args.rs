@@ -130,7 +130,7 @@ pub fn get_cli_args() -> App<'static> {
              .short('n')
              .help("Match the search from the beginning, and do not allow gaps")
              .long_help(gap_search_mode_template!(
-                     "Disable gap-search. Match only consecutive characters from the beginning of the search query. For example, searching for \"do\" would match \"DOcuments\" and \"DOwnloads\", but not \"desktop\".",
+                     "Match only consecutive characters, and only from the beginning of the folder or file name. For example, searching for \"do\" would match \"DOcuments\" and \"DOwnloads\", but not \"desktop\".",
                      "gap-search",
                      "gap-search-anywhere",
                      "normal-search-anywhere",
@@ -142,7 +142,7 @@ pub fn get_cli_args() -> App<'static> {
              .short('N')
              .help("Match search anywhere, but do not allow gaps")
              .long_help(gap_search_mode_template!(
-                     "Disable gap-search. Match only consecutive characters, but they may appear anywhere in the search query. For example, searching for \"e\" would match \"documEnts\" and \"dEsktop\", but not \"downloads\".",
+                     "Match only consecutive characters, but they may appear anywhere in file or folder name, not just the beginning. For example, searching for \"e\" would match \"documEnts\" and \"dEsktop\", but not \"downloads\".",
                      "gap-search",
                      "gap-search-anywhere",
                      "normal-search",
