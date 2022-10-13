@@ -133,7 +133,12 @@ impl TereSettings {
             ret.gap_search_mode = GapSearchMode::GapSearchFromStart;
         } else if args.contains_id("gap-search-anywhere") {
             ret.gap_search_mode = GapSearchMode::GapSearchAnywere;
+        } else if args.contains_id("normal-search") {
+            ret.gap_search_mode = GapSearchMode::NormalSearch;
+        } else if args.contains_id("normal-search-anywhere") {
+            ret.gap_search_mode = GapSearchMode::NormalSearchAnywhere;
         } else if args.contains_id("no-gap-search") {
+            warnings.push("The option 'no-gap-search' has been renamed to 'normal-search', please use that instead.");
             ret.gap_search_mode = GapSearchMode::NormalSearch;
         }
 
