@@ -85,14 +85,6 @@ impl<'a> TereTui<'a> {
 
         ret.update_header()?;
         ret.redraw_all_windows()?;
-        ret.info_message(
-            format!(
-                "{} {} - Type something to search, press '?' to view help or Esc to exit.",
-                env!("CARGO_PKG_NAME"),
-                env!("CARGO_PKG_VERSION")
-            )
-            .as_str(),
-        )?;
         Ok(ret)
     }
 
@@ -650,9 +642,10 @@ impl<'a> TereTui<'a> {
 
     fn cycle_gap_search_mode(&mut self) -> CTResult<()> {
         self.app_state.set_gap_search_mode(match self.app_state.settings().gap_search_mode {
-            GapSearchMode::GapSearchFromStart => GapSearchMode::NoGapSearch,
-            GapSearchMode::NoGapSearch => GapSearchMode::GapSearchAnywere,
-            GapSearchMode::GapSearchAnywere => GapSearchMode::GapSearchFromStart,
+            GapSearchMode::GapSearchFromStart => GapSearchMode::NormalSearch,
+            GapSearchMode::NormalSearch => GapSearchMode::GapSearchAnywere,
+            GapSearchMode::GapSearchAnywere => GapSearchMode::NormalSearchAnywhere,
+            GapSearchMode::NormalSearchAnywhere => GapSearchMode::GapSearchFromStart,
         });
         self.on_matches_changed()
     }

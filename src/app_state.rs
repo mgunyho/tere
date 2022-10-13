@@ -210,6 +210,18 @@ impl TereAppState {
         let cwd = std::env::var("PWD")
             .map(PathBuf::from)
             .or_else(|_| std::env::current_dir())?;
+
+        let (settings, warnings) = TereSettings::parse_cli_args(cli_args)?;
+        let info_msg = if warnings.is_empty() {
+            format!(
+                "{} {} - Type something to search, press '?' to view help or Esc to exit.",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_VERSION"),
+            )
+        } else {
+            format!("Warning: {}", warnings.join(" "))
+        };
+
         let mut ret = Self {
             main_win_w: window_w,
             main_win_h: window_h,
@@ -218,9 +230,9 @@ impl TereAppState {
             cursor_pos: 0,
             scroll_pos: 0,
             header_msg: "".into(),
-            info_msg: "".into(),
+            info_msg,
             search_string: "".into(),
-            _settings: TereSettings::parse_cli_args(cli_args)?,
+            _settings: settings,
             history: HistoryTree::from_abs_path(cwd.clone()),
         };
 
@@ -684,11 +696,14 @@ impl TereAppState {
         // TODO: construct regex pattern inside MatchesVec instead? - it relies now on capture
         // groups which are defined by the format!() parens here...
         let mut regex_str = "".to_string();
-        if self.settings().gap_search_mode == GapSearchMode::NoGapSearch {
+        let gap_search_mode = &self.settings().gap_search_mode;
+        if gap_search_mode == &GapSearchMode::NormalSearch {
             let _ = write!(regex_str, "^({})", regex::escape(&search_string));
+        } else if gap_search_mode == &GapSearchMode::NormalSearchAnywhere {
+            let _ = write!(regex_str, "({})", regex::escape(&search_string));
         } else {
             // enable gap search. Add '^' to the regex to match only from the start if applicable.
-            if self.settings().gap_search_mode == GapSearchMode::GapSearchFromStart {
+            if gap_search_mode == &GapSearchMode::GapSearchFromStart {
                 regex_str.push('^');
             }
             regex_str.push_str(
@@ -1565,7 +1580,7 @@ mod tests {
         assert_eq!(s.visible_match_indices(), vec![2, 3]);
         assert_eq!(s.cursor_pos, 2);
 
-        s.set_gap_search_mode(GapSearchMode::NoGapSearch);
+        s.set_gap_search_mode(GapSearchMode::NormalSearch);
 
         // now it should be
         //   ...
