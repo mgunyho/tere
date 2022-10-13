@@ -117,8 +117,13 @@ pub fn get_cli_args() -> App<'static> {
                      ))
              .overrides_with_all(&["gap-search-anywhere", "no-gap-search"])
             )
+        // DEPRECATED in favor of normal-search, this is here only for backward compatibility
         .arg(Arg::new("no-gap-search")
              .long("no-gap-search")
+             .hidden(true)
+            )
+        .arg(Arg::new("normal-search")
+             .long("normal-search")
              .short('n')
              .help("Match the search from the beginning, and do not allow gaps")
              .long_help(gap_search_mode_template!(
