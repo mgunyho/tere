@@ -105,7 +105,7 @@ pub fn get_cli_args() -> App<'static> {
                      "normal-search",
                      "normal-search-anywhere",
                      ))
-             .overrides_with_all(&["gap-search", "gap-search-anywhere", "no-gap-search"])
+             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         .arg(Arg::new("gap-search-anywhere")
              .long("gap-search-anywhere")
@@ -117,11 +117,12 @@ pub fn get_cli_args() -> App<'static> {
                      "normal-search",
                      "normal-search-anywhere",
                      ))
-             .overrides_with_all(&["gap-search-anywhere", "no-gap-search"])
+             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         // DEPRECATED in favor of normal-search, this is here only for backward compatibility
         .arg(Arg::new("no-gap-search")
              .long("no-gap-search")
+             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
              .hidden(true)
             )
         .arg(Arg::new("normal-search")
@@ -134,7 +135,7 @@ pub fn get_cli_args() -> App<'static> {
                      "gap-search-anywhere",
                      "normal-search-anywhere",
                      ))
-             .overrides_with("no-gap-search")
+             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         .arg(Arg::new("normal-search-anywhere")
              .long("normal-search-anywhere")
@@ -146,6 +147,7 @@ pub fn get_cli_args() -> App<'static> {
                      "gap-search-anywhere",
                      "normal-search",
                      ))
+             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         .arg(Arg::new("map")
              .long("map")
