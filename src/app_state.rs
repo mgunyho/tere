@@ -230,7 +230,7 @@ impl TereAppState {
             cursor_pos: 0,
             scroll_pos: 0,
             header_msg: "".into(),
-            info_msg: info_msg,
+            info_msg,
             search_string: "".into(),
             _settings: settings,
             history: HistoryTree::from_abs_path(cwd.clone()),
