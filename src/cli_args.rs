@@ -15,10 +15,10 @@ macro_rules! case_sensitive_template {
 }
 
 macro_rules! gap_search_mode_template {
-    ($help_text:tt, $x:tt, $y:tt) => {
+    ($help_text:tt, $x:tt, $y:tt, $z:tt $(,)?) => {
         concat!(
             $help_text,
-            "\n\nThis overrides the --", $x, " and --", $y,
+            "\n\nThis overrides the --", $x, ", --", $y, " and --", $z,
             " options. You can also change the search mode while the program is running with the keyboard shortcut Ctrl-f by default."
         )
     }
@@ -101,8 +101,9 @@ pub fn get_cli_args() -> App<'static> {
              .help("Match the search from the beginning, but allow gaps (default)")
              .long_help(gap_search_mode_template!(
                      "When searching, match items that start with the same character as the search query, but allow gaps between the search characters. For example, searching for \"do\" would match \"DesktOp\", \"DOcuments\", and \"DOwnloads\", while searching for \"dt\" would match \"DeskTop\" and \"DocumenTs\" but not \"downloads\", and searching for \"es\" would match none of the above. This is the default behavior.",
-                     "gap-search",
-                     "no-gap-search"
+                     "gap-search-anywhere",
+                     "normal-search",
+                     "normal-search-anywhere",
                      ))
              .overrides_with_all(&["gap-search", "gap-search-anywhere", "no-gap-search"])
             )
@@ -112,8 +113,9 @@ pub fn get_cli_args() -> App<'static> {
              .help("Match the search anywhere, and allow gaps")
              .long_help(gap_search_mode_template!(
                      "When searching, allow the search characters to appear anywhere in a file/folder name, possibly with gaps between them. For example, searching for \"do\" would match \"DesktOp\", \"DOcuments\", and \"DOwnloads\", while searching for \"es\" would match \"dESktop\" and \"documEntS\", but not \"downloads\".",
-                     "gap-search-from-start",
-                     "no-gap-search"
+                     "gap-search",
+                     "normal-search",
+                     "normal-search-anywhere",
                      ))
              .overrides_with_all(&["gap-search-anywhere", "no-gap-search"])
             )
@@ -129,13 +131,21 @@ pub fn get_cli_args() -> App<'static> {
              .long_help(gap_search_mode_template!(
                      "Disable gap-search. Match only consecutive characters from the beginning of the search query. For example, searching for \"do\" would match \"DOcuments\" and \"DOwnloads\", but not \"desktop\".",
                      "gap-search",
-                     "gap-search-from-start"
+                     "gap-search-anywhere",
+                     "normal-search-anywhere",
                      ))
              .overrides_with("no-gap-search")
             )
         .arg(Arg::new("normal-search-anywhere")
              .long("normal-search-anywhere")
              .short('N')
+             .help("Match search anywhere, but do not allow gaps")
+             .long_help(gap_search_mode_template!(
+                     "Disable gap-search. Match only consecutive characters, but they may appear anywhere in the search query. For example, searching for \"e\" would match \"documEnts\" and \"dEsktop\", but not \"downloads\".",
+                     "gap-search",
+                     "gap-search-anywhere",
+                     "normal-search",
+                     ))
             )
         .arg(Arg::new("map")
              .long("map")
