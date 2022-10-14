@@ -219,6 +219,7 @@ impl TereAppState {
                 env!("CARGO_PKG_VERSION"),
             )
         } else {
+            //TODO: red color or something?
             format!("Warning: {}", warnings.join(" "))
         };
 
