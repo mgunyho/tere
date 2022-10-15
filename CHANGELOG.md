@@ -1,4 +1,4 @@
-## 1.3.0 (unreleased)
+## 1.3.0 (2022-10-15)
 
 - Add option to toggle filter search mode while the app is running, the default shortcut is `Alt-f` (Github #59)
 - Added option to sort directory listing by creation and modification date in addition to the name. Can be changed with the `--sort` CLI option and with the default shortcut `Alt-s`. (Thanks @joshrdane, Github #64)
