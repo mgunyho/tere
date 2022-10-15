@@ -308,7 +308,7 @@ Here's a checklist of things to do for a new release.
 - Update the release date in `CHANGELOG.md`
 - `git checkout master && git merge --no-ff develop`. The commit title should be "Version X.Y.Z" and the commit message should contain the changelog.
 - `git tag vX.Y.Z`
-- `git push && git push --tags`
+- `git push && git push --tags`. Also make sure that the latest version of `develop` is pushed.
 - `sh ./build-release.sh` to build the binaries. They are zipped and placed in the folder `release/`.
 - Upload binaries to github and copy-paste the changelog from the commit message
 - `cargo publish` to upload to crates.io
