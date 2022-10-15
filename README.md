@@ -145,8 +145,10 @@ You can navigate folders in `tere` by moving the cursor around and by typing to 
 |Move cursor to the bottom| <kbd>End</kbd>  or <kbd>Alt</kbd>-<kbd>Shift</kbd>-<kbd>g</kbd> | `CursorBottom` |
 |Erase a character from the search | <kbd>Backspace</kbd> if searching | `EraseSearchChar` |
 |Clear the search | <kbd>Esc</kbd> if searching | `ClearSearch` |
+|Toggle filter search| <kbd>Alt</kbd>-<kbd>f</kbd> | `ChangeFilterSearchMode` |
 |Change case sensitivity mode| <kbd>Alt</kbd>-<kbd>c</kbd> | `ChangeCaseSensitiveMode` |
 |Change gap search mode| <kbd>Ctrl</kbd>-<kbd>f</kbd> | `ChangeGapSearchMode` |
+|Change sorting mode| <kbd>Alt</kbd>-<kbd>s</kbd> | `ChangeSortMode` |
 |Refresh current directory| <kbd>Ctrl</kbd>-<kbd>r</kbd>| `RefreshListing` |
 |Show help screen| <kbd>?</kbd> | `Help` |
 |Exit `tere`| <kbd>Esc</kbd> or <kbd>Alt</kbd>-<kbd>q</kbd> | `Exit` |
@@ -173,7 +175,7 @@ To stop searching, press <kbd>Esc</kbd> or erase all search characters by pressi
 
 By default, the searching uses "smart case", meaning that if the query contains only lowercase letters, case is ignored, but if there are uppercase letters, the search is case sensitive. This can be changed with the `--ignore-case` and `--case-sensitive` options, or with the keyboard shortcut <kbd>Alt</kbd>-<kbd>c</kbd> by default.
 
-In addition, in the default search mode, "gap search" is enabled. This means that the search query matches any folder or file name that contains the searched characters, even if there are other characters between them. For example, searching for `dt` would match both `DeskTop` and `DocumenTs`. This behavior can be changed with the `--gap-search-anywhere` and `--no-gap-search` options, or with the keyboard shortcut <kbd>Ctrl</kbd>-<kbd>f</kbd> by default. See the output of the `--help` option for further details.
+Additionally, in the default search mode, "gap search" (sometimes also known as fuzzy search) is enabled. This means that the search matches any folder or file name as long as it starts with the same character as the search query, and contains the rest of the query characters, even if there are other characters between them. For example, searching for `dt` would match both `DeskTop` and `DocumenTs`. With the `--gap-search-anywhere` option, the first character of the query doesn't have to match the first character of a folder/file name. The gap search can be disabled with the `--normal-search` and `--normal-search-anywhere` options, which only allow matching consecutive characters, either from the start or anywhere within the folder/file name, respsectively. The gap search behavior can also be changed with the keyboard shortcut <kbd>Ctrl</kbd>-<kbd>f</kbd> by default. See the output of the `--help` option for further details.
 
 ### Mouse navigation
 
@@ -188,7 +190,8 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 - `--filter-search` or `-f` / `--no-filter-search` or `-F`: If `--filter-search` is set, show only items that match the current search query in the listing. Otherwise all items are shown in the listing while searching (this is the default behavior).
 - `--folders-only` or `-d` / `--no-folders-only` or `-D`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
 - `--smart-case` or `-S` / `--ignore-case` or `-i` / `--case-sensitive` or `-s`: Set the case sensitivity mode. The default mode is smart case, which is case insensitive if the query contains only lowercase letters and case sensitive otherwise.
-- `--gap-search` or `-g` / `--gap-search-anywhere` or `-G` / `--no-gap-search` or `-n`: Configure whether to allow matches with gaps in them (see above).
+- `--gap-search` or `-g` / `--gap-search-anywhere` or `-G` / `--normal-search` or `-n` / `--normal-search-anywhere` or `-N`: Configure whether to allow matches with gaps in them (see above).
+- `--sort name` / `created` / `modified`: Change the sorting order of the listing.
 - `--autocd-timeout` - If the current search matches only one folder, automatically change to that folder after this many milliseconds. Can also be set to `off`, which disables this behaviour.
 - `--history-file`: To make browsing more convenient, `tere` saves a history of folders you have visited to this file in JSON format. It should be an absolute path. Defaults to `$CACHE_DIR/tere/history.json`, where `$CACHE_DIR` is `$XDG_CACHE_HOME` or `~/.cache`. Set to the empty string `''` to disable saving the history. Note that the history reveals parts of your folder structure if it can be read by someone else.
 - `--mouse=on` or `--mouse=off`: Enable or disable navigating with the mouse. If enabled, you can left-click to enter folders and right-click to go to the parent folder. Off by default.
@@ -302,6 +305,7 @@ Here's a checklist of things to do for a new release.
 - Run `cargo test` and verify that all tests pass
 - Update version in `Cargo.toml`
 - Run `cargo build` so that `Cargo.lock` is also updated, and make a commit with the updated versions.
+- Update the release date in `CHANGELOG.md`
 - `git checkout master && git merge --no-ff develop`. The commit title should be "Version X.Y.Z" and the commit message should contain the changelog.
 - `git tag vX.Y.Z`
 - `git push && git push --tags`

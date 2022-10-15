@@ -9,7 +9,7 @@ use strum_macros::{
 /// The possible actions that the user can do
 
 
-#[derive(Debug, PartialEq, Clone, StrumDisplay, EnumString, EnumIter)]
+#[derive(Debug, PartialEq, Eq, Clone, StrumDisplay, EnumString, EnumIter)]
 pub enum Action {
     ChangeDir,
     ChangeDirParent,
@@ -27,8 +27,10 @@ pub enum Action {
     EraseSearchChar,
     ClearSearch,
 
+    ChangeFilterSearchMode,
     ChangeCaseSensitiveMode,
     ChangeGapSearchMode,
+    ChangeSortMode,
 
     RefreshListing,
 
@@ -59,8 +61,10 @@ impl Action {
             Self::EraseSearchChar => "Erase one character from the search",
             Self::ClearSearch => "Clear the search",
 
+            Self::ChangeFilterSearchMode => "Toggle the filter-search mode",
             Self::ChangeCaseSensitiveMode => "Change the case-sensitive mode",
             Self::ChangeGapSearchMode => "Change the gap-search mode",
+            Self::ChangeSortMode => "Change the sorting mode",
 
             Self::RefreshListing => "Refresh the directory listing",
 

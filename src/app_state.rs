@@ -8,13 +8,14 @@ use std::ffi::OsStr;
 use std::io::{Error as IOError, ErrorKind, Result as IOResult};
 use std::path::{Component, Path, PathBuf};
 use std::fmt::Write as _;
+use std::time::SystemTime;
 
 use regex::Regex;
 
 #[path = "settings.rs"]
 pub mod settings;
 use settings::TereSettings;
-pub use settings::{CaseSensitiveMode, GapSearchMode};
+pub use settings::{CaseSensitiveMode, GapSearchMode, SortMode};
 
 #[path = "history.rs"]
 mod history;
@@ -122,6 +123,20 @@ impl CustomDirEntry {
             None => false,
         }
     }
+
+    pub fn created(&self) -> SystemTime {
+        match &self.metadata {
+            Some(m) => m.created().unwrap_or(SystemTime::UNIX_EPOCH),
+            None => SystemTime::UNIX_EPOCH,
+        }
+    }
+
+    pub fn modified(&self) -> SystemTime {
+        match &self.metadata {
+            Some(m) => m.modified().unwrap_or(SystemTime::UNIX_EPOCH),
+            None => SystemTime::UNIX_EPOCH,
+        }
+    }
 }
 
 impl From<std::fs::DirEntry> for CustomDirEntry {
@@ -162,8 +177,6 @@ pub struct TereAppState {
     // including ".." (the parent folder).
     ls_output_buf: LsBufType,
 
-    //sort_mode: SortMode // TODO: sort by date etc
-
     // Have to manually keep track of the logical absolute path of our app, see https://stackoverflow.com/a/70309860/5208725
     pub current_path: PathBuf,
 
@@ -180,7 +193,7 @@ pub struct TereAppState {
     pub header_msg: String,
     pub info_msg: String,
 
-    pub settings: TereSettings,
+    _settings: TereSettings,
 
     history: HistoryTree,
 }
@@ -197,6 +210,19 @@ impl TereAppState {
         let cwd = std::env::var("PWD")
             .map(PathBuf::from)
             .or_else(|_| std::env::current_dir())?;
+
+        let (settings, warnings) = TereSettings::parse_cli_args(cli_args)?;
+        let info_msg = if warnings.is_empty() {
+            format!(
+                "{} {} - Type something to search, press '?' to view help or Esc to exit.",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_VERSION"),
+            )
+        } else {
+            //TODO: red color or something?
+            format!("Warning: {}", warnings.join(" "))
+        };
+
         let mut ret = Self {
             main_win_w: window_w,
             main_win_h: window_h,
@@ -205,14 +231,14 @@ impl TereAppState {
             cursor_pos: 0,
             scroll_pos: 0,
             header_msg: "".into(),
-            info_msg: "".into(),
+            info_msg,
             search_string: "".into(),
-            settings: TereSettings::parse_cli_args(cli_args)?,
+            _settings: settings,
             history: HistoryTree::from_abs_path(cwd.clone()),
         };
 
         //read history tree from file, if applicable
-        if let Some(hist_file) = &ret.settings.history_file {
+        if let Some(hist_file) = &ret.settings().history_file {
             match std::fs::read_to_string(hist_file) {
                 Ok(file_contents) => {
                     let mut tree: HistoryTree = serde_json::from_str(&file_contents)?;
@@ -239,7 +265,7 @@ impl TereAppState {
 
     /// Things to do when the app is about to exit.
     pub fn on_exit(&self) -> IOResult<()> {
-        if let Some(hist_file) = &self.settings.history_file {
+        if let Some(hist_file) = &self.settings().history_file {
             let parent_dir = hist_file.parent().ok_or_else(|| {
                 IOError::new(ErrorKind::NotFound, "history file has no parent folder")
             })?;
@@ -254,6 +280,10 @@ impl TereAppState {
     ///////////////////////////////////////////
     // Helpers for reading the current state //
     ///////////////////////////////////////////
+
+    pub fn settings(&self) -> &TereSettings {
+        &self._settings
+    }
 
     pub fn is_searching(&self) -> bool {
         !self.search_string.is_empty()
@@ -276,7 +306,7 @@ impl TereAppState {
     /// Return a vector that contains the indices into the currently visible
     /// items that contain a match
     pub fn visible_match_indices(&self) -> Vec<usize> {
-        if self.is_searching() && self.settings.filter_search {
+        if self.is_searching() && self.settings().filter_search {
             (0..self.ls_output_buf.matches.len()).collect()
         } else {
             // it's ok to clone here, the kept_indices will be usually quite short.
@@ -287,7 +317,7 @@ impl TereAppState {
     /// All items that are visible with the current settings in the current search state. This
     /// includes items that might fall outside the window.
     pub fn visible_items(&self) -> Vec<&CustomDirEntry> {
-        if self.is_searching() && self.settings.filter_search {
+        if self.is_searching() && self.settings().filter_search {
             self.ls_output_buf.kept_items()
         } else {
             self.ls_output_buf.all_items.iter().collect()
@@ -296,7 +326,7 @@ impl TereAppState {
 
     /// Shorthand to get the number of items without having to clone / iterate over all of them
     pub fn num_visible_items(&self) -> usize {
-        if self.is_searching() && self.settings.filter_search {
+        if self.is_searching() && self.settings().filter_search {
             self.num_matching_items()
         } else {
             self.num_total_items()
@@ -330,12 +360,24 @@ impl TereAppState {
 
     pub fn get_match_locations_at_cursor_pos(&self, cursor_pos: usize) -> Option<&MatchesLocType> {
         let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
-        if self.settings.filter_search {
+        if self.settings().filter_search {
             // NOTE: we assume that the matches is a sorted map
             self.ls_output_buf.matches.values().nth(idx)
         } else {
             self.ls_output_buf.matches.get(&idx)
         }
+    }
+
+    /// Perform an operation (op), while making sure that the cursor stays on the item where it
+    /// was initially. Note: If `op` removes the previous item from the list of matches (i.e. list
+    /// of valid cursor positions), this may leave the cursor position in an inconsistent state.
+    fn with_cursor_fixed_at_current_item<F>(&mut self, op: F)
+    where
+        F: FnOnce(&mut Self),
+    {
+        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
+        op(self);
+        previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
     }
 
     //////////////////////////////////////
@@ -363,11 +405,10 @@ impl TereAppState {
         let entries = std::fs::read_dir(std::path::Component::CurDir)?;
 
         let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> = Box::new(
-            //TODO: sort by date etc... - collect into vector of PathBuf's instead of strings (check out `Pathbuf::metadata()`)
             entries.filter_map(|e| e.ok()).map(CustomDirEntry::from),
         );
 
-        if self.settings.folders_only {
+        if self.settings().folders_only {
             entries = Box::new(entries.filter(|e| e.path().is_dir()));
         }
 
@@ -376,12 +417,24 @@ impl TereAppState {
         new_output_buf.sort_by(|a, b| {
             match (a.is_dir(), b.is_dir()) {
                 (true, true) | (false, false) => {
-                    // both are dirs or files, compare by name.
-                    // partial_cmp for strings always returns Some, so unwrap is ok here
-                    a.file_name_checked()
-                        .to_lowercase()
-                        .partial_cmp(&b.file_name_checked().to_lowercase())
-                        .unwrap()
+                    match &self.settings().sort_mode {
+                        SortMode::Name => {
+                            // both are dirs or files, compare by name.
+                            // partial_cmp for strings always returns Some, so unwrap is ok here
+                            a.file_name_checked()
+                                .to_lowercase()
+                                .partial_cmp(&b.file_name_checked().to_lowercase())
+                                .unwrap()
+                        }
+                        SortMode::Created => {
+                            // b > a for sorting most recently created first
+                            b.created().partial_cmp(&a.created()).unwrap()
+                        }
+                        SortMode::Modified => {
+                            // b > a for sorting most recently modified first
+                            b.modified().partial_cmp(&a.modified()).unwrap()
+                        }
+                    }
                 }
                 // Otherwise, put folders first
                 (true, false) => std::cmp::Ordering::Less,
@@ -478,6 +531,40 @@ impl TereAppState {
         Ok(())
     }
 
+    /////////////////////////////////////////////
+    // Functions for changing the app settings //
+    /////////////////////////////////////////////
+
+    /// Change the filter search mode, and ensure that the app state is valid after that
+    pub fn set_filter_search(&mut self, filter_search: bool) {
+        // Toggling filter search doesn't affect the current match, so we can use set_filter_search
+        self.with_cursor_fixed_at_current_item(|self_| {
+            self_._settings.filter_search = filter_search;
+        });
+    }
+
+    pub fn set_case_sensitive(&mut self, case_sensitive: CaseSensitiveMode) {
+        self._settings.case_sensitive = case_sensitive;
+        // a bit of a hack, but this is the easiest way to force the cursor to be on a valid match
+        // after changing the mode.
+        // TODO: check if with_cursor_fixed_at_current_item + update_search_matches() is enough?
+        self.advance_search("");
+    }
+
+    pub fn set_gap_search_mode(&mut self, gap_search_mode: GapSearchMode) {
+        self._settings.gap_search_mode = gap_search_mode;
+        self.advance_search(""); // hacky, see the comment above in set_case_sensitive
+    }
+
+    pub fn set_sort_mode(&mut self, sort_mode: SortMode) {
+        self.with_cursor_fixed_at_current_item(|self_| {
+            self_._settings.sort_mode = sort_mode;
+            self_.update_ls_output_buf().ok();
+            //TODO: should probably have a separate method for re-sorting the matches vector...
+            self_.update_search_matches();
+        });
+    }
+
     /////////////////////////////////////
     // Functions for moving the cursor //
     /////////////////////////////////////
@@ -486,41 +573,45 @@ impl TereAppState {
     /// currently visible items, and update the scroll position as necessary
     pub fn move_cursor(&mut self, amount: isize, wrap: bool) {
         let old_cursor_pos = self.cursor_pos;
+        let n_visible_items = self.visible_items().len();
+        let max_cursor_pos = self.main_win_h - 1;
         let old_scroll_pos = self.scroll_pos;
-        let visible_items = self.visible_items();
-        let n_visible_items = visible_items.len();
-        let max_y = self.main_win_h;
 
-        let mut new_cursor_pos: isize = (old_cursor_pos as isize).saturating_add(amount);
+        // pointer_pos: the global location of the cursor in ls_output_buf
+        let old_pointer_pos: usize = old_cursor_pos + old_scroll_pos;
 
-        if wrap && !visible_items.is_empty() {
-            let offset = self.scroll_pos as isize;
-            new_cursor_pos =
-                (offset + new_cursor_pos).rem_euclid(n_visible_items as isize) - offset;
-        }
-
-        if new_cursor_pos < 0 {
-            // attempting to go above the current view, scroll up
-            self.scroll_pos = self.scroll_pos.saturating_sub(new_cursor_pos.unsigned_abs());
-            self.cursor_pos = 0;
-        } else if new_cursor_pos as usize + old_scroll_pos >= n_visible_items {
-            // attempting to go below content
-            //TODO: wrap, but only if cursor is starting off at the last row
-            // i.e. if pressing pgdown before the end, jump only to the end,
-            // but if pressing pgdown at the very end, wrap and start from top
-            self.scroll_pos = n_visible_items.saturating_sub(max_y);
-            self.cursor_pos = n_visible_items.saturating_sub(self.scroll_pos + 1);
-        } else if new_cursor_pos as usize >= max_y {
-            // Attempting to go below current view, scroll down.
-            self.cursor_pos = max_y.saturating_sub(1);
-            self.scroll_pos = std::cmp::min(
-                n_visible_items,
-                old_scroll_pos + new_cursor_pos as usize
-            ).saturating_sub(self.cursor_pos);
+        let new_pointer_pos = if n_visible_items == 0 {
+            old_pointer_pos
         } else {
-            // scrolling within view
-            self.cursor_pos = usize::try_from(new_cursor_pos).unwrap_or(0);
+            let pointer_pos_signed = isize::try_from(old_pointer_pos).unwrap_or(isize::MAX);
+            let n_visible_signed = isize::try_from(n_visible_items).unwrap_or(isize::MAX);
+            let result = pointer_pos_signed + amount;
+            if wrap {
+                usize::try_from(result.rem_euclid(n_visible_signed)).unwrap_or(usize::MAX)
+            } else {
+                usize::try_from(result.max(0).min(n_visible_signed - 1)).unwrap_or(usize::MAX)
+            }
+        };
+
+        // update scroll position and calculate new cursor position
+        if n_visible_items <= max_cursor_pos {
+            // all items fit on screen, set scroll to 0
+            self.scroll_pos = 0;
+            self.cursor_pos = new_pointer_pos;
+        } else if new_pointer_pos <= old_scroll_pos {
+            // new cursor position is above screen, scroll up
+            self.scroll_pos = new_pointer_pos;
+            self.cursor_pos = 0;
+        } else if new_pointer_pos >= old_scroll_pos + max_cursor_pos {
+            // new cursor position is below screen, scroll down
+            self.cursor_pos = max_cursor_pos;
+            self.scroll_pos = new_pointer_pos.saturating_sub(max_cursor_pos);
+        } else {
+            // cursor stays within view, no need to change scroll position
+            self.cursor_pos = new_pointer_pos.saturating_sub(self.scroll_pos);
         }
+
+
     }
 
     /// Move the cursor so that it is at the location `row` in the
@@ -542,7 +633,7 @@ impl TereAppState {
 
     /// Move the cursor to the next or previous match in the current list of
     /// matches. If dir is positive, move to the next match, if it's negative,
-    /// move to the previous match, and if it's zero, move to the cursor to the
+    /// move to the previous match, and if it's zero, move the cursor to the
     /// current match.
     pub fn move_cursor_to_adjacent_match(&mut self, dir: isize) {
         if self.is_searching() {
@@ -552,7 +643,7 @@ impl TereAppState {
                 return;
             }
 
-            if self.settings.filter_search {
+            if self.settings().filter_search {
                 // the only visible items are the matches, so we can just move the cursor
                 self.move_cursor(dir.signum(), true);
             } else {
@@ -592,7 +683,7 @@ impl TereAppState {
     ////////////
 
     fn update_search_matches(&mut self) {
-        let is_case_sensitive = match self.settings.case_sensitive {
+        let is_case_sensitive = match self.settings().case_sensitive {
             CaseSensitiveMode::IgnoreCase => false,
             CaseSensitiveMode::CaseSensitive => true,
             CaseSensitiveMode::SmartCase => self.search_string.chars().any(|c| c.is_uppercase()),
@@ -606,11 +697,14 @@ impl TereAppState {
         // TODO: construct regex pattern inside MatchesVec instead? - it relies now on capture
         // groups which are defined by the format!() parens here...
         let mut regex_str = "".to_string();
-        if self.settings.gap_search_mode == GapSearchMode::NoGapSearch {
+        let gap_search_mode = &self.settings().gap_search_mode;
+        if gap_search_mode == &GapSearchMode::NormalSearch {
             let _ = write!(regex_str, "^({})", regex::escape(&search_string));
+        } else if gap_search_mode == &GapSearchMode::NormalSearchAnywhere {
+            let _ = write!(regex_str, "({})", regex::escape(&search_string));
         } else {
             // enable gap search. Add '^' to the regex to match only from the start if applicable.
-            if self.settings.gap_search_mode == GapSearchMode::GapSearchFromStart {
+            if gap_search_mode == &GapSearchMode::GapSearchFromStart {
                 regex_str.push('^');
             }
             regex_str.push_str(
@@ -628,19 +722,21 @@ impl TereAppState {
     }
 
     pub fn clear_search(&mut self) {
-        let previous_item_under_cursor = self.get_item_under_cursor().cloned();
-        self.search_string.clear();
-        previous_item_under_cursor.map(|itm| self.move_cursor_to_filename(itm.file_name_checked()));
+        self.with_cursor_fixed_at_current_item(|self_|
+            self_.search_string.clear()
+        );
     }
 
     pub fn advance_search(&mut self, query: &str) {
+        // Can't use with_cursor_fixed_at_current_item, because the current item might not be a
+        // match any more after updating the search string.
         let previous_item_under_cursor = self.get_item_under_cursor().cloned();
 
         self.search_string.push_str(query);
 
         self.update_search_matches();
 
-        if self.settings.filter_search {
+        if self.settings().filter_search {
             if let Some(item) = previous_item_under_cursor {
                 if !self.move_cursor_to_filename(item.file_name_checked()) {
                     self.move_cursor_to(0);
@@ -659,7 +755,7 @@ impl TereAppState {
 
             self.update_search_matches();
 
-            if self.settings.filter_search {
+            if self.settings().filter_search {
                 if let Some(item) = previous_item_under_cursor {
                     if !self.move_cursor_to_filename(item.file_name_checked()) {
                         self.move_cursor_to(0);
@@ -704,7 +800,7 @@ mod tests {
             header_msg: "".into(),
             info_msg: "".into(),
             search_string: "".into(),
-            settings: Default::default(),
+            _settings: Default::default(),
             history: HistoryTree::from_abs_path("/"),
         }
     }
@@ -753,6 +849,31 @@ mod tests {
         assert_eq!(state.scroll_pos, 0);
         state.move_cursor(-100, false);
         assert_eq!(state.cursor_pos, 0);
+        assert_eq!(state.scroll_pos, 0);
+    }
+
+    #[test]
+    fn test_scrolling_bufsize_less_than_window_size_wrap() {
+        let mut state = create_test_state(5, 4);
+
+        state.move_cursor_to(0);
+        for i in 0..3 {
+            state.move_cursor(1, true);
+            assert_eq!(state.cursor_pos, i+1);
+            assert_eq!(state.scroll_pos, 0);
+        }
+        // cursor should be at the bottom of the listing
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 0);
+
+        // wrap around
+        state.move_cursor(1, true);
+        assert_eq!(state.cursor_pos, 0);
+        assert_eq!(state.scroll_pos, 0);
+
+        // wrap around backwards
+        state.move_cursor(-1, true);
+        assert_eq!(state.cursor_pos, 3);
         assert_eq!(state.scroll_pos, 0);
     }
 
@@ -890,6 +1011,23 @@ mod tests {
     }
 
     #[test]
+    fn test_scrolling_bufsize_larger_than_window_size_wrap() {
+        let mut state = create_test_state(4, 5);
+
+        state.move_cursor_to(5);
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 1);
+
+        state.move_cursor(1, true);
+        assert_eq!(state.cursor_pos, 0);
+        assert_eq!(state.scroll_pos, 0);
+
+        state.move_cursor(-1, true);
+        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.scroll_pos, 1);
+    }
+
+    #[test]
     fn test_basic_advance_search() {
         let mut s = create_test_state_with_buf(
             5,
@@ -995,7 +1133,7 @@ mod tests {
             6,
             strings_to_ls_buf(vec!["..", "bar", "baz", "foo", "frob"]),
         );
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
 
         // current state:
         // > ..
@@ -1042,7 +1180,7 @@ mod tests {
             6,
             strings_to_ls_buf(vec!["..", "bar", "baz", "foo", "forb"]),
         );
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
 
         // current state:
         // > ..
@@ -1096,7 +1234,7 @@ mod tests {
             3,
             strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
 
         s.move_cursor_to(3);
 
@@ -1133,7 +1271,7 @@ mod tests {
             6,
             strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
         s.move_cursor_to(2);
 
         // current state:
@@ -1190,7 +1328,7 @@ mod tests {
             6,
             strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
         s.move_cursor_to(4);
 
         // current state:
@@ -1229,13 +1367,64 @@ mod tests {
         assert_eq!(s.cursor_pos, 4);
     }
 
+    #[ignore]
+    #[test]
+    fn test_advance_and_erase_search_with_filter_and_cursor_on_match3() {
+        // idea: the cursor should not move if it's not necessary
+
+        let mut s = create_test_state_with_buf(
+            3,
+            strings_to_ls_buf(vec!["..", "aaa", "baa", "bab", "bba", "caa", "cab"]),
+        );
+        s._settings.filter_search = true;
+        s.move_cursor_to(1);
+
+        // current state:
+        //   ..  |
+        // > aaa |
+        //   baa |
+        //   bab
+        //   bba
+        //   caa
+        //   cab
+
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.scroll_pos, 0);
+
+        s.advance_search("b");
+
+        // current state:
+        // > baa |
+        //   bab |
+        //   bba |
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 0);
+        assert_eq!(s.visible_items().len(), 3);
+
+        s.erase_search_char();
+
+        // current state should be:
+        //   ..
+        //   aa
+        // > baa |
+        //   bab |
+        //   bba |
+        //   caa
+        //   cab
+
+        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.scroll_pos, 2);
+        assert_eq!(s.visible_items().len(), 7);
+    }
+
     #[test]
     fn test_advance_and_erase_search_with_filter_and_scrolling() {
         let mut s = create_test_state_with_buf(
             2,
             strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
 
         // current state:
         // > ..   |
@@ -1280,7 +1469,7 @@ mod tests {
             3,
             strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
         );
-        s.settings.filter_search = true;
+        s._settings.filter_search = true;
         s.move_cursor_to(4);
 
         // current state:
@@ -1303,4 +1492,105 @@ mod tests {
         assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
     }
+
+    #[test]
+    fn test_filter_search_toggle() {
+        let mut s = create_test_state_with_buf(
+            10,
+            strings_to_ls_buf(vec!["..", "aaa", "aab", "bbb"]),
+        );
+        s._settings.filter_search = false;
+        s.cursor_pos = 1;
+
+        // initial state:
+        //   ..
+        // > aaa
+        //   aab
+        //   bbb
+        assert_eq!(s.cursor_pos, 1);
+
+        s.advance_search("a");
+        s.move_cursor_to_adjacent_match(1);
+
+        // state should now be
+        //   ..
+        //   aaa
+        // > aab
+        //   bbb
+
+        assert_eq!(s.scroll_pos, 0);
+        assert_eq!(s.cursor_pos, 2);
+        assert_eq!(
+            s.visible_items().iter().map(|e| e.file_name_checked()).collect::<Vec<_>>(),
+            vec!["..", "aaa", "aab", "bbb"]
+        );
+
+        // toggle the filter search
+        s.set_filter_search(true);
+
+        // now the state should be
+        //   aaa
+        // > aab
+
+        assert_eq!(s.scroll_pos, 0);
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(
+            s.visible_items().iter().map(|e| e.file_name_checked()).collect::<Vec<_>>(),
+            vec!["aaa", "aab"]
+        );
+    }
+
+    #[test]
+    fn test_case_sensitive_mode_change() {
+        let mut s = create_test_state_with_buf(
+            10,
+            strings_to_ls_buf(vec!["..", "a", "A"]),
+        );
+        s.cursor_pos = 2;
+        s.advance_search("a");
+
+        // current state:
+        //   ..
+        //   a  *
+        // > A  *
+
+        assert_eq!(s.visible_match_indices(), vec![1, 2]);
+        assert_eq!(s.cursor_pos, 2);
+
+        s.set_case_sensitive(CaseSensitiveMode::CaseSensitive);
+        assert_eq!(s.visible_match_indices(), vec![1]);
+        assert_eq!(s.cursor_pos, 1);
+    }
+
+    #[test]
+    fn test_gap_search_mode_change() {
+        let mut s = create_test_state_with_buf(
+            10,
+            strings_to_ls_buf(vec!["..", "aaa", "aab", "aba"]),
+        );
+        s.cursor_pos = 1;
+        s.advance_search("a");
+        s.advance_search("b");
+
+        // the state should now be
+        //   ..
+        //   aaa
+        // > aab *
+        //   aba *
+
+        assert_eq!(s.visible_match_indices(), vec![2, 3]);
+        assert_eq!(s.cursor_pos, 2);
+
+        s.set_gap_search_mode(GapSearchMode::NormalSearch);
+
+        // now it should be
+        //   ...
+        //   aaa
+        //   aab
+        // > aba *
+
+        assert_eq!(s.visible_match_indices(), vec![3]);
+        assert_eq!(s.cursor_pos, 3);
+    }
+
 }

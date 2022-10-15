@@ -34,10 +34,11 @@ impl fmt::Display for CaseSensitiveMode {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum GapSearchMode {
+    NormalSearch,
+    NormalSearchAnywhere,
     GapSearchFromStart,
-    NoGapSearch,
     GapSearchAnywere,
 }
 
@@ -51,8 +52,32 @@ impl fmt::Display for GapSearchMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let text = match self {
             GapSearchMode::GapSearchFromStart => "gap search from start",
-            GapSearchMode::NoGapSearch        => "normal search",
+            GapSearchMode::NormalSearch       => "normal search",
+            GapSearchMode::NormalSearchAnywhere => "normal search anywhere",
             GapSearchMode::GapSearchAnywere   => "gap search anywhere",
+        };
+        write!(f, "{}", text)
+    }
+}
+
+pub enum SortMode {
+    Name,
+    Created,
+    Modified,
+}
+
+impl Default for SortMode {
+    fn default() -> Self {
+        Self::Name
+    }
+}
+
+impl fmt::Display for SortMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let text = match self {
+            SortMode::Name     => "name",
+            SortMode::Created  => "cre",
+            SortMode::Modified => "mod",
         };
         write!(f, "{}", text)
     }
@@ -67,6 +92,8 @@ pub struct TereSettings {
 
     pub case_sensitive: CaseSensitiveMode,
 
+    pub sort_mode: SortMode,
+
     pub autocd_timeout: Option<u64>,
 
     pub history_file: Option<PathBuf>,
@@ -79,9 +106,12 @@ pub struct TereSettings {
     pub keymap: HashMap<(KeyEvent, ActionContext), Action>,
 }
 
+pub type DeprecationWarnings = Vec<&'static str>;
+
 impl TereSettings {
-    pub fn parse_cli_args(args: &ArgMatches) -> Result<Self, ClapError> {
+    pub fn parse_cli_args(args: &ArgMatches) -> Result<(Self, DeprecationWarnings), ClapError> {
         let mut ret = Self::default();
+        let mut warnings = vec![];
 
         if args.contains_id("folders-only") {
             ret.folders_only = true;
@@ -103,8 +133,13 @@ impl TereSettings {
             ret.gap_search_mode = GapSearchMode::GapSearchFromStart;
         } else if args.contains_id("gap-search-anywhere") {
             ret.gap_search_mode = GapSearchMode::GapSearchAnywere;
+        } else if args.contains_id("normal-search") {
+            ret.gap_search_mode = GapSearchMode::NormalSearch;
+        } else if args.contains_id("normal-search-anywhere") {
+            ret.gap_search_mode = GapSearchMode::NormalSearchAnywhere;
         } else if args.contains_id("no-gap-search") {
-            ret.gap_search_mode = GapSearchMode::NoGapSearch;
+            warnings.push("The option 'no-gap-search' has been renamed to 'normal-search', please use that instead.");
+            ret.gap_search_mode = GapSearchMode::NormalSearch;
         }
 
         ret.autocd_timeout = match args
@@ -173,7 +208,20 @@ impl TereSettings {
             ));
         }
 
-        Ok(ret)
+        ret.sort_mode = match args
+            .get_many::<String>("sort")
+            .unwrap()
+            .map(|v| v.as_str())
+            .last()
+            .unwrap()
+        {
+            "created" => SortMode::Created,
+            "modified" => SortMode::Modified,
+            "name" => SortMode::Name,
+            _ => unreachable!(),
+        };
+
+        Ok((ret, warnings))
     }
 }
 
@@ -280,8 +328,10 @@ pub const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
 
     (key!(esc), ActionContext::Searching, Action::ClearSearch),
 
+    (key!(alt-f),  ActionContext::None, Action::ChangeFilterSearchMode),
     (key!(alt-c),  ActionContext::None, Action::ChangeCaseSensitiveMode),
     (key!(ctrl-f), ActionContext::None, Action::ChangeGapSearchMode),
+    (key!(alt-s),  ActionContext::None, Action::ChangeSortMode),
 
     (key!(ctrl-r), ActionContext::None, Action::RefreshListing),
 
@@ -303,7 +353,7 @@ mod tests {
 
         DEFAULT_KEYMAP
             .iter()
-            .for_each(|(k, c, _)| *key_counts.entry((k.clone(), c.clone())).or_default() += 1);
+            .for_each(|(k, c, _)| *key_counts.entry((*k, c.clone())).or_default() += 1);
 
         for (k, v) in key_counts {
             assert_eq!(v, 1, "found {} entries for key {:?} in context {:?}", v, k.0, k.1);
@@ -354,7 +404,8 @@ mod tests {
                 "foo",
                 "-m", "ctrl-x:Exit",
             ]);
-        let settings = TereSettings::parse_cli_args(&m).unwrap();
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
         assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::Exit));
     }
 
@@ -365,7 +416,8 @@ mod tests {
                 "foo",
                 "-m", "ctrl-x:Exit,ctrl-y:ClearSearch",
             ]);
-        let settings = TereSettings::parse_cli_args(&m).unwrap();
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
         assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::Exit));
         assert_eq!(settings.keymap.get(&(key!(ctrl-y), ActionContext::None)), Some(&Action::ClearSearch));
     }
@@ -377,7 +429,8 @@ mod tests {
                 "foo",
                 "-m", "ctrl-x:Exit,ctrl-x:ClearSearch", // repeated mapping
             ]);
-        let settings = TereSettings::parse_cli_args(&m).unwrap();
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
         assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::ClearSearch));
     }
 
@@ -390,7 +443,8 @@ mod tests {
                 "-m", "ctrl-x:Exit",
                 "-m", "ctrl-x:ClearSearch",
             ]);
-        let settings = TereSettings::parse_cli_args(&m).unwrap();
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
         assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::ClearSearch));
     }
 
@@ -460,20 +514,20 @@ mod tests {
             .get_matches_from(vec![
                 "foo",
             ]);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-h), ActionContext::None)), Some(&Action::ChangeDirParent));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-j), ActionContext::None)), Some(&Action::CursorDown));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-k), ActionContext::None)), Some(&Action::CursorUp));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-l), ActionContext::None)), Some(&Action::ChangeDir));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-h), ActionContext::None)), Some(&Action::ChangeDirParent));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-j), ActionContext::None)), Some(&Action::CursorDown));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-k), ActionContext::None)), Some(&Action::CursorUp));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-l), ActionContext::None)), Some(&Action::ChangeDir));
 
         let m = crate::cli_args::get_cli_args()
             .get_matches_from(vec![
                 "foo",
                 "-m", "alt-h:None,alt-j:None,alt-k:None,alt-l:None",
             ]);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-h), ActionContext::None)), None);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-j), ActionContext::None)), None);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-k), ActionContext::None)), None);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(alt-l), ActionContext::None)), None);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-h), ActionContext::None)), None);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-j), ActionContext::None)), None);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-k), ActionContext::None)), None);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-l), ActionContext::None)), None);
     }
 
     #[test]
@@ -482,13 +536,13 @@ mod tests {
             .get_matches_from(vec![
                 "foo",
             ]);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(esc), ActionContext::NotSearching)), Some(&Action::Exit));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(esc), ActionContext::Searching)), Some(&Action::ClearSearch));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(esc), ActionContext::None)), None);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(esc), ActionContext::NotSearching)), Some(&Action::Exit));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(esc), ActionContext::Searching)), Some(&Action::ClearSearch));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(esc), ActionContext::None)), None);
 
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(backspace), ActionContext::Searching)), Some(&Action::EraseSearchChar));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(backspace), ActionContext::NotSearching)), Some(&Action::ChangeDirParent));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(backspace), ActionContext::None)), None);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(backspace), ActionContext::Searching)), Some(&Action::EraseSearchChar));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(backspace), ActionContext::NotSearching)), Some(&Action::ChangeDirParent));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(backspace), ActionContext::None)), None);
 
         let m = crate::cli_args::get_cli_args()
             .get_matches_from(vec![
@@ -497,9 +551,9 @@ mod tests {
                 "-m", "backspace:None", // this shouldn't affect any of the mappings since they are context-dependent
                 "-m", "backspace:None:None", // this shouldn't affect any of the mappings since they are context-dependent
             ]);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(esc), ActionContext::NotSearching)), Some(&Action::Exit));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(esc), ActionContext::Searching)), None);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().keymap.get(&(key!(esc), ActionContext::None)), None);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(esc), ActionContext::NotSearching)), Some(&Action::Exit));
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(esc), ActionContext::Searching)), None);
+        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(esc), ActionContext::None)), None);
     }
 
     #[test]
@@ -510,7 +564,9 @@ mod tests {
                 "--clear-default-keymap",
                 "--map", "ctrl-x:Exit",
             ]);
-        assert!(TereSettings::parse_cli_args(&m).unwrap().keymap.len() == 1);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(settings.keymap.len() == 1);
     }
 
     #[test]
@@ -531,6 +587,18 @@ mod tests {
                 "--map", "esc:NotSearching:None,alt-q:None",
             ]);
         assert!(TereSettings::parse_cli_args(&m).is_err());
+    }
+
+    #[test]
+    fn test_no_gap_search_deprecated() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--no-gap-search"
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(!warnings.is_empty());
+        assert!(settings.gap_search_mode == GapSearchMode::NormalSearch);
     }
 
 }

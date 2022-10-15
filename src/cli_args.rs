@@ -15,10 +15,10 @@ macro_rules! case_sensitive_template {
 }
 
 macro_rules! gap_search_mode_template {
-    ($help_text:tt, $x:tt, $y:tt) => {
+    ($help_text:tt, $x:tt, $y:tt, $z:tt $(,)?) => {
         concat!(
             $help_text,
-            "\n\nThis overrides the --", $x, " and --", $y,
+            "\n\nThis overrides the --", $x, ", --", $y, " and --", $z,
             " options. You can also change the search mode while the program is running with the keyboard shortcut Ctrl-f by default."
         )
     }
@@ -35,7 +35,7 @@ pub fn get_cli_args() -> App<'static> {
              //.visible_alias("fs") //TODO: consider
              .short('f')
              .help("Show only items matching the search in listing")
-             .long_help("Show only items matching the current search query in the listing. This overrides the --no-filter-search option.")
+             .long_help("Show only items matching the current search query in the listing. This overrides the --no-filter-search option. You can toggle the filtering with the keyboard shortcut Alt-f by default.")
              .overrides_with("filter-search")
             )
         .arg(Arg::new("no-filter-search")
@@ -43,7 +43,7 @@ pub fn get_cli_args() -> App<'static> {
              //.visible_alias("nfs") //TODO: consider
              .short('F')
              .help("Show all items in the listing even when searching (default)")
-             .long_help("Show all items in the listing even when searching (default). This overrides the --filter-search option.")
+             .long_help("Show all items in the listing even when searching (default). This overrides the --filter-search option. You can toggle the filtering with the keyboard shortcut Alt-f by default.")
              .overrides_with_all(&["filter-search", "no-filter-search"])
             )
         .arg(Arg::new("folders-only")
@@ -101,10 +101,11 @@ pub fn get_cli_args() -> App<'static> {
              .help("Match the search from the beginning, but allow gaps (default)")
              .long_help(gap_search_mode_template!(
                      "When searching, match items that start with the same character as the search query, but allow gaps between the search characters. For example, searching for \"do\" would match \"DesktOp\", \"DOcuments\", and \"DOwnloads\", while searching for \"dt\" would match \"DeskTop\" and \"DocumenTs\" but not \"downloads\", and searching for \"es\" would match none of the above. This is the default behavior.",
-                     "gap-search",
-                     "no-gap-search"
+                     "gap-search-anywhere",
+                     "normal-search",
+                     "normal-search-anywhere",
                      ))
-             .overrides_with_all(&["gap-search", "gap-search-anywhere", "no-gap-search"])
+             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         .arg(Arg::new("gap-search-anywhere")
              .long("gap-search-anywhere")
@@ -112,23 +113,42 @@ pub fn get_cli_args() -> App<'static> {
              .help("Match the search anywhere, and allow gaps")
              .long_help(gap_search_mode_template!(
                      "When searching, allow the search characters to appear anywhere in a file/folder name, possibly with gaps between them. For example, searching for \"do\" would match \"DesktOp\", \"DOcuments\", and \"DOwnloads\", while searching for \"es\" would match \"dESktop\" and \"documEntS\", but not \"downloads\".",
-                     "gap-search-from-start",
-                     "no-gap-search"
+                     "gap-search",
+                     "normal-search",
+                     "normal-search-anywhere",
                      ))
-             .overrides_with_all(&["gap-search-anywhere", "no-gap-search"])
+             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
+        // DEPRECATED in favor of normal-search, this is here only for backward compatibility
         .arg(Arg::new("no-gap-search")
              .long("no-gap-search")
+             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
+             .hidden(true)
+            )
+        .arg(Arg::new("normal-search")
+             .long("normal-search")
              .short('n')
              .help("Match the search from the beginning, and do not allow gaps")
              .long_help(gap_search_mode_template!(
-                     "Disable gap-search. Match only consecutive characters from the beginning of the search query. For example, searching for \"do\" would match \"DOcuments\" and \"DOwnloads\", but not \"desktop\".",
+                     "Match only consecutive characters, and only from the beginning of the folder or file name. For example, searching for \"do\" would match \"DOcuments\" and \"DOwnloads\", but not \"desktop\".",
                      "gap-search",
-                     "gap-search-from-start"
+                     "gap-search-anywhere",
+                     "normal-search-anywhere",
                      ))
-             .overrides_with("no-gap-search")
+             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
-        //TODO: if somebody wants this: '-N', '--no-gap-search-anywhere - don't allow gaps, but can start anywhere. maybe have to come up with a better long name.
+        .arg(Arg::new("normal-search-anywhere")
+             .long("normal-search-anywhere")
+             .short('N')
+             .help("Match search anywhere, but do not allow gaps")
+             .long_help(gap_search_mode_template!(
+                     "Match only consecutive characters, but they may appear anywhere in file or folder name, not just the beginning. For example, searching for \"e\" would match \"documEnts\" and \"dEsktop\", but not \"downloads\".",
+                     "gap-search",
+                     "gap-search-anywhere",
+                     "normal-search",
+                     ))
+             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
+            )
         .arg(Arg::new("map")
              .long("map")
              .short('m')
@@ -177,6 +197,17 @@ justify_and_indent(
              .help("Do not use the default keyboard mapping.")
              .long_help("Do not use the default keyboard mapping, so that all shortcuts have to be manually created from scratch using the --map/-m option. If no mapping for Exit is provided, tere will not run.")
              )
+        .arg(Arg::new("sort")
+             .long("sort")
+             .help("Select sorting mode")
+             .long_help("Choose whether to sort the listing by name, or the time of creation or modification. You can change the sort order with the keyboard shortcut Alt-s by default.")
+             .takes_value(true)
+             .value_name("'name', 'created', or 'modified'")
+             .possible_values(&["name", "created", "modified"])
+             .hide_possible_values(true)
+             .default_value("name")
+             .multiple_occurrences(true)
+            )
         .arg(Arg::new("autocd-timeout")
              .long("autocd-timeout")
              .help("Timeout for auto-cd when there's only one match, in milliseconds. Use 'off' to disable auto-cd.")

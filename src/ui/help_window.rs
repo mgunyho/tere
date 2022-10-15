@@ -4,7 +4,7 @@ use crossterm::{
     style::{StyledContent, Stylize},
     event::KeyEvent,
 };
-use textwrap::{self, word_splitters::WordSplitter::NoHyphenation, Options};
+use textwrap;
 use crate::ui::{Action, ActionContext};
 
 const README_STR: &str = include_str!("../../README.md");
@@ -52,15 +52,26 @@ pub fn get_formatted_help_text(
         .replace("<kbd>",  "`")
         .replace("</kbd>", "`");
 
+    wrap_and_stylize(&help_str, width)
+}
+
+/// Strip the markup (markdown) from some text and wrap it to a given width. The result is a
+/// vector of lines, where each line is a vector of styled elements.
+fn wrap_and_stylize(text: &str, width: usize) -> Vec<Vec<StyledContent<String>>> {
+
     // Strip out markup and extract the locations where we need to toggle bold on/off.
-    let (help_str, bold_toggle_locs) = strip_markup_and_extract_bold_positions(&help_str);
+    let (mut text, bold_toggle_locs) = strip_markup_and_extract_bold_positions(text);
 
     // apply text wrapping
-    let opts = Options::new(width).word_splitter(NoHyphenation);
-    let help_str = textwrap::wrap(&help_str, opts);
+    textwrap::fill_inplace(&mut text, width);
 
-    // apply bold at the toggle locations and return
-    stylize_wrapped_lines(help_str, bold_toggle_locs)
+    // Apply bold at the toggle locations. Have to be mut so that the drain/filter below works.
+    let mut result = stylize_wrapped_lines(text.split('\n').collect(), bold_toggle_locs);
+
+    // remove empty items (e.g. if the line started with a bold item).
+    result.drain(..)
+        .map(|mut line| line.drain(..).filter(|item| !item.content().is_empty()).collect())
+        .collect()
 }
 
 /// Extract the table of keyboard shortcuts from the README. Panics if the README is incorrectly
@@ -187,7 +198,7 @@ fn invert_key_mapping_sorted(
             (ActionContext::None, ActionContext::None) => cmp_key_events(k1, k2),
             (_,                   ActionContext::None) => std::cmp::Ordering::Greater,
             (ActionContext::None,                   _) => std::cmp::Ordering::Less,
-            (_, _) => (c1.to_string().cmp(&c2.to_string())),
+            (_, _) => c1.to_string().cmp(&c2.to_string()),
         })
     }
 
@@ -330,15 +341,15 @@ mod tests {
             let parts: Vec<_> = line.split('|').collect();
 
             let action_name = parts[3].replace('`', "").trim().to_string();
-            let action = Action::from_str(&action_name).expect(
-                format!("Invalid action in table row '{}': '{}'", line, action_name).as_ref(),
-            );
+            let action = Action::from_str(&action_name).unwrap_or_else(|_| {
+                panic!("Invalid action in table row '{}': '{}'", line, action_name)
+            });
 
             let key_combos: Vec<_> = parts[2]
                 .replace("if not searching,", "").replace("if searching", "")
                 .replace("<kbd>", "").replace("</kbd>", "")
-                .replace("+", "-")
-                .replace("↑", "up").replace("↓", "down").replace("←", "left").replace("→", "right")
+                .replace('+', "-")
+                .replace('↑', "up").replace('↓', "down").replace('←', "left").replace('→', "right")
                 .replace("Page Up", "pageup").replace("Page Down", "pagedown")
                 .split(" or ")
                 .map(|k| crokey::parse(k.trim()).unwrap())
@@ -347,7 +358,7 @@ mod tests {
                 key_mappings
                     .entry(k)
                     .and_modify(|a| a.push(action.clone()))
-                    .or_insert(vec![action.clone()]);
+                    .or_insert_with(|| vec![action.clone()]);
             }
         });
 
@@ -366,10 +377,12 @@ mod tests {
         // Check that default keymaps match the ones listed in the README
         for (key_combo, _, expected_action) in crate::app_state::settings::DEFAULT_KEYMAP {
             let key_combo_str = crokey::KeyEventFormat::default().to_string(*key_combo);
-            let actions = key_mappings.get(&key_combo).expect(&format!(
-                "Key mapping {}:{} not found in README",
-                key_combo_str, expected_action,
-            ));
+            let actions = key_mappings.get(key_combo).unwrap_or_else(|| {
+                panic!(
+                    "Key mapping {}:{} not found in README",
+                    key_combo_str, expected_action,
+                )
+            });
             assert!(
                 actions.contains(expected_action),
                 "Key mapping '{}:{}' in default keymap doesn't match README: '{:?}'",
@@ -389,6 +402,14 @@ mod tests {
     }
 
     #[test]
+    fn test_strip_markup2() {
+        let input = "## foo bar\n\nlorem ipsum `dolor\nsit` amet";
+        let (output, locs) = strip_markup_and_extract_bold_positions(input);
+        assert_eq!(output, "foo bar\n\nlorem ipsum dolor\nsit amet");
+        assert_eq!(locs, vec![0, 7, 21, 30]);
+    }
+
+    #[test]
     fn test_stylize_wrapped_lines() {
         let lines = vec!["foo bar", "", "lorem ipsum dolor sit amet"];
         let stylized = stylize_wrapped_lines(lines, vec![0, 7, 21, 26]);
@@ -402,4 +423,40 @@ mod tests {
         assert_eq!(stylized[2][1], "dolor".to_string().bold());
         assert_eq!(stylized[2][2], " sit amet".to_string().stylize());
     }
+
+    #[test]
+    fn test_stylize_wrapped_lines2() {
+        let input = "## foo bar\n\nlorem ipsum `dolor` sit amet";
+        let (lines, locs) = strip_markup_and_extract_bold_positions(input);
+        let stylized = stylize_wrapped_lines(lines.split('\n').collect(), locs);
+
+        assert_eq!(
+            stylized[0],
+            vec!["".to_string().stylize(), "foo bar".to_string().bold()]
+        );
+        assert_eq!(stylized[1], vec![]);
+        assert_eq!(stylized[2][0], "lorem ipsum ".to_string().stylize());
+        assert_eq!(stylized[2][1], "dolor".to_string().bold());
+        assert_eq!(stylized[2][2], " sit amet".to_string().stylize());
+    }
+
+    #[test]
+    fn test_wrap_and_stylize() {
+        // test case where textwrap adds an extra newline in the middle of a bold section of text,
+        // where the newline does *not* replace whitespace (i.e. after a special character such as
+        // '/')
+
+        let input = "## foo bar\n\nlorem ipsum `dolor/sit` amet";
+        let stylized = wrap_and_stylize(input, 18);
+
+        assert_eq!(
+            stylized[0],
+            vec!["foo bar".to_string().bold()]
+        );
+        assert_eq!(stylized[1], vec![]);
+        assert_eq!(stylized[2][0], "lorem ipsum".to_string().stylize());
+        assert_eq!(stylized[3][0], "dolor/sit".to_string().bold());
+        assert_eq!(stylized[3][1], " amet".to_string().stylize());
+    }
+
 }

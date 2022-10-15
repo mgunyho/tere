@@ -11,6 +11,7 @@ use crate::app_state::{
     TereAppState,
     CaseSensitiveMode,
     GapSearchMode,
+    SortMode,
     NO_MATCHES_MSG,
 };
 use help_window::get_formatted_help_text;
@@ -78,20 +79,12 @@ impl<'a> TereTui<'a> {
             app_state: state,
         };
 
-        if ret.app_state.settings.mouse_enabled {
+        if ret.app_state.settings().mouse_enabled {
             execute!(ret.window, EnableMouseCapture)?;
         }
 
         ret.update_header()?;
         ret.redraw_all_windows()?;
-        ret.info_message(
-            format!(
-                "{} {} - Type something to search, press '?' to view help or Esc to exit.",
-                env!("CARGO_PKG_NAME"),
-                env!("CARGO_PKG_VERSION")
-            )
-            .as_str(),
-        )?;
         Ok(ret)
     }
 
@@ -142,16 +135,22 @@ impl<'a> TereTui<'a> {
     }
 
     fn redraw_info_window(&mut self) -> CTResult<()> {
-        let (_, h) = terminal_size_usize()?;
+        let (w, h) = terminal_size_usize()?;
         let info_win_row = h - FOOTER_SIZE - INFO_WIN_SIZE;
 
         self.queue_clear_row(info_win_row)?;
         let mut win = self.window;
+        let msg = UnicodeSegmentation::graphemes(self.app_state.info_msg.as_str(), true)
+            .take(w)
+            .collect::<Vec<&str>>()
+            .as_slice()
+            .concat();
+
         execute!(
             win,
             cursor::MoveTo(0, u16::try_from(info_win_row).unwrap_or(u16::MAX)),
             style::SetAttribute(Attribute::Reset),
-            style::Print(&self.app_state.info_msg.clone().bold()),
+            style::Print(msg.bold()),
         )
     }
 
@@ -176,8 +175,9 @@ impl<'a> TereTui<'a> {
         let mut win = self.window;
         let mut extra_msg = String::new();
 
-        let _ = write!(extra_msg, "{} - ", self.app_state.settings.gap_search_mode);
-        let _ = write!(extra_msg, "{} - ", self.app_state.settings.case_sensitive);
+        let _ = write!(extra_msg, "{} - ", self.app_state.settings().gap_search_mode);
+        let _ = write!(extra_msg, "{} - ", self.app_state.settings().case_sensitive);
+        let _ = write!(extra_msg, "sort:{} - ", self.app_state.settings().sort_mode);
 
         let cursor_idx = self
             .app_state
@@ -234,7 +234,7 @@ impl<'a> TereTui<'a> {
             style::Print(
                 &format!(
                     "{}: {}",
-                    if self.app_state.settings.filter_search {
+                    if self.app_state.settings().filter_search {
                         "filter"
                     } else {
                         "search"
@@ -248,6 +248,7 @@ impl<'a> TereTui<'a> {
 
     fn draw_main_window_row(&mut self, row: usize, highlight: bool) -> CTResult<()> {
         let row_abs = row + HEADER_SIZE;
+        let width: usize = main_window_size()?.0;
 
         //TODO: make customizable...
         let highlight_fg = style::Color::Black;
@@ -298,6 +299,8 @@ impl<'a> TereTui<'a> {
             // above byte offsets, and determine whether they should be underlined.
             let letters_underlining: Vec<(&str, bool)> =
                 UnicodeSegmentation::grapheme_indices(fname.as_str(), true)
+                    // print only up to as many characters as the screen width
+                    .take(width)
                     // this contains() could probably be optimized, but shouldn't be too bad.
                     .map(|(i, c)| (c, underline_locs.contains(&i)))
                     .collect();
@@ -342,7 +345,13 @@ impl<'a> TereTui<'a> {
                 // use it for anything else.
                 //TODO: different color for target?
                 let target_text = format!(" -> {}", target.display());
-                queue!(self.window, style::Print(&target_text))?;
+                queue!(
+                    self.window,
+                    style::SetAttribute(Attribute::Reset),
+                    style::SetForegroundColor(symlink_color),
+                    style::SetBackgroundColor(if highlight { highlight_bg } else { style::Color::Reset }),
+                    style::Print(&target_text),
+                )?;
 
                 letters_underlining.len() + UnicodeSegmentation::graphemes(target_text.as_str(), true).count()
             } else {
@@ -353,21 +362,28 @@ impl<'a> TereTui<'a> {
         };
 
         // color the rest of the line if applicable
-        let width: usize = main_window_size()?.0;
-        if highlight && width > item_size {
-            queue!(
-                self.window,
-                style::SetAttribute(Attribute::Reset), // so that the rest of the line isn't underlined
-                style::SetBackgroundColor(highlight_bg),
-                style::Print(" ".repeat(width.saturating_sub(item_size))),
-            )?;
+        if item_size < width {
+            if highlight {
+                queue!(
+                    self.window,
+                    style::SetAttribute(Attribute::Reset), // so that the rest of the line isn't underlined
+                    style::SetBackgroundColor(highlight_bg),
+                    style::Print(" ".repeat(width.saturating_sub(item_size))),
+                )?;
+            } else {
+                queue!(
+                    self.window,
+                    style::ResetColor,
+                    style::SetAttribute(Attribute::Reset),
+                    terminal::Clear(terminal::ClearType::UntilNewLine),
+                )?;
+            }
         }
 
         execute!(
             self.window,
             style::ResetColor,
             style::SetAttribute(Attribute::Reset),
-            terminal::Clear(terminal::ClearType::UntilNewLine),
         )
     }
 
@@ -474,7 +490,7 @@ impl<'a> TereTui<'a> {
         let n_matches = self.app_state.num_matching_items();
         if n_matches == 1 {
             // There's only one match, highlight it and then change dir if applicable
-            if let Some(timeout) = self.app_state.settings.autocd_timeout {
+            if let Some(timeout) = self.app_state.settings().autocd_timeout {
                 self.highlight_row_exclusive(self.app_state.cursor_pos)?;
 
                 std::thread::sleep(std::time::Duration::from_millis(timeout));
@@ -486,33 +502,29 @@ impl<'a> TereTui<'a> {
 
                 self.change_dir("")?;
             }
-        } else if n_matches == 0 {
-            self.info_message(NO_MATCHES_MSG)?;
-        } else {
-            self.info_message("")?;
         }
-        self.redraw_main_window()?;
-        self.redraw_footer()?;
-        Ok(())
+        self.on_matches_changed()
     }
 
     fn erase_search_char(&mut self) -> CTResult<()> {
         self.app_state.erase_search_char();
+        self.on_matches_changed()
+    }
 
-        if self.app_state.num_matching_items() == 0 {
+
+    fn on_clear_search(&mut self) -> CTResult<()> {
+        self.app_state.clear_search();
+        self.on_matches_changed()
+    }
+
+    /// Things to do when the matches are possibly changed
+    fn on_matches_changed(&mut self) -> CTResult<()> {
+        if self.app_state.is_searching() && self.app_state.num_matching_items() == 0 {
             self.info_message(NO_MATCHES_MSG)?;
         } else {
             self.info_message("")?;
         }
 
-        self.redraw_main_window()?;
-        self.redraw_footer()?;
-        Ok(())
-    }
-
-    fn on_clear_search(&mut self) -> CTResult<()> {
-        self.app_state.clear_search();
-        self.info_message("")?; // clear possible 'no matches' message
         self.redraw_main_window()?;
         self.redraw_footer()?;
         Ok(())
@@ -547,6 +559,38 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    // When moving the cursor to the top or bottom of the listing
+    fn on_cursor_top_bottom(&mut self, top: bool) -> CTResult<()> {
+        let searching = self.app_state.is_searching();
+        let match_indices = self.app_state.visible_match_indices();
+
+        let target_idx = if !searching || match_indices.is_empty() {
+            Some(if top {
+                0
+            } else {
+                self.app_state.num_visible_items()
+            })
+        } else if searching && !match_indices.is_empty() {
+            let mut it = match_indices.iter();
+            Some(if top {
+                // OK to unwrap, we've checked that the len is > 0
+                *it.next().unwrap()
+            } else {
+                *it.last().unwrap()
+            })
+        } else {
+            None
+        };
+
+        if let Some(idx) = target_idx {
+            self.app_state.move_cursor_to(idx);
+            self.redraw_main_window()?;
+            self.redraw_footer()?;
+        }
+
+        Ok(())
+    }
+
     fn on_go_to_home(&mut self) -> CTResult<()> {
         if let Some(path) = home_dir() {
             if let Some(path) = path.to_str() {
@@ -558,20 +602,6 @@ impl<'a> TereTui<'a> {
 
     fn on_go_to_root(&mut self) -> CTResult<()> {
         self.change_dir("/")?;
-        Ok(())
-    }
-
-    // When moving the cursor to the top or bottom of the listing
-    fn on_cursor_top_bottom(&mut self, top: bool) -> CTResult<()> {
-        if !self.app_state.is_searching() {
-            let target = if top {
-                0
-            } else {
-                self.app_state.num_visible_items()
-            };
-            self.app_state.move_cursor_to(target);
-            self.redraw_main_window()?;
-        } // TODO: else jump to first/last match
         Ok(())
     }
 
@@ -596,29 +626,37 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    fn toggle_filter_search_mode(&mut self) -> CTResult<()> {
+        self.app_state.set_filter_search(!self.app_state.settings().filter_search);
+        self.on_matches_changed()
+    }
+
     fn cycle_case_sensitive_mode(&mut self) -> CTResult<()> {
-        self.app_state.settings.case_sensitive = match self.app_state.settings.case_sensitive {
+        self.app_state.set_case_sensitive(match self.app_state.settings().case_sensitive {
             CaseSensitiveMode::IgnoreCase => CaseSensitiveMode::CaseSensitive,
             CaseSensitiveMode::CaseSensitive => CaseSensitiveMode::SmartCase,
             CaseSensitiveMode::SmartCase => CaseSensitiveMode::IgnoreCase,
-        };
-        self.app_state.advance_search("");
-        self.redraw_main_window()?;
-        self.redraw_footer()?;
-        Ok(())
+        });
+        self.on_matches_changed()
     }
 
     fn cycle_gap_search_mode(&mut self) -> CTResult<()> {
-        self.app_state.settings.gap_search_mode = match self.app_state.settings.gap_search_mode {
-            GapSearchMode::GapSearchFromStart => GapSearchMode::NoGapSearch,
-            GapSearchMode::NoGapSearch => GapSearchMode::GapSearchAnywere,
-            GapSearchMode::GapSearchAnywere => GapSearchMode::GapSearchFromStart,
-        };
-        //TODO: do the other stuff that self.on_search_char_does, notably, change dir if only one match. or should it?
-        self.app_state.advance_search("");
-        self.redraw_main_window()?;
-        self.redraw_footer()?;
-        Ok(())
+        self.app_state.set_gap_search_mode(match self.app_state.settings().gap_search_mode {
+            GapSearchMode::GapSearchFromStart => GapSearchMode::NormalSearch,
+            GapSearchMode::NormalSearch => GapSearchMode::GapSearchAnywere,
+            GapSearchMode::GapSearchAnywere => GapSearchMode::NormalSearchAnywhere,
+            GapSearchMode::NormalSearchAnywhere => GapSearchMode::GapSearchFromStart,
+        });
+        self.on_matches_changed()
+    }
+
+    fn cycle_sort_mode(&mut self) -> CTResult<()> {
+        self.app_state.set_sort_mode(match self.app_state.settings().sort_mode {
+            SortMode::Name => SortMode::Created,
+            SortMode::Created => SortMode::Modified,
+            SortMode::Modified => SortMode::Name,
+        });
+        self.on_matches_changed()
     }
 
     pub fn main_event_loop(&mut self) -> Result<(), TereError> {
@@ -634,10 +672,10 @@ impl<'a> TereTui<'a> {
 
                     let action = self
                         .app_state
-                        .settings.keymap.get(&(k, valid_ctx))
+                        .settings().keymap.get(&(k, valid_ctx))
                         // If no mapping is found with the currently applying context, look for a
                         // mapping that applies in any context
-                        .or_else(|| self.app_state.settings.keymap.get(&(k, ActionContext::None)));
+                        .or_else(|| self.app_state.settings().keymap.get(&(k, ActionContext::None)));
 
                     if let Some(action) = action {
                         match action {
@@ -663,8 +701,10 @@ impl<'a> TereTui<'a> {
 
                             Action::ClearSearch => self.on_clear_search()?,
 
+                            Action::ChangeFilterSearchMode => self.toggle_filter_search_mode()?,
                             Action::ChangeCaseSensitiveMode => self.cycle_case_sensitive_mode()?,
                             Action::ChangeGapSearchMode => self.cycle_gap_search_mode()?,
+                            Action::ChangeSortMode => self.cycle_sort_mode()?,
 
                             Action::RefreshListing => {
                                 self.change_dir(".")?; //TODO: use 'current dir' instead of hardcoded '.' (?, see also pardir discussion elsewhere)
@@ -714,7 +754,7 @@ impl<'a> TereTui<'a> {
             }
         };
 
-        if self.app_state.settings.mouse_enabled {
+        if self.app_state.settings().mouse_enabled {
             execute!(self.window, DisableMouseCapture)?;
         }
 
@@ -775,42 +815,42 @@ impl<'a> TereTui<'a> {
     fn draw_help_view(&mut self, scroll: usize) -> CTResult<()> {
         queue!(
             self.window,
-            cursor::MoveTo(0, u16::try_from(HEADER_SIZE).unwrap_or(u16::MAX)),
             style::SetAttribute(Attribute::Reset),
             style::ResetColor,
         )?;
 
-        let (w, h) = main_window_size()?;
-        let help_text = get_formatted_help_text(w, &self.app_state.settings.keymap);
+        let (width, height) = main_window_size()?;
+        let help_text = get_formatted_help_text(width, &self.app_state.settings().keymap);
         for (i, line) in help_text
             .iter()
             .skip(scroll)
             .chain(vec![vec![]].iter().cycle()) // add empty lines at the end
-            .take(h as usize)
+            .take(height as usize)
             .enumerate()
         {
             // Set up cursor position
             queue!(
                 self.window,
-                // have to do MoveToColumn(0) manually because we're in raw mode
-                cursor::MoveToColumn(0),
-                // don't print newline before first line
-                style::Print(if i == 0 { "" } else { "\n" }),
+                cursor::MoveTo(0, u16::try_from(i + HEADER_SIZE).unwrap_or(u16::MAX)),
             )?;
 
+            let mut col = 0; // manually count how many columns we're printing
             // Print the fragments (which can have different styles)
             for fragment in line {
                 queue!(
                     self.window,
                     style::PrintStyledContent(fragment.clone()),
                 )?;
+                col += UnicodeSegmentation::graphemes(fragment.content().as_str(), true).count();
             }
 
-            // Clear the rest of the row
-            queue!(
-                self.window,
-                terminal::Clear(terminal::ClearType::UntilNewLine),
-            )?;
+            // Clear the rest of the row if applicable
+            if col < width {
+                queue!(
+                    self.window,
+                    terminal::Clear(terminal::ClearType::UntilNewLine),
+                )?;
+            }
         }
 
         execute!(self.window)?;
