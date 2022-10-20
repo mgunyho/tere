@@ -105,7 +105,7 @@ how to do it:
     SET TereEXE=C:\path\to\tere.exe
 
     FOR /F "tokens=*" %%a in ('%TereEXE% %*') do SET OUTPUT=%%a
-    IF [%OUTPUT%] == [] goto :EOF
+    IF ["%OUTPUT%"] == [""] goto :EOF
     cd %OUTPUT%
     ```
     Note that if you want to make `tere` work with *both* PowerShell and CMD, you should *not* put `tere.exe` to a location that is in your `PATH`, because then the `.exe` will be run instead of the `.bat`. Place `tere.exe` somewhere that is not in your `PATH`, and use the full path to the exe in both the `.bat` file and in the PowerShell `$PROFILE`.
