@@ -1,3 +1,7 @@
+## 1.3.1 (2022-12-06)
+
+- Fixed a bug where `?` didn't show the help screen on Windows by default
+
 ## 1.3.0 (2022-10-15)
 
 - Add option to toggle filter search mode while the app is running, the default shortcut is `Alt-f` (Github #59)

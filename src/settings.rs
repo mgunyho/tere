@@ -336,6 +336,7 @@ pub const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
     (key!(ctrl-r), ActionContext::None, Action::RefreshListing),
 
     (key!('?'), ActionContext::None, Action::Help),
+    (key!(shift-'?'), ActionContext::None, Action::Help),
 
     (key!(esc),    ActionContext::NotSearching, Action::Exit),
     (key!(alt-q),  ActionContext::None, Action::Exit),
