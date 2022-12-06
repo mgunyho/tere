@@ -31,6 +31,8 @@ how to do it:
    - Install `tere` with [Homebrew](https://brew.sh) by running `brew install tere`.
    - Install `tere` with [Nix](https://nixos.org/) by running `nix-env -i tere`.
    - Install `tere` with [Cargo](https://www.rust-lang.org/tools/install) by running `cargo install tere`.
+   - Install `tere` with [Pacman](https://wiki.archlinux.org/title/pacman) by running `pacman -S tere`.
+   - Install `tere` with [Scoop](https://scoop.sh) by running `scoop install tere`.
    - Build from source, see [below](#hacking).
 
 1. Configure your shell to `cd` to the folder printed by `tere` when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent. See instructions for your shell below.
@@ -104,7 +106,7 @@ how to do it:
     SET TereEXE=C:\path\to\tere.exe
 
     FOR /F "tokens=*" %%a in ('%TereEXE% %*') do SET OUTPUT=%%a
-    IF [%OUTPUT%] == [] goto :EOF
+    IF ["%OUTPUT%"] == [""] goto :EOF
     cd %OUTPUT%
     ```
     Note that if you want to make `tere` work with *both* PowerShell and CMD, you should *not* put `tere.exe` to a location that is in your `PATH`, because then the `.exe` will be run instead of the `.bat`. Place `tere.exe` somewhere that is not in your `PATH`, and use the full path to the exe in both the `.bat` file and in the PowerShell `$PROFILE`.
@@ -307,7 +309,7 @@ Here's a checklist of things to do for a new release.
 - Update the release date in `CHANGELOG.md`
 - `git checkout master && git merge --no-ff develop`. The commit title should be "Version X.Y.Z" and the commit message should contain the changelog.
 - `git tag vX.Y.Z`
-- `git push && git push --tags`
+- `git push && git push --tags`. Also make sure that the latest version of `develop` is pushed.
 - `sh ./build-release.sh` to build the binaries. They are zipped and placed in the folder `release/`.
 - Upload binaries to github and copy-paste the changelog from the commit message
 - `cargo publish` to upload to crates.io
