@@ -167,9 +167,8 @@ type LsBufType = MatchesVec;
 
 /// This struct represents the state of the application.
 pub struct TereAppState {
-    // Width and height of the main window. These values have to be updated by
-    // calling using the update_main_window_dimensions function if the window
-    // dimensions change.
+    // Width and height of the main window. These values have to be updated by calling the
+    // update_main_window_dimensions function if the window dimensions change.
     main_win_w: usize,
     main_win_h: usize,
 
@@ -204,9 +203,9 @@ impl TereAppState {
         window_w: usize,
         window_h: usize,
     ) -> Result<Self, TereError> {
-        // Try to read the current folder from the PWD environment variable, since it doesn't
-        // have symlinks resolved (which is what we want). If this fails for some reason (on
-        // windows?), default to std::env::current_dir, which has resolved symlinks.
+        // Try to read the current folder from the PWD environment variable, since it doesn't have
+        // symlinks resolved (this is what we want). If this fails for some reason (on windows?),
+        // default to std::env::current_dir, which has resolved symlinks.
         let cwd = std::env::var("PWD")
             .map(PathBuf::from)
             .or_else(|_| std::env::current_dir())?;
