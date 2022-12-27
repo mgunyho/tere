@@ -23,6 +23,10 @@ use crate::settings::{
 mod history;
 use history::HistoryTree;
 
+#[path = "installation_check.rs"]
+mod installation_check;
+use installation_check::check_first_run_with_prompt;
+
 use crate::error::TereError;
 
 pub const NO_MATCHES_MSG: &str = "No matches";
