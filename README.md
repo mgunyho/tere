@@ -122,7 +122,7 @@ If instructions for your shell are missing, feel free to send a pull request tha
 
 ### Step 3: That's it
 
-The next time you open a new shell, the command `tere` should work (you can also of course call the shell function/alias whatever you like). The above shell configuration also acts as a configuration file for `tere`, just add the options you want (see `tere --help`).
+The next time you open a new shell, the command `tere` should work. You can of course rename the shell function/alias to whatever you like. The shell configuration also acts as a config file for `tere`, just add the options you want (see `tere --help`).
 
 ### Supported platforms
 
