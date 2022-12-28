@@ -11,11 +11,11 @@ use crate::error::TereError;
 
 const FIRST_RUN_MESSAGE_FMT: &str = "Welcome to `tere`!
 
-It seems like you are running `tere` for the first time. To use `tere` for changing directories, you need to make a small addition to your shell config. For example, for Bash/Zsh, you have to put the following in your `.bashrc`/`.zshrc`:
+It seems like you are running `tere` for the first time. To use `tere` for changing directories, you need to make a small addition to your shell configuration. For example, for Bash/Zsh, you have to put the following in your `.bashrc`/`.zshrc`:
 
 {}
 
-For other shells and additional details such as configuration, see the `README`.
+For other shells and additional details such as configuring `tere`, see the `README`.
 
 Press `y` to confirm that you have updated your shell configuration, or any other key to cancel.
 ";
