@@ -1,5 +1,5 @@
-/// This module contains functionality for checking if the app is being run for the first time, or
-/// if it has already been "installed".
+/// This module contains functionality for checking if the app is being run for the first time.
+
 use std::path::PathBuf;
 use std::io::Stderr;
 use std::convert::TryFrom;
