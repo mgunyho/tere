@@ -5,7 +5,7 @@ use std::io::Stderr;
 use std::convert::TryFrom;
 
 use crate::settings::TereSettings;
-use crate::ui::markup_render::wrap_and_stylize;
+use crate::ui::markup_render::{wrap_and_stylize, README_STR};
 
 use crate::error::TereError;
 
@@ -58,7 +58,7 @@ fn prompt_first_run(window: &mut Stderr) -> Result<(), TereError> {
         )?;
 
         let (w, h) = terminal::size()?;
-        for (i, line) in wrap_and_stylize(FIRST_RUN_MESSAGE_FMT, w as usize)
+        for (i, line) in get_formatted_first_run_message(w as usize)
             .iter()
             .enumerate()
             .take(h as usize)
@@ -87,5 +87,37 @@ fn prompt_first_run(window: &mut Stderr) -> Result<(), TereError> {
             Event::Resize(_, _) => draw()?,
             _ => return Err(TereError::FirstRunPromptCancelled("Cancelled.".to_string())),
         }
+    }
+}
+
+fn get_formatted_first_run_message(
+    width: usize,
+) -> Vec<Vec<crossterm::style::StyledContent<String>>> {
+    let shell_snippet = README_STR
+        .split_once("Put this in your `.bashrc` or `.zshrc`:\n\n```sh\n")
+        .expect("Could not find shell snippet in README")
+        .1;
+
+    let shell_snippet = &shell_snippet[
+        ..
+        shell_snippet.find("\n```").expect("Could not find end of shell snippet in README")
+    ];
+
+    // can't use format!() with FIRST_RUN_MESSAGE_FMT as the, since macros run before name
+    // resolution (see https://github.com/rust-lang/rust/issues/69133#issuecomment-585789037),
+    // so have to manually do it (I don't want to pull in const_format for just this).
+    let first_run_message = FIRST_RUN_MESSAGE_FMT.replacen("{}", shell_snippet, 1);
+    wrap_and_stylize(&first_run_message, width)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_shell_snippet_found() {
+        // This should panic if the shell snippet used in the first run message is missing or
+        // incorrectly formatted in the README
+        get_formatted_first_run_message(100);
     }
 }
