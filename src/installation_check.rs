@@ -1,6 +1,7 @@
 /// This module contains functionality for checking if the app is being run for the first time, or
 /// if it has already been "installed".
 use std::path::PathBuf;
+use std::io::{Stderr, Write};
 
 use crate::settings::TereSettings;
 
@@ -9,7 +10,7 @@ use crate::error::TereError;
 /// Determine whether the app is being run for the first time, and if so, prompt the user to
 /// configure their shell. If the app has been run before, or the user responds affirmatively to
 /// the prompt, write the `version` file and return Ok, otherwise return an error.
-pub fn check_first_run_with_prompt(settings: &TereSettings) -> Result<(), TereError> {
+pub fn check_first_run_with_prompt(settings: &TereSettings, window: &mut Stderr) -> Result<(), TereError> {
     let hist_file = &settings.history_file;
     let version_file_path = version_file_path();
 
@@ -28,11 +29,11 @@ pub fn check_first_run_with_prompt(settings: &TereSettings) -> Result<(), TereEr
         }
         Ok(())
     } else {
-        prompt_first_run()
+        prompt_first_run(window)
     }
 }
 
-fn prompt_first_run() -> Result<(), TereError> {
+fn prompt_first_run(window: &mut Stderr) -> Result<(), TereError> {
     todo!()
 }
 
