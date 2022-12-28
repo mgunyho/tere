@@ -16,6 +16,8 @@ use settings::TereSettings;
 mod app_state;
 use app_state::TereAppState;
 
+mod installation_check;
+use installation_check::check_first_run_with_prompt;
 
 mod ui;
 use ui::TereTui;
@@ -52,6 +54,7 @@ fn main() -> Result<(), TereError> {
     let res: Result<std::path::PathBuf, TereError> = terminal::enable_raw_mode()
         .and_then(|_| stderr.flush()).map_err(TereError::from)
         .and_then(|_| TereSettings::parse_cli_args(&cli_args))
+        .and_then(|(settings, warnings)| { check_first_run_with_prompt(&settings)?; Ok((settings, warnings)) })
         .and_then(|(settings, warnings)| TereAppState::init(settings, &warnings))
         .and_then(|state| TereTui::init(state, &mut stderr))
         .and_then(|mut ui| ui.main_event_loop()); // actually run the app and return the final path
