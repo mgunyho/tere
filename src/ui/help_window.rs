@@ -375,7 +375,7 @@ mod tests {
         }
 
         // Check that default keymaps match the ones listed in the README
-        for (key_combo, _, expected_action) in crate::app_state::settings::DEFAULT_KEYMAP {
+        for (key_combo, _, expected_action) in crate::settings::DEFAULT_KEYMAP {
             // Shift-'?' doesn't need to be in the readme, it's in the default keymap to fix
             // the behavior on Windows.
             if *key_combo == crokey::key!(shift-'?') {
