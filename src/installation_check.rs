@@ -1,7 +1,7 @@
 /// This module contains functionality for checking if the app is being run for the first time, or
 /// if it has already been "installed".
 use std::path::PathBuf;
-use std::io::{Stderr, Write};
+use std::io::Stderr;
 
 use crate::settings::TereSettings;
 
