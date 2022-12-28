@@ -25,98 +25,104 @@ To use `tere` for changing directories, you need to install it, and then
 configure your shell to `cd` to the folder `tere` prints when it exits. Here's
 how to do it:
 
-1. Obtain a copy of `tere`. This can be done in various ways:
+### Step 1: Obtain a copy of `tere`
 
-   - Download the [latest release](https://github.com/mgunyho/tere-rs/releases).
-   - Install `tere` with [Homebrew](https://brew.sh) by running `brew install tere`.
-   - Install `tere` with [Nix](https://nixos.org/) by running `nix-env -i tere`.
-   - Install `tere` with [Cargo](https://www.rust-lang.org/tools/install) by running `cargo install tere`.
-   - Install `tere` with [Pacman](https://wiki.archlinux.org/title/pacman) by running `pacman -S tere`.
-   - Install `tere` with [Scoop](https://scoop.sh) by running `scoop install tere`.
-   - Build from source, see [below](#hacking).
+This can be done in various ways:
 
-1. Configure your shell to `cd` to the folder printed by `tere` when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent. See instructions for your shell below.
+- Download the [latest release](https://github.com/mgunyho/tere-rs/releases).
+- Install `tere` with [Homebrew](https://brew.sh) by running `brew install tere`.
+- Install `tere` with [Nix](https://nixos.org/) by running `nix-env -i tere`.
+- Install `tere` with [Cargo](https://www.rust-lang.org/tools/install) by running `cargo install tere`.
+- Install `tere` with [Pacman](https://wiki.archlinux.org/title/pacman) by running `pacman -S tere`.
+- Install `tere` with [Scoop](https://scoop.sh) by running `scoop install tere`.
+- Build from source, see [below](#hacking).
 
-    <details>
-    <summary>Bash/Zsh</summary>
+### Step 2: Configure your shell to `cd` using `tere`
 
-    Put this in your `.bashrc` or `.zshrc`:
+`tere` only prints a folder when it exits. To make your shell actually `cd` to this folder, you have to define a function or alias, since the working directory cannot be changed by a subprocess. See instructions for your shell below.
 
-    ```sh
-    tere() {
-        local result=$(command tere "$@")
-        [ -n "$result" ] && cd -- "$result"
+<details>
+<summary>Bash/Zsh</summary>
+
+Put this in your `.bashrc` or `.zshrc`:
+
+```sh
+tere() {
+    local result=$(command tere "$@")
+    [ -n "$result" ] && cd -- "$result"
+}
+```
+</details>
+
+<details>
+<summary>fish</summary>
+
+Put this in your `config.fish`:
+
+```sh
+function tere
+    set --local result (command tere $argv)
+    [ -n "$result" ] && cd -- "$result"
+end
+```
+</details>
+
+<details>
+<summary>Xonsh</summary>
+
+Put this in your `.xonshrc` (Xonsh v0.10. or newer is required):
+
+```py
+def _tere(args):
+    result = $(tere @(args)).strip()
+    if result:
+        cd @(result)
+
+aliases["tere"] = _tere
+```
+</details>
+
+<details>
+<summary>PowerShell</summary>
+
+Put this in your `$PROFILE`:
+
+```powershell
+function Invoke-Tere() {
+    $result = . (Get-Command -CommandType Application tere) $args
+    if ($result) {
+        Set-Location $result
     }
-    ```
-    </details>
+}
+Set-Alias tere Invoke-Tere
+```
+</details>
 
-    <details>
-    <summary>fish</summary>
+<details>
+<summary>Windows Command Prompt (CMD)</summary>
 
-    Put this in your `config.fish`:
+Put this in a batch script file called `tere.bat` in a folder included in your `PATH` environment variable such as `C:\Windows`:
 
-    ```sh
-    function tere
-        set --local result (command tere $argv)
-        [ -n "$result" ] && cd -- "$result"
-    end
-    ```
-    </details>
+```batch
+@echo off
 
-    <details>
-    <summary>Xonsh</summary>
+rem set the location/path of the tere executable here...
+SET TereEXE=C:\path\to\tere.exe
 
-    Put this in your `.xonshrc` (Xonsh v0.10. or newer is required):
+FOR /F "tokens=*" %%a in ('%TereEXE% %*') do SET OUTPUT=%%a
+IF ["%OUTPUT%"] == [""] goto :EOF
+cd %OUTPUT%
+```
+Note that if you want to make `tere` work with *both* PowerShell and CMD, you should *not* put `tere.exe` to a location that is in your `PATH`, because then the `.exe` will be run instead of the `.bat`. Place `tere.exe` somewhere that is not in your `PATH`, and use the full path to the exe in both the `.bat` file and in the PowerShell `$PROFILE`.
+</details>
 
-    ```py
-    def _tere(args):
-        result = $(tere @(args)).strip()
-        if result:
-            cd @(result)
+If `tere` is not in your `PATH`, use an absolute path to the tere binary in your shell config file. For example, for Bash/Zsh, you would need to replace `local result=$(command tere "$@")` with `local result=$(/path/to/tere "$@")`, or for PowerShell, replace `(Get-Command -CommandType Application tere)` with `C:\path\to\tere.exe`.
 
-    aliases["tere"] = _tere
-    ```
-    </details>
+If instructions for your shell are missing, feel free to send a pull request that includes them!
 
-    <details>
-    <summary>PowerShell</summary>
+### Step 3: That's it
 
-    Put this in your `$PROFILE`:
-
-    ```powershell
-    function Invoke-Tere() {
-        $result = . (Get-Command -CommandType Application tere) $args
-        if ($result) {
-            Set-Location $result
-        }
-    }
-    Set-Alias tere Invoke-Tere
-    ```
-    </details>
-
-    <details>
-    <summary>Windows Command Prompt (CMD)</summary>
-
-    Put this in a batch script file called `tere.bat` in a folder included in your `PATH` environment variable such as `C:\Windows`:
-
-    ```batch
-    @echo off
-
-    rem set the location/path of the tere executable here...
-    SET TereEXE=C:\path\to\tere.exe
-
-    FOR /F "tokens=*" %%a in ('%TereEXE% %*') do SET OUTPUT=%%a
-    IF ["%OUTPUT%"] == [""] goto :EOF
-    cd %OUTPUT%
-    ```
-    Note that if you want to make `tere` work with *both* PowerShell and CMD, you should *not* put `tere.exe` to a location that is in your `PATH`, because then the `.exe` will be run instead of the `.bat`. Place `tere.exe` somewhere that is not in your `PATH`, and use the full path to the exe in both the `.bat` file and in the PowerShell `$PROFILE`.
-    </details>
-
-    If `tere` is not in your `PATH`, use an absolute path to the tere binary in your shell config file. For example, for Bash/Zsh, you would need to replace `local result=$(command tere "$@")` with `local result=$(/path/to/tere "$@")`, or for PowerShell, replace `(Get-Command -CommandType Application tere)` with `C:\path\to\tere.exe`.
-
-    If instructions for your shell are missing, feel free to send a pull request that includes them!
-
-1. That's it. The next time you open a new shell, the command `tere` should work (you can also of course call the shell function/alias whatever you like). The above shell configuration also acts as a config file for `tere`, just add the options you want (see `tere --help`).
+The next time you open a new shell, the command `tere` should work. You can of course rename the shell function/alias to whatever you like. The shell configuration also acts as a config file for `tere`, just add the options you want (see `tere --help`).
 
 ### Supported platforms
 
