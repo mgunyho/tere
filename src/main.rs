@@ -77,7 +77,7 @@ fn main() -> Result<(), TereError> {
                 // Print pretty error message if the error was in arg parsing
                 TereError::Clap(e) => e.exit(),
 
-                TereError::ExitWithoutCd(msg) => {
+                TereError::ExitWithoutCd(msg) | TereError::FirstRunPromptCancelled(msg) => {
                     eprintln!("{}", msg);
                     std::process::exit(1);
                 },
