@@ -25,7 +25,7 @@ To use `tere` for changing directories, you need to install it, and then
 configure your shell to `cd` to the folder `tere` prints when it exits. Here's
 how to do it:
 
-### Step 1. Obtain a copy of `tere`
+### Step 1: Obtain a copy of `tere`
 
 This can be done in various ways:
 
@@ -37,7 +37,7 @@ This can be done in various ways:
 - Install `tere` with [Scoop](https://scoop.sh) by running `scoop install tere`.
 - Build from source, see [below](#hacking).
 
-### Step 2. Configure your shell to `cd` using `tere`
+### Step 2: Configure your shell to `cd` using `tere`
 
 `tere` only prints a folder when it exits. To make your shell actually `cd` to this folder, you have to define a function or alias, since the working directory cannot be changed by a subprocess. See instructions for your shell below.
 
@@ -120,7 +120,7 @@ If `tere` is not in your `PATH`, use an absolute path to the tere binary in your
 
 If instructions for your shell are missing, feel free to send a pull request that includes them!
 
-### Step 3. That's it.
+### Step 3: That's it
 
 The next time you open a new shell, the command `tere` should work (you can also of course call the shell function/alias whatever you like). The above shell configuration also acts as a configuration file for `tere`, just add the options you want (see `tere --help`).
 
