@@ -9,24 +9,22 @@ use crate::error::TereError;
 
 /// Determine whether the app is being run for the first time, and if so, prompt the user to
 /// configure their shell. If the app has been run before, or the user responds affirmatively to
-/// the prompt, write the `version` file and return Ok, otherwise return an error.
+/// the prompt, return Ok, otherwise return an error.
 pub fn check_first_run_with_prompt(settings: &TereSettings, window: &mut Stderr) -> Result<(), TereError> {
     let hist_file = &settings.history_file;
-    let version_file_path = version_file_path();
 
-    // Check if the version file exists to determine whether we want to show the first run prompt.
-    // Additionally, to be backwards compatible and not show the prompt to old users, use a bit of a
-    // heuristic: we assume the app has been run before if the history file exists, or the user
-    // explicitly requests no history file.
-    if version_file_path.is_none() // chache dir doesn't exist, we assume that the user knows what they're doing
-        || version_file_path.as_ref().unwrap().try_exists().unwrap_or(false) // version file exists
-        || hist_file.is_none() // user passed empty history file
+    // For now we use a bit of a heuristic to determine if the app is being run for the first time:
+    // we assume that the app has been run before if the history file exists, or the user
+    // explicitly requests no history file. (Or one more possiblity is that the cache directory
+    // doesn't exist. In this case, we assume that the user knows what they're doing, and don't
+    // prompt either.)
+    //
+    // Earlier I also had the idea to write the current version of the app to a `version` file in
+    // the cache folder, which would signify that the app has been run before, but for now the
+    // history file is enough.
+    if hist_file.is_none() // user passed empty history file
         || PathBuf::from(hist_file.as_ref().unwrap()).try_exists().unwrap_or(false) // history file exists
     {
-        // Only attempt to write the version file if the cache directory exists
-        if version_file_path.is_some() {
-            write_version_file()?;
-        }
         Ok(())
     } else {
         prompt_first_run(window)
@@ -35,15 +33,4 @@ pub fn check_first_run_with_prompt(settings: &TereSettings, window: &mut Stderr)
 
 fn prompt_first_run(window: &mut Stderr) -> Result<(), TereError> {
     todo!()
-}
-
-/// Get path for the `version` file. Returns None if the cache directory doesn't exist.
-fn version_file_path() -> Option<PathBuf> {
-    dirs::cache_dir().map(|path| path.join(env!("CARGO_PKG_NAME")).join("version"))
-}
-
-/// Write the current version of the app in the file specified by `version_file_path`. Assuming
-/// that this function is called only if the cache directory exists.
-fn write_version_file() -> Result<(), TereError> {
-    std::fs::write(version_file_path().unwrap(), env!("CARGO_PKG_VERSION")).map_err(TereError::from)
 }
