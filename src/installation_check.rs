@@ -36,11 +36,13 @@ fn prompt_first_run() -> Result<(), TereError> {
     todo!()
 }
 
-/// Get path for the `version` file. Returns None if the cache folder doesn't exist.
+/// Get path for the `version` file. Returns None if the cache directory doesn't exist.
 fn version_file_path() -> Option<PathBuf> {
     dirs::cache_dir().map(|path| path.join(env!("CARGO_PKG_NAME")).join("version"))
 }
 
+/// Write the current version of the app in the file specified by `version_file_path`. Assuming
+/// that this function is called only if the cache directory exists.
 fn write_version_file() -> Result<(), TereError> {
     std::fs::write(version_file_path().unwrap(), env!("CARGO_PKG_VERSION")).map_err(TereError::from)
 }
