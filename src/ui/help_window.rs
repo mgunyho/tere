@@ -4,9 +4,11 @@ use crossterm::{
     style::StyledContent,
     event::KeyEvent,
 };
-use crate::ui::{Action, ActionContext, markup_render::wrap_and_stylize};
+use crate::ui::{
+    markup_render::{wrap_and_stylize, README_STR},
+    Action, ActionContext,
+};
 
-const README_STR: &str = include_str!("../../README.md");
 
 /// Word-wrap the help string to be displayed in the help window, and apply correct formatting
 /// (such as bolding) using crossterm::style.

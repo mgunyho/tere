@@ -4,6 +4,8 @@
 
 use crossterm::style::{StyledContent, Stylize};
 
+pub const README_STR: &str = include_str!("../../README.md");
+
 /// Strip the markup (markdown) from some text and wrap it to a given width. The result is a
 /// vector of lines, where each line is a vector of styled elements.
 pub fn wrap_and_stylize(text: &str, width: usize) -> Vec<Vec<StyledContent<String>>> {
