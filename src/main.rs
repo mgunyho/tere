@@ -8,9 +8,14 @@ use crossterm::{
 //TODO: rustfmt
 //TODO: clippy
 
-mod app_state;
-
 mod cli_args;
+
+mod settings;
+use settings::TereSettings;
+
+mod app_state;
+use app_state::TereAppState;
+
 
 mod ui;
 use ui::TereTui;
@@ -46,11 +51,10 @@ fn main() -> Result<(), TereError> {
 
     let res: Result<std::path::PathBuf, TereError> = terminal::enable_raw_mode()
         .and_then(|_| stderr.flush()).map_err(TereError::from)
-        .and_then(|_| TereTui::init(&cli_args, &mut stderr)) // actually run the app
-        .and_then(|mut ui| {
-            ui.main_event_loop()
-                .map(|_| ui.current_path())
-        });
+        .and_then(|_| TereSettings::parse_cli_args(&cli_args))
+        .and_then(|(settings, warnings)| TereAppState::init(settings, &warnings))
+        .and_then(|state| TereTui::init(state, &mut stderr))
+        .and_then(|mut ui| ui.main_event_loop()); // actually run the app and return the final path
 
     // Always disable raw mode
     let raw_mode_success = terminal::disable_raw_mode().map_err(TereError::from);

@@ -9,10 +9,12 @@ use std::fmt::Write as _;
 use crate::error::TereError;
 use crate::app_state::{
     TereAppState,
+    NO_MATCHES_MSG,
+};
+use crate::settings::{
     CaseSensitiveMode,
     GapSearchMode,
     SortMode,
-    NO_MATCHES_MSG,
 };
 use help_window::get_formatted_help_text;
 pub use action::{Action, ActionContext};
@@ -38,7 +40,6 @@ use crossterm::{
     Result as CTResult,
 };
 
-use clap::ArgMatches;
 use dirs::home_dir;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -62,7 +63,7 @@ fn terminal_size_usize() -> CTResult<(usize, usize)> {
 }
 
 // Dimensions (width, height) of main window
-fn main_window_size() -> CTResult<(usize, usize)> {
+pub fn main_window_size() -> CTResult<(usize, usize)> {
     let (w, h) = terminal_size_usize()?;
     Ok((
         w as usize,
@@ -71,18 +72,17 @@ fn main_window_size() -> CTResult<(usize, usize)> {
 }
 
 impl<'a> TereTui<'a> {
-    pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> Result<Self, TereError> {
-        let (w, h) = main_window_size()?;
-        let state = TereAppState::init(args, w, h)?;
+    pub fn init(app_state: TereAppState, window: &'a mut Stderr) -> Result<Self, TereError> {
         let mut ret = Self {
             window,
-            app_state: state,
+            app_state,
         };
 
         if ret.app_state.settings().mouse_enabled {
             execute!(ret.window, EnableMouseCapture)?;
         }
 
+        ret.update_main_window_dimensions()?;
         ret.update_header()?;
         ret.redraw_all_windows()?;
         Ok(ret)
@@ -659,7 +659,7 @@ impl<'a> TereTui<'a> {
         self.on_matches_changed()
     }
 
-    pub fn main_event_loop(&mut self) -> Result<(), TereError> {
+    pub fn main_event_loop(&mut self) -> Result<PathBuf, TereError> {
 
         let loop_result = loop {
             match read_event()? {
@@ -760,6 +760,7 @@ impl<'a> TereTui<'a> {
 
         self.app_state.on_exit().map_err(TereError::from)
             .and(loop_result)
+            .map(|_| self.current_path())
     }
 
     fn help_view_loop(&mut self) -> CTResult<()> {

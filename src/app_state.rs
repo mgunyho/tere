@@ -1,6 +1,5 @@
 /// This module contains structs related to handling the application state,
 /// independent of a "graphical" front-end, such as crossterm.
-use clap::ArgMatches;
 
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
@@ -12,10 +11,13 @@ use std::time::SystemTime;
 
 use regex::Regex;
 
-#[path = "settings.rs"]
-pub mod settings;
-use settings::TereSettings;
-pub use settings::{CaseSensitiveMode, GapSearchMode, SortMode};
+use crate::settings::{
+    TereSettings,
+    DeprecationWarnings,
+    CaseSensitiveMode,
+    GapSearchMode,
+    SortMode,
+};
 
 #[path = "history.rs"]
 mod history;
@@ -198,11 +200,9 @@ pub struct TereAppState {
 }
 
 impl TereAppState {
-    pub fn init(
-        cli_args: &ArgMatches,
-        window_w: usize,
-        window_h: usize,
-    ) -> Result<Self, TereError> {
+    /// Initialize the app state with the given settings. Note that the window dimensions are
+    /// initialized to one, they need to be updated manually afterwards.
+    pub fn init(settings: TereSettings, warnings: &DeprecationWarnings) -> Result<Self, TereError> {
         // Try to read the current folder from the PWD environment variable, since it doesn't have
         // symlinks resolved (this is what we want). If this fails for some reason (on windows?),
         // default to std::env::current_dir, which has resolved symlinks.
@@ -210,7 +210,6 @@ impl TereAppState {
             .map(PathBuf::from)
             .or_else(|_| std::env::current_dir())?;
 
-        let (settings, warnings) = TereSettings::parse_cli_args(cli_args)?;
         let info_msg = if warnings.is_empty() {
             format!(
                 "{} {} - Type something to search, press '?' to view help or Esc to exit.",
@@ -223,8 +222,8 @@ impl TereAppState {
         };
 
         let mut ret = Self {
-            main_win_w: window_w,
-            main_win_h: window_h,
+            main_win_w: 1,
+            main_win_h: 1,
             ls_output_buf: vec![].into(),
             current_path: cwd.clone(),
             cursor_pos: 0,
@@ -609,8 +608,6 @@ impl TereAppState {
             // cursor stays within view, no need to change scroll position
             self.cursor_pos = new_pointer_pos.saturating_sub(self.scroll_pos);
         }
-
-
     }
 
     /// Move the cursor so that it is at the location `row` in the
