@@ -25,7 +25,9 @@ To use `tere` for changing directories, you need to install it, and then
 configure your shell to `cd` to the folder `tere` prints when it exits. Here's
 how to do it:
 
-1. Obtain a copy of `tere`. This can be done in various ways:
+### Step 1. Obtain a copy of `tere`
+
+This can be done in various ways:
 
    - Download the [latest release](https://github.com/mgunyho/tere-rs/releases).
    - Install `tere` with [Homebrew](https://brew.sh) by running `brew install tere`.
@@ -35,7 +37,9 @@ how to do it:
    - Install `tere` with [Scoop](https://scoop.sh) by running `scoop install tere`.
    - Build from source, see [below](#hacking).
 
-1. Configure your shell to `cd` to the folder printed by `tere` when it exits. It has to be usually done using a function or alias, since a subprocess cannot change the working directory of the parent. See instructions for your shell below.
+### Step 2. Configure your shell to `cd` using `tere`
+
+`tere` only prints a folder when it exits. To make your shell actually `cd` to this folder, you have to define a function or alias, since the working directory cannot be changed by a subprocess. See instructions for your shell below.
 
     <details>
     <summary>Bash/Zsh</summary>
@@ -116,7 +120,9 @@ how to do it:
 
     If instructions for your shell are missing, feel free to send a pull request that includes them!
 
-1. That's it. The next time you open a new shell, the command `tere` should work (you can also of course call the shell function/alias whatever you like). The above shell configuration also acts as a config file for `tere`, just add the options you want (see `tere --help`).
+### Step 3. That's it.
+
+The next time you open a new shell, the command `tere` should work (you can also of course call the shell function/alias whatever you like). The above shell configuration also acts as a configuration file for `tere`, just add the options you want (see `tere --help`).
 
 ### Supported platforms
 
