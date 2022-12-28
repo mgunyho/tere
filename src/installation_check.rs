@@ -23,7 +23,10 @@ Press `y` to confirm that you have updated your shell configuration, or any othe
 /// Determine whether the app is being run for the first time, and if so, prompt the user to
 /// configure their shell. If the app has been run before, or the user responds affirmatively to
 /// the prompt, return Ok, otherwise return an error.
-pub fn check_first_run_with_prompt(settings: &TereSettings, window: &mut Stderr) -> Result<(), TereError> {
+pub fn check_first_run_with_prompt(
+    settings: &TereSettings,
+    window: &mut Stderr,
+) -> Result<(), TereError> {
     let hist_file = &settings.history_file;
 
     // For now we use a bit of a heuristic to determine if the app is being run for the first time:
@@ -66,13 +69,13 @@ fn prompt_first_run(window: &mut Stderr) -> Result<(), TereError> {
             queue!(
                 window,
                 cursor::MoveTo(0, u16::try_from(i).unwrap_or(u16::MAX)),
-                )?;
+            )?;
 
             for fragment in line {
                 queue!(
                     window,
                     style::PrintStyledContent(fragment.clone())
-                    )?;
+                )?;
             }
         }
         execute!(window)?;
