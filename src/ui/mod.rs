@@ -9,10 +9,12 @@ use std::fmt::Write as _;
 use crate::error::TereError;
 use crate::app_state::{
     TereAppState,
+    NO_MATCHES_MSG,
+};
+use crate::settings::{
     CaseSensitiveMode,
     GapSearchMode,
     SortMode,
-    NO_MATCHES_MSG,
 };
 use help_window::get_formatted_help_text;
 pub use action::{Action, ActionContext};

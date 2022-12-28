@@ -1,6 +1,5 @@
 /// This module contains structs related to handling the application state,
 /// independent of a "graphical" front-end, such as crossterm.
-use clap::ArgMatches;
 
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
@@ -12,10 +11,13 @@ use std::time::SystemTime;
 
 use regex::Regex;
 
-#[path = "settings.rs"]
-pub mod settings;
-use settings::TereSettings;
-pub use settings::{CaseSensitiveMode, GapSearchMode, SortMode};
+use crate::settings::{
+    TereSettings,
+    DeprecationWarnings,
+    CaseSensitiveMode,
+    GapSearchMode,
+    SortMode,
+};
 
 #[path = "history.rs"]
 mod history;
@@ -199,7 +201,8 @@ pub struct TereAppState {
 
 impl TereAppState {
     pub fn init(
-        cli_args: &ArgMatches,
+        settings: TereSettings,
+        warnings: &DeprecationWarnings,
         window_w: usize,
         window_h: usize,
     ) -> Result<Self, TereError> {
@@ -210,7 +213,6 @@ impl TereAppState {
             .map(PathBuf::from)
             .or_else(|_| std::env::current_dir())?;
 
-        let (settings, warnings) = TereSettings::parse_cli_args(cli_args)?;
         let info_msg = if warnings.is_empty() {
             format!(
                 "{} {} - Type something to search, press '?' to view help or Esc to exit.",
