@@ -202,10 +202,7 @@ pub struct TereAppState {
 impl TereAppState {
     /// Initialize the app state with the given settings. Note that the window dimensions are
     /// initialized to one, they need to be updated manually afterwards.
-    pub fn init(
-        settings: TereSettings,
-        warnings: &DeprecationWarnings,
-    ) -> Result<Self, TereError> {
+    pub fn init(settings: TereSettings, warnings: &DeprecationWarnings) -> Result<Self, TereError> {
         // Try to read the current folder from the PWD environment variable, since it doesn't have
         // symlinks resolved (this is what we want). If this fails for some reason (on windows?),
         // default to std::env::current_dir, which has resolved symlinks.
@@ -611,8 +608,6 @@ impl TereAppState {
             // cursor stays within view, no need to change scroll position
             self.cursor_pos = new_pointer_pos.saturating_sub(self.scroll_pos);
         }
-
-
     }
 
     /// Move the cursor so that it is at the location `row` in the

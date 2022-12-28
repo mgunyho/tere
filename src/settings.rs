@@ -1,11 +1,11 @@
 /// Module for managing the settings (command line arguments) of the app
+use clap::{error::ErrorKind as ClapErrorKind, ArgMatches, Error as ClapError};
+use crokey::key;
+use crossterm::event::KeyEvent;
+use std::collections::HashMap;
 use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::collections::HashMap;
-use clap::{ArgMatches, Error as ClapError, error::ErrorKind as ClapErrorKind};
-use crossterm::event::KeyEvent;
-use crokey::key;
 
 use crate::error::TereError;
 use crate::ui::{Action, ActionContext};
