@@ -53,8 +53,8 @@ fn main() -> Result<(), TereError> {
         .and_then(|_| stderr.flush()).map_err(TereError::from)
         .and_then(|_| TereSettings::parse_cli_args(&cli_args))
         .and_then(|(settings, warnings)| TereAppState::init(settings, &warnings))
-        .and_then(|state| TereTui::init(state, &mut stderr)) // actually run the app
-        .and_then(|mut ui| ui.main_event_loop().map(|_| ui.current_path()));
+        .and_then(|state| TereTui::init(state, &mut stderr))
+        .and_then(|mut ui| ui.main_event_loop()); // actually run the app and return the final path
 
     // Always disable raw mode
     let raw_mode_success = terminal::disable_raw_mode().map_err(TereError::from);

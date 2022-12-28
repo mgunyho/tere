@@ -659,7 +659,7 @@ impl<'a> TereTui<'a> {
         self.on_matches_changed()
     }
 
-    pub fn main_event_loop(&mut self) -> Result<(), TereError> {
+    pub fn main_event_loop(&mut self) -> Result<PathBuf, TereError> {
 
         let loop_result = loop {
             match read_event()? {
@@ -760,6 +760,7 @@ impl<'a> TereTui<'a> {
 
         self.app_state.on_exit().map_err(TereError::from)
             .and(loop_result)
+            .map(|_| self.current_path())
     }
 
     fn help_view_loop(&mut self) -> CTResult<()> {
