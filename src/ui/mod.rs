@@ -1,5 +1,7 @@
 pub mod help_window;
+pub mod markup_render;
 mod action;
+
 
 use std::convert::TryFrom;
 use std::io::{Stderr, Write};
