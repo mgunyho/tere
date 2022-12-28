@@ -200,11 +200,11 @@ pub struct TereAppState {
 }
 
 impl TereAppState {
+    /// Initialize the app state with the given settings. Note that the window dimensions are
+    /// initialized to one, they need to be updated manually afterwards.
     pub fn init(
         settings: TereSettings,
         warnings: &DeprecationWarnings,
-        window_w: usize,
-        window_h: usize,
     ) -> Result<Self, TereError> {
         // Try to read the current folder from the PWD environment variable, since it doesn't have
         // symlinks resolved (this is what we want). If this fails for some reason (on windows?),
@@ -225,8 +225,8 @@ impl TereAppState {
         };
 
         let mut ret = Self {
-            main_win_w: window_w,
-            main_win_h: window_h,
+            main_win_w: 1,
+            main_win_h: 1,
             ls_output_buf: vec![].into(),
             current_path: cwd.clone(),
             cursor_pos: 0,

@@ -82,6 +82,7 @@ impl<'a> TereTui<'a> {
             execute!(ret.window, EnableMouseCapture)?;
         }
 
+        ret.update_main_window_dimensions()?;
         ret.update_header()?;
         ret.redraw_all_windows()?;
         Ok(ret)

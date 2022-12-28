@@ -18,7 +18,7 @@ use app_state::TereAppState;
 
 
 mod ui;
-use ui::{TereTui, main_window_size};
+use ui::TereTui;
 
 mod error;
 use error::TereError;
@@ -52,7 +52,7 @@ fn main() -> Result<(), TereError> {
     let res: Result<std::path::PathBuf, TereError> = terminal::enable_raw_mode()
         .and_then(|_| stderr.flush()).map_err(TereError::from)
         .and_then(|_| TereSettings::parse_cli_args(&cli_args).map_err(TereError::from)) //TODO: return TereError from parse_cli_args
-        .and_then(|(settings, warnings)| { let (w, h) = main_window_size()?; TereAppState::init(settings, &warnings, w, h) })
+        .and_then(|(settings, warnings)| TereAppState::init(settings, &warnings))
         .and_then(|state| TereTui::init(state, &mut stderr)) // actually run the app
         .and_then(|mut ui| ui.main_event_loop().map(|_| ui.current_path()));
 
