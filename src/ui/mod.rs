@@ -38,7 +38,6 @@ use crossterm::{
     Result as CTResult,
 };
 
-use clap::ArgMatches;
 use dirs::home_dir;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -62,7 +61,7 @@ fn terminal_size_usize() -> CTResult<(usize, usize)> {
 }
 
 // Dimensions (width, height) of main window
-fn main_window_size() -> CTResult<(usize, usize)> {
+pub fn main_window_size() -> CTResult<(usize, usize)> {
     let (w, h) = terminal_size_usize()?;
     Ok((
         w as usize,
@@ -71,12 +70,10 @@ fn main_window_size() -> CTResult<(usize, usize)> {
 }
 
 impl<'a> TereTui<'a> {
-    pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> Result<Self, TereError> {
-        let (w, h) = main_window_size()?;
-        let state = TereAppState::init(args, w, h)?;
+    pub fn init(app_state: TereAppState, window: &'a mut Stderr) -> Result<Self, TereError> {
         let mut ret = Self {
             window,
-            app_state: state,
+            app_state,
         };
 
         if ret.app_state.settings().mouse_enabled {

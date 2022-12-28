@@ -9,11 +9,12 @@ use crossterm::{
 //TODO: clippy
 
 mod app_state;
+use app_state::TereAppState;
 
 mod cli_args;
 
 mod ui;
-use ui::TereTui;
+use ui::{TereTui, main_window_size};
 
 mod error;
 use error::TereError;
@@ -46,7 +47,8 @@ fn main() -> Result<(), TereError> {
 
     let res: Result<std::path::PathBuf, TereError> = terminal::enable_raw_mode()
         .and_then(|_| stderr.flush()).map_err(TereError::from)
-        .and_then(|_| TereTui::init(&cli_args, &mut stderr)) // actually run the app
+        .and_then(|_| { let (w, h) = main_window_size()?; TereAppState::init(&cli_args, w, h) })
+        .and_then(|state| TereTui::init(state, &mut stderr)) // actually run the app
         .and_then(|mut ui| {
             ui.main_event_loop()
                 .map(|_| ui.current_path())
