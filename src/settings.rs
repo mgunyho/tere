@@ -7,6 +7,7 @@ use clap::{ArgMatches, Error as ClapError, error::ErrorKind as ClapErrorKind};
 use crossterm::event::KeyEvent;
 use crokey::key;
 
+use crate::error::TereError;
 use crate::ui::{Action, ActionContext};
 
 //TODO: config file?
@@ -109,7 +110,7 @@ pub struct TereSettings {
 pub type DeprecationWarnings = Vec<&'static str>;
 
 impl TereSettings {
-    pub fn parse_cli_args(args: &ArgMatches) -> Result<(Self, DeprecationWarnings), ClapError> {
+    pub fn parse_cli_args(args: &ArgMatches) -> Result<(Self, DeprecationWarnings), TereError> {
         let mut ret = Self::default();
         let mut warnings = vec![];
 
@@ -205,7 +206,7 @@ impl TereSettings {
             return Err(ClapError::raw(
                 ClapErrorKind::EmptyValue,
                 "No keyboard mapping found for exit!\n",
-            ));
+            ).into());
         }
 
         ret.sort_mode = match args
