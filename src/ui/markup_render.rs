@@ -7,7 +7,6 @@ use crossterm::style::{StyledContent, Stylize};
 /// Strip the markup (markdown) from some text and wrap it to a given width. The result is a
 /// vector of lines, where each line is a vector of styled elements.
 pub fn wrap_and_stylize(text: &str, width: usize) -> Vec<Vec<StyledContent<String>>> {
-
     // Strip out markup and extract the locations where we need to toggle bold on/off.
     let (mut text, bold_toggle_locs) = strip_markup_and_extract_bold_positions(text);
 
@@ -18,8 +17,13 @@ pub fn wrap_and_stylize(text: &str, width: usize) -> Vec<Vec<StyledContent<Strin
     let mut result = stylize_wrapped_lines(text.split('\n').collect(), bold_toggle_locs);
 
     // remove empty items (e.g. if the line started with a bold item).
-    result.drain(..)
-        .map(|mut line| line.drain(..).filter(|item| !item.content().is_empty()).collect())
+    result
+        .drain(..)
+        .map(|mut line| {
+            line.drain(..)
+                .filter(|item| !item.content().is_empty())
+                .collect()
+        })
         .collect()
 }
 
@@ -112,7 +116,6 @@ where
     res
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -173,10 +176,7 @@ mod tests {
         let input = "## foo bar\n\nlorem ipsum `dolor/sit` amet";
         let stylized = wrap_and_stylize(input, 18);
 
-        assert_eq!(
-            stylized[0],
-            vec!["foo bar".to_string().bold()]
-        );
+        assert_eq!(stylized[0], vec!["foo bar".to_string().bold()]);
         assert_eq!(stylized[1], vec![]);
         assert_eq!(stylized[2][0], "lorem ipsum".to_string().stylize());
         assert_eq!(stylized[3][0], "dolor/sit".to_string().bold());
