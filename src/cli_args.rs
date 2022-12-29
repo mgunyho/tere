@@ -166,13 +166,7 @@ pub fn get_cli_args() -> Command {
              .long("map")
              .short('m')
              .help("Map one or more keyboard shortcuts. See full help (with --help) for further details.")
-             // We need to provide static strings to the long help, but then we can't use format
-             // because it returns String, and it won't live long enough. So we leak the string,
-             // which is ok because it's done only once. Another option would be to create a
-             // wrapper object to own the strings, but this is simpler.
-             // see https://stackoverflow.com/questions/64184984/dynamically-generate-subcommands-with-formatted-description-in-clap
-             // and https://stackoverflow.com/questions/65303960/clap-how-to-pass-a-default-value-when-returning-argmatchesstatic
-             .long_help(&*Box::leak(format!(
+             .long_help(format!(
 "Add one or more keyboard shortcut mappings. The basic syntax is of the form 'key-combination:action' or 'key-combination:context:action', see examples below. This option can be provided multiple times, and multiple mappings can be created by a comma-separated list of mappings. If the same key combination (with the same context) is provided multiple times, the previous mappings are overridden. Use the action 'None' to remove a previously added mapping or one of the default mappings.
 
 Examples:
@@ -200,7 +194,7 @@ justify_and_indent(
     &ActionContext::iter().map(|a| a.to_string()).collect::<Vec<_>>(),
     &ActionContext::iter().map(|a| a.description().to_string()).collect::<Vec<_>>()
     ),
-).into_boxed_str()))
+))
             .value_name("MAPPING")
             )
         .arg(Arg::new("clear-default-keymap")
