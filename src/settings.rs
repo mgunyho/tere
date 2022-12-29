@@ -755,4 +755,69 @@ mod tests {
         assert!(settings.gap_search_mode == GapSearchMode::NormalSearch);
     }
 
+    #[test]
+    fn test_sort_mode_override() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.sort_mode, SortMode::Name);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--sort", "created",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.sort_mode, SortMode::Created);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--sort",  "created",
+                "--sort",  "name",
+                "--sort",  "modified",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.sort_mode, SortMode::Modified);
+
+    }
+
+    #[test]
+    fn test_mouse_override() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(!settings.mouse_enabled);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--mouse", "off",
+                "--mouse", "on",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(settings.mouse_enabled);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--mouse",  "off",
+                "--mouse",  "on",
+                "--mouse",  "off",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(!settings.mouse_enabled);
+
+    }
+
 }
