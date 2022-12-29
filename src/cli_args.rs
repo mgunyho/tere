@@ -218,7 +218,7 @@ justify_and_indent(
         .arg(Arg::new("autocd-timeout")
              .action(ArgAction::Set)
              .long("autocd-timeout")
-             .help("Timeout for auto-cd when there's only one match, in milliseconds. Use 'off' to disable auto-cd.")
+             .help("Timeout for auto-cd when there's only one match, in milliseconds. Use 'off' to disable.")
              .long_help("If the current search matches only one folder, automatically change to that folder after this many milliseconds. If the value is 'off', automatic cding is disabled, and you have to manually enter the folder. Setting the timeout to zero is not recommended, because it makes navigation confusing.")
              .default_value("200")
              .value_name("TIMEOUT or 'off'")
