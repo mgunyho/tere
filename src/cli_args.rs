@@ -1,4 +1,4 @@
-use clap::{App, Arg};
+use clap::{App, Arg, ArgAction};
 use crate::ui::{Action, ActionContext};
 use strum::IntoEnumIterator;
 
@@ -31,6 +31,7 @@ pub fn get_cli_args() -> App<'static> {
         //.author(env!("CARGO_PKG_AUTHORS")) // TODO: rest of these https://stackoverflow.com/a/27841363
         .global_setting(clap::AppSettings::DeriveDisplayOrder)
         .arg(Arg::new("filter-search")
+             .action(ArgAction::IncOccurrence)
              .long("filter-search")
              //.visible_alias("fs") //TODO: consider
              .short('f')
@@ -39,6 +40,7 @@ pub fn get_cli_args() -> App<'static> {
              .overrides_with("filter-search")
             )
         .arg(Arg::new("no-filter-search")
+             .action(ArgAction::IncOccurrence)
              .long("no-filter-search")
              //.visible_alias("nfs") //TODO: consider
              .short('F')
@@ -47,6 +49,7 @@ pub fn get_cli_args() -> App<'static> {
              .overrides_with_all(&["filter-search", "no-filter-search"])
             )
         .arg(Arg::new("folders-only")
+             .action(ArgAction::IncOccurrence)
              .long("folders-only")
              //.visible_alias("fo") //TODO: consider
              .short('d')
@@ -55,6 +58,7 @@ pub fn get_cli_args() -> App<'static> {
              .overrides_with("folders-only")
             )
         .arg(Arg::new("no-folders-only")
+             .action(ArgAction::IncOccurrence)
              .long("no-folders-only")
              //.visible_alias("nfo") //TODO: consider
              .short('D')
@@ -63,6 +67,7 @@ pub fn get_cli_args() -> App<'static> {
              .overrides_with_all(&["folders-only", "no-folders-only"])
             )
         .arg(Arg::new("case-sensitive")
+             .action(ArgAction::IncOccurrence)
              .long("case-sensitive")
              .short('s')  // same as ripgrep
              .help("Case sensitive search")
@@ -74,6 +79,7 @@ pub fn get_cli_args() -> App<'static> {
              .overrides_with_all(&["ignore-case", "smart-case", "case-sensitive"])
             )
         .arg(Arg::new("ignore-case")
+             .action(ArgAction::IncOccurrence)
              .long("ignore-case")
              .short('i') // same as ripgrep
              .help("Ignore case when searching")
@@ -85,6 +91,7 @@ pub fn get_cli_args() -> App<'static> {
              .overrides_with_all(&["smart-case", "ignore-case"])
             )
         .arg(Arg::new("smart-case")
+             .action(ArgAction::IncOccurrence)
              .long("smart-case")
              .short('S') // same as ripgrep
              .help("Smart case search (default)")
@@ -96,6 +103,7 @@ pub fn get_cli_args() -> App<'static> {
              .overrides_with("smart-case")
             )
         .arg(Arg::new("gap-search")
+             .action(ArgAction::IncOccurrence)
              .long("gap-search")
              .short('g')
              .help("Match the search from the beginning, but allow gaps (default)")
@@ -108,6 +116,7 @@ pub fn get_cli_args() -> App<'static> {
              .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         .arg(Arg::new("gap-search-anywhere")
+             .action(ArgAction::IncOccurrence)
              .long("gap-search-anywhere")
              .short('G')
              .help("Match the search anywhere, and allow gaps")
@@ -121,11 +130,13 @@ pub fn get_cli_args() -> App<'static> {
             )
         // DEPRECATED in favor of normal-search, this is here only for backward compatibility
         .arg(Arg::new("no-gap-search")
+             .action(ArgAction::IncOccurrence)
              .long("no-gap-search")
              .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
              .hidden(true)
             )
         .arg(Arg::new("normal-search")
+             .action(ArgAction::IncOccurrence)
              .long("normal-search")
              .short('n')
              .help("Match the search from the beginning, and do not allow gaps")
@@ -138,6 +149,7 @@ pub fn get_cli_args() -> App<'static> {
              .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         .arg(Arg::new("normal-search-anywhere")
+             .action(ArgAction::IncOccurrence)
              .long("normal-search-anywhere")
              .short('N')
              .help("Match search anywhere, but do not allow gaps")
@@ -150,6 +162,7 @@ pub fn get_cli_args() -> App<'static> {
              .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         .arg(Arg::new("map")
+             .action(ArgAction::StoreValue)
              .long("map")
              .short('m')
              .help("Map one or more keyboard shortcuts. See full help (with --help) for further details.")
@@ -193,11 +206,13 @@ justify_and_indent(
             .multiple_occurrences(true)
             )
         .arg(Arg::new("clear-default-keymap")
+             .action(ArgAction::IncOccurrence)
              .long("clear-default-keymap")
              .help("Do not use the default keyboard mapping.")
              .long_help("Do not use the default keyboard mapping, so that all shortcuts have to be manually created from scratch using the --map/-m option. If no mapping for Exit is provided, tere will not run.")
              )
         .arg(Arg::new("sort")
+             .action(ArgAction::StoreValue)
              .long("sort")
              .help("Select sorting mode")
              .long_help("Choose whether to sort the listing by name, or the time of creation or modification. You can change the sort order with the keyboard shortcut Alt-s by default.")
@@ -209,6 +224,7 @@ justify_and_indent(
              .multiple_occurrences(true)
             )
         .arg(Arg::new("autocd-timeout")
+             .action(ArgAction::StoreValue)
              .long("autocd-timeout")
              .help("Timeout for auto-cd when there's only one match, in milliseconds. Use 'off' to disable auto-cd.")
              .long_help("If the current search matches only one folder, automatically change to that folder after this many milliseconds. If the value is 'off', automatic cding is disabled, and you have to manually enter the folder. Setting the timeout to zero is not recommended, because it makes navigation confusing.")
@@ -217,6 +233,7 @@ justify_and_indent(
              .overrides_with("autocd-timeout")
             )
         .arg(Arg::new("history-file")
+             .action(ArgAction::StoreValue)
              .long("history-file")
              .help("Save history to the file at this absolute path. Set to empty to disable.")
              .long_help("Save a history of visited folders in this file in JSON format. Should be an absolute path. Set to empty to disable saving history. If not provided, defaults to '$CACHE_DIR/tere/history.json', where $CACHE_DIR is the cache directory, i.e. $XDG_CACHE_HOME or ~/.cache. Note that the history file reveals parts of your folder structure if it can be read by someone else.")
@@ -224,6 +241,7 @@ justify_and_indent(
              .value_name("FILE or ''")
             )
         .arg(Arg::new("mouse")
+             .action(ArgAction::StoreValue)
              .long("mouse")
              .help("Enable mouse navigation")
              .long_help("Enable mouse navigation. If enabled, you can browse by clicking around with the mouse.")
