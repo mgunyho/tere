@@ -41,7 +41,7 @@ pub enum GapSearchMode {
     NormalSearch,
     NormalSearchAnywhere,
     GapSearchFromStart,
-    GapSearchAnywere,
+    GapSearchAnywhere,
 }
 
 impl Default for GapSearchMode {
@@ -56,7 +56,7 @@ impl fmt::Display for GapSearchMode {
             GapSearchMode::GapSearchFromStart => "gap search from start",
             GapSearchMode::NormalSearch       => "normal search",
             GapSearchMode::NormalSearchAnywhere => "normal search anywhere",
-            GapSearchMode::GapSearchAnywere   => "gap search anywhere",
+            GapSearchMode::GapSearchAnywhere  => "gap search anywhere",
         };
         write!(f, "{}", text)
     }
@@ -135,7 +135,7 @@ impl TereSettings {
         if args.contains_id("gap-search") {
             ret.gap_search_mode = GapSearchMode::GapSearchFromStart;
         } else if args.contains_id("gap-search-anywhere") {
-            ret.gap_search_mode = GapSearchMode::GapSearchAnywere;
+            ret.gap_search_mode = GapSearchMode::GapSearchAnywhere;
         } else if args.contains_id("normal-search") {
             ret.gap_search_mode = GapSearchMode::NormalSearch;
         } else if args.contains_id("normal-search-anywhere") {
