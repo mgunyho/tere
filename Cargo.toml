@@ -23,9 +23,9 @@ strum_macros = "0.24"
 strum = { version = "0.24", features = ["derive"] }
 
 [dependencies.clap]
-version = "3"
+version = "4"
 default-features = false
-features = ["wrap_help", "suggestions", "std"]
+features = ["wrap_help", "suggestions", "std", "derive", "usage"]
 
 [profile.release]
 lto = true
