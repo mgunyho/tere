@@ -117,31 +117,31 @@ impl TereSettings {
         let mut ret = Self::default();
         let mut warnings = vec![];
 
-        if let Some(true) = args.get_one::<bool>("folders-only") {
+        if args.get_flag("folders-only") {
             ret.folders_only = true;
         }
 
-        if let Some(true) = args.get_one::<bool>("filter-search") {
+        if args.get_flag("filter-search") {
             ret.filter_search = true;
         }
 
-        if let Some(true) = args.get_one::<bool>("case-sensitive") {
+        if args.get_flag("case-sensitive") {
             ret.case_sensitive = CaseSensitiveMode::CaseSensitive;
-        } else if let Some(true) = args.get_one::<bool>("ignore-case") {
+        } else if args.get_flag("ignore-case") {
             ret.case_sensitive = CaseSensitiveMode::IgnoreCase;
-        } else if let Some(true) = args.get_one::<bool>("smart-case") {
+        } else if args.get_flag("smart-case") {
             ret.case_sensitive = CaseSensitiveMode::SmartCase;
         }
 
-        if let Some(true) = args.get_one::<bool>("gap-search") {
+        if args.get_flag("gap-search") {
             ret.gap_search_mode = GapSearchMode::GapSearchFromStart;
-        } else if let Some(true) = args.get_one::<bool>("gap-search-anywhere") {
+        } else if args.get_flag("gap-search-anywhere") {
             ret.gap_search_mode = GapSearchMode::GapSearchAnywhere;
-        } else if let Some(true) = args.get_one::<bool>("normal-search") {
+        } else if args.get_flag("normal-search") {
             ret.gap_search_mode = GapSearchMode::NormalSearch;
-        } else if let Some(true) = args.get_one::<bool>("normal-search-anywhere") {
+        } else if args.get_flag("normal-search-anywhere") {
             ret.gap_search_mode = GapSearchMode::NormalSearchAnywhere;
-        } else if let Some(true) = args.get_one::<bool>("no-gap-search") {
+        } else if args.get_flag("no-gap-search") {
             warnings.push("The option 'no-gap-search' has been renamed to 'normal-search', please use that instead.");
             ret.gap_search_mode = GapSearchMode::NormalSearch;
         }
