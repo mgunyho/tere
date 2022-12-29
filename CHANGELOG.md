@@ -1,3 +1,7 @@
+## 1.4.0 (unreleased)
+
+- Check if the app is being run for the first time (based on whether the history file exists, and a bit of additional simple logic), and if so, prompt the user to confirm that they have updated their shell configuration (Github #83)
+
 ## 1.3.1 (2022-12-06)
 
 - Fixed a bug where `?` didn't show the help screen on Windows by default
