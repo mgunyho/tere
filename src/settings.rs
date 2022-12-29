@@ -594,6 +594,156 @@ mod tests {
     }
 
     #[test]
+    fn test_filter_search_override() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(!settings.filter_search);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--filter-search",
+                "--no-filter-search",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(!settings.filter_search);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--filter-search",
+                "--no-filter-search",
+                "--filter-search",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(settings.filter_search);
+    }
+
+    #[test]
+    fn test_folders_only_override() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(!settings.folders_only);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--folders-only",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(settings.folders_only);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--folders-only",
+                "--no-folders-only",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(!settings.folders_only);
+    }
+
+    #[test]
+    fn test_case_sensitive_mode_override() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.case_sensitive, CaseSensitiveMode::SmartCase);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--case-sensitive",
+                "--ignore-case",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.case_sensitive, CaseSensitiveMode::IgnoreCase);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--case-sensitive",
+                "--ignore-case",
+                "--case-sensitive",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.case_sensitive, CaseSensitiveMode::CaseSensitive);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--case-sensitive",
+                "--ignore-case",
+                "--case-sensitive",
+                "--smart-case",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.case_sensitive, CaseSensitiveMode::SmartCase);
+    }
+
+    #[test]
+    fn test_gap_search_mode_override() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.gap_search_mode, GapSearchMode::GapSearchFromStart);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--gap-search",
+                "--gap-search-anywhere",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.gap_search_mode, GapSearchMode::GapSearchAnywhere);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--gap-search",
+                "--gap-search-anywhere",
+                "--normal-search-anywhere",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.gap_search_mode, GapSearchMode::NormalSearchAnywhere);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--gap-search",
+                "--gap-search-anywhere",
+                "--normal-search-anywhere",
+                "--gap-search",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.gap_search_mode, GapSearchMode::GapSearchFromStart);
+    }
+
+    #[test]
     fn test_no_gap_search_deprecated() {
         let m = crate::cli_args::get_cli_args()
             .get_matches_from(vec![
