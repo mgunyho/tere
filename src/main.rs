@@ -16,8 +16,8 @@ use settings::TereSettings;
 mod app_state;
 use app_state::TereAppState;
 
-mod installation_check;
-use installation_check::check_first_run_with_prompt;
+mod first_run_check;
+use first_run_check::check_first_run_with_prompt;
 
 mod ui;
 use ui::TereTui;
