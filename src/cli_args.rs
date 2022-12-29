@@ -1,5 +1,6 @@
 use clap::{Command, Arg, ArgAction};
 use crate::ui::{Action, ActionContext};
+use crate::settings::SortMode;
 use strum::IntoEnumIterator;
 
 /// The CLI options for tere
@@ -215,10 +216,10 @@ justify_and_indent(
              .long("sort")
              .help("Select sorting mode")
              .long_help("Choose whether to sort the listing by name, or the time of creation or modification. You can change the sort order with the keyboard shortcut Alt-s by default.")
-             .takes_value(true)
              .value_name("'name', 'created', or 'modified'")
-             .possible_values(&["name", "created", "modified"])
+             .value_parser(clap::builder::EnumValueParser::<SortMode>::new())
              .hide_possible_values(true)
+             //NOTE: couldn't figure out how to get this using clap derive, even though SortMode implements Default. So have to have it here.
              .default_value("name")
             )
         .arg(Arg::new("autocd-timeout")

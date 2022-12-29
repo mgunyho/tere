@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
+use strum_macros::EnumIter;
 
 use crate::error::TereError;
 use crate::ui::{Action, ActionContext};
@@ -62,7 +63,7 @@ impl fmt::Display for GapSearchMode {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone, EnumIter, clap::ValueEnum)]
 pub enum SortMode {
     Name,
     Created,
@@ -211,18 +212,10 @@ impl TereSettings {
             ).into());
         }
 
-        ret.sort_mode = match args
-            .get_many::<String>("sort")
-            .unwrap()
-            .map(|v| v.as_str())
-            .last()
-            .unwrap()
-        {
-            "created" => SortMode::Created,
-            "modified" => SortMode::Modified,
-            "name" => SortMode::Name,
-            _ => unreachable!(),
-        };
+        ret.sort_mode = args
+            .get_one::<SortMode>("sort")
+            .cloned()
+            .unwrap_or_default();
 
         Ok((ret, warnings))
     }
