@@ -523,8 +523,6 @@ impl<'a> TereTui<'a> {
     fn on_matches_changed(&mut self) -> CTResult<()> {
         if self.app_state.is_searching() && self.app_state.num_matching_items() == 0 {
             self.info_message(NO_MATCHES_MSG)?;
-        } else {
-            self.info_message("")?;
         }
 
         self.redraw_main_window()?;
