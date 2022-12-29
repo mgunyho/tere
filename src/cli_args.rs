@@ -249,3 +249,13 @@ fn justify_and_indent(variants: &[String], descriptions: &[String]) -> String {
 
     lines.join("\n")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn verify_cli() {
+        get_cli_args().debug_assert();
+    }
+}
