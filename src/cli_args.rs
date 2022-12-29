@@ -37,7 +37,7 @@ pub fn get_cli_args() -> Command<'static> {
              .short('f')
              .help("Show only items matching the search in listing")
              .long_help("Show only items matching the current search query in the listing. This overrides the --no-filter-search option. You can toggle the filtering with the keyboard shortcut Alt-f by default.")
-             .overrides_with("filter-search")
+             .overrides_with_all(&["filter-search", "no-filter-search"])
             )
         .arg(Arg::new("no-filter-search")
              .action(ArgAction::IncOccurrence)
@@ -55,7 +55,7 @@ pub fn get_cli_args() -> Command<'static> {
              .short('d')
              .help("Show only folders in the listing")
              .long_help("Show only folders (and symlinks pointing to folders) in the listing. This overrides the --no-folders-only option.")
-             .overrides_with("folders-only")
+             .overrides_with_all(&["folders-only", "no-folders-only"])
             )
         .arg(Arg::new("no-folders-only")
              .action(ArgAction::IncOccurrence)
@@ -88,7 +88,7 @@ pub fn get_cli_args() -> Command<'static> {
                      "case-sensitive",
                      "smart-case"
                      ))
-             .overrides_with_all(&["smart-case", "ignore-case"])
+             .overrides_with_all(&["ignore-case", "smart-case", "case-sensitive"])
             )
         .arg(Arg::new("smart-case")
              .action(ArgAction::IncOccurrence)
@@ -100,7 +100,7 @@ pub fn get_cli_args() -> Command<'static> {
                      "case-sensitive",
                      "ignore-case"
                      ))
-             .overrides_with("smart-case")
+             .overrides_with_all(&["ignore-case", "smart-case", "case-sensitive"])
             )
         .arg(Arg::new("gap-search")
              .action(ArgAction::IncOccurrence)
