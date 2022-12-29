@@ -203,7 +203,6 @@ justify_and_indent(
 ).into_boxed_str()))
             .takes_value(true)
             .value_name("MAPPING")
-            .multiple_occurrences(true)
             )
         .arg(Arg::new("clear-default-keymap")
              .action(ArgAction::SetTrue)
@@ -221,7 +220,6 @@ justify_and_indent(
              .possible_values(&["name", "created", "modified"])
              .hide_possible_values(true)
              .default_value("name")
-             .multiple_occurrences(true)
             )
         .arg(Arg::new("autocd-timeout")
              .action(ArgAction::Set)
@@ -250,7 +248,6 @@ justify_and_indent(
              .possible_values(&["on", "off"])
              .hide_possible_values(true)
              .default_value("off")
-             .multiple_occurrences(true)
             )
 }
 
