@@ -213,6 +213,7 @@ justify_and_indent(
              .hide_possible_values(true)
              //NOTE: couldn't figure out how to get this using clap derive, even though SortMode implements Default. So have to have it here.
              .default_value("name")
+             .overrides_with("sort")
             )
         .arg(Arg::new("autocd-timeout")
              .action(ArgAction::Set)
@@ -239,6 +240,7 @@ justify_and_indent(
              .value_parser(clap::builder::PossibleValuesParser::new(["on", "off"]))
              .hide_possible_values(true)
              .default_value("off")
+             .overrides_with("mouse")
             )
 }
 
