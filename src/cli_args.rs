@@ -133,7 +133,7 @@ pub fn get_cli_args() -> Command<'static> {
              .action(ArgAction::SetTrue)
              .long("no-gap-search")
              .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
-             .hidden(true)
+             .hide(true)
             )
         .arg(Arg::new("normal-search")
              .action(ArgAction::SetTrue)
