@@ -180,7 +180,7 @@ impl TereSettings {
         }
 
         // ok to unwrap, because mouse has the default value of 'off'
-        if args.get_many::<String>("mouse").unwrap().map(|v| v.as_str()).last().unwrap() == "on" {
+        if args.get_one::<String>("mouse").unwrap() == "on" {
             ret.mouse_enabled = true;
         }
 

@@ -246,7 +246,7 @@ justify_and_indent(
              .long_help("Enable mouse navigation. If enabled, you can browse by clicking around with the mouse.")
              .takes_value(true)
              .value_name("'on' or 'off'")
-             .possible_values(&["on", "off"])
+             .value_parser(clap::builder::PossibleValuesParser::new(["on", "off"]))
              .hide_possible_values(true)
              .default_value("off")
             )
