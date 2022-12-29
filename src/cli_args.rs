@@ -25,12 +25,11 @@ macro_rules! gap_search_mode_template {
     }
 }
 
-pub fn get_cli_args() -> Command<'static> {
+pub fn get_cli_args() -> Command {
     Command::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .about(env!("CARGO_PKG_DESCRIPTION"))
         //.author(env!("CARGO_PKG_AUTHORS")) // TODO: rest of these https://stackoverflow.com/a/27841363
-        .global_setting(clap::AppSettings::DeriveDisplayOrder)
         .arg(Arg::new("filter-search")
              .action(ArgAction::SetTrue)
              .long("filter-search")
@@ -202,7 +201,6 @@ justify_and_indent(
     &ActionContext::iter().map(|a| a.description().to_string()).collect::<Vec<_>>()
     ),
 ).into_boxed_str()))
-            .takes_value(true)
             .value_name("MAPPING")
             )
         .arg(Arg::new("clear-default-keymap")
@@ -236,7 +234,6 @@ justify_and_indent(
              .long("history-file")
              .help("Save history to the file at this absolute path. Set to empty to disable.")
              .long_help("Save a history of visited folders in this file in JSON format. Should be an absolute path. Set to empty to disable saving history. If not provided, defaults to '$CACHE_DIR/tere/history.json', where $CACHE_DIR is the cache directory, i.e. $XDG_CACHE_HOME or ~/.cache. Note that the history file reveals parts of your folder structure if it can be read by someone else.")
-             .takes_value(true)
              .value_name("FILE or ''")
             )
         .arg(Arg::new("mouse")
@@ -244,7 +241,6 @@ justify_and_indent(
              .long("mouse")
              .help("Enable mouse navigation")
              .long_help("Enable mouse navigation. If enabled, you can browse by clicking around with the mouse.")
-             .takes_value(true)
              .value_name("'on' or 'off'")
              .value_parser(clap::builder::PossibleValuesParser::new(["on", "off"]))
              .hide_possible_values(true)

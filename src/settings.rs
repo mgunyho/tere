@@ -207,7 +207,7 @@ impl TereSettings {
 
         if !ret.keymap.values().any(|a| a == &Action::Exit) {
             return Err(ClapError::raw(
-                ClapErrorKind::EmptyValue,
+                ClapErrorKind::InvalidValue,
                 "No keyboard mapping found for exit!\n",
             ).into());
         }
