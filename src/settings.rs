@@ -12,6 +12,7 @@ use crate::ui::{Action, ActionContext};
 
 //TODO: config file?
 
+#[derive(Debug, PartialEq)]
 pub enum CaseSensitiveMode {
     IgnoreCase,
     CaseSensitive,
@@ -35,7 +36,7 @@ impl fmt::Display for CaseSensitiveMode {
     }
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum GapSearchMode {
     NormalSearch,
     NormalSearchAnywhere,
@@ -61,6 +62,7 @@ impl fmt::Display for GapSearchMode {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum SortMode {
     Name,
     Created,
