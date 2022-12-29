@@ -183,7 +183,7 @@ impl TereSettings {
             ret.mouse_enabled = true;
         }
 
-        if !args.is_present("clear-default-keymap") {
+        if let Some(false) = args.get_one::<bool>("clear-default-keymap") {
             ret.keymap = DEFAULT_KEYMAP
                 .iter()
                 .map(|(k, c, a)| ((*k, c.clone()), a.clone()))
