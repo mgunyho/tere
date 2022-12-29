@@ -1,4 +1,4 @@
-use clap::{App, Arg, ArgAction};
+use clap::{Command, Arg, ArgAction};
 use crate::ui::{Action, ActionContext};
 use strum::IntoEnumIterator;
 
@@ -24,8 +24,8 @@ macro_rules! gap_search_mode_template {
     }
 }
 
-pub fn get_cli_args() -> App<'static> {
-    App::new(env!("CARGO_PKG_NAME"))
+pub fn get_cli_args() -> Command<'static> {
+    Command::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .about(env!("CARGO_PKG_DESCRIPTION"))
         //.author(env!("CARGO_PKG_AUTHORS")) // TODO: rest of these https://stackoverflow.com/a/27841363
