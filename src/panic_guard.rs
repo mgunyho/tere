@@ -62,12 +62,17 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    // Need these to communicate results back to us from within callback
-    use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+    // Need this to communicate results back to us from within callback
     use std::sync::Mutex;
+
+    // ensure that some tests don't run in parallel while we're messing with the global panic
+    // hook
+    static TEST_MUTEX: Mutex<()> = Mutex::new(());
 
     #[test]
     fn test_callback_called_on_drop() {
+        let _m = TEST_MUTEX.lock().unwrap();
+
         let called = Arc::new(Mutex::new(0));
 
         {
@@ -80,42 +85,46 @@ mod tests {
     }
 
     #[test]
-    fn test_panic() {
-        // because we're messing with the global panic hook, all tests have to be in one function
-        // to ensure that we're not modifying it from multiple different threads (unless we want to
-        // run the tests single-threaded).
+    fn test_callback_called_once_only_panic() {
+        let _m = TEST_MUTEX.lock().unwrap();
+        let original_hook = std::panic::take_hook(); // store the original panic hook just in case
 
         // test that the callback is only called once, even if there is a panic
-        //let calls = Arc::new(Mutex::new(0));
-        //{
-        //    let calls = calls.clone();
-        //    let _guard = GuardWithHook::new(move || {*calls.lock().unwrap() += 1;});
 
-        //    assert!(std::panic::catch_unwind(|| panic!("test")).is_err());
-        //}
-        //assert_eq!(*calls.lock().unwrap(), 1);
+        let calls = Arc::new(Mutex::new(0));
 
-        // test that the callback is called before the panic hook
+        assert!(std::panic::catch_unwind(|| {
+            let calls = calls.clone();
+            let _guard = GuardWithHook::new(move || {*calls.lock().unwrap() += 1;});
+            panic!("test");
+        }).is_err());
 
-        let original_hook = std::panic::take_hook(); // this should be the default hook
+        // restore original hook before assert, so we see the error message if the test fails
+        std::panic::set_hook(original_hook);
+
+        assert_eq!(*calls.lock().unwrap(), 1);
+    }
+
+    #[test]
+    fn test_callback_called_before_panic_hook() {
+        let _m = TEST_MUTEX.lock().unwrap();
+        let original_hook = std::panic::take_hook(); // store the original panic hook just in case
+
+        // test that the cleanup callback is called before the panic hook
 
         let calls: Arc<Mutex<Vec<&str>>> = Arc::new(Mutex::new(vec![]));
         let calls2 = calls.clone();
-        std::panic::set_hook(Box::new(move |info| {
-            if let Ok(mut v) = calls2.try_lock() {
-                v.push("hook");
-            }
-            eprintln!("{}", info);
-        }));
-        {
+        std::panic::set_hook(Box::new(move |_| calls2.lock().unwrap().push("hook")));
+
+        assert!(std::panic::catch_unwind(|| {
             let calls = calls.clone();
-            let _guard = GuardWithHook::new(move || {calls.lock().unwrap().push("cleanup");});
+            let _guard = GuardWithHook::new(move || calls.lock().unwrap().push("cleanup"));
+            panic!("test");
+        }).is_err());
 
-            assert!(std::panic::catch_unwind(|| panic!("test")).is_err());
-        }
-        assert_eq!(*calls.lock().unwrap(), vec!["cleanup", "hook"]);
-
+        // restore original hook before assert, so we see the error message if the test fails
         std::panic::set_hook(original_hook);
-    }
 
+        assert_eq!(*calls.lock().unwrap(), vec!["cleanup", "hook"]);
+    }
 }
