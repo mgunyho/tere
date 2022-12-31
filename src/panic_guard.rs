@@ -65,8 +65,7 @@ mod tests {
     // Need this to communicate results back to us from within callback
     use std::sync::Mutex;
 
-    // ensure that some tests don't run in parallel while we're messing with the global panic
-    // hook
+    // ensure that tests don't run in parallel while we're messing with the global panic hook
     static TEST_MUTEX: Mutex<()> = Mutex::new(());
 
     #[test]
@@ -87,7 +86,7 @@ mod tests {
     #[test]
     fn test_callback_called_once_only_panic() {
         let _m = TEST_MUTEX.lock().unwrap();
-        let original_hook = std::panic::take_hook(); // store the original panic hook just in case
+        let original_hook = std::panic::take_hook(); // so we can restore the original panic hook
 
         // test that the callback is only called once, even if there is a panic
 
@@ -108,7 +107,7 @@ mod tests {
     #[test]
     fn test_callback_called_before_panic_hook() {
         let _m = TEST_MUTEX.lock().unwrap();
-        let original_hook = std::panic::take_hook(); // store the original panic hook just in case
+        let original_hook = std::panic::take_hook(); // so we can restore the original panic hook
 
         // test that the cleanup callback is called before the panic hook
 
@@ -127,4 +126,85 @@ mod tests {
 
         assert_eq!(*calls.lock().unwrap(), vec!["cleanup", "hook"]);
     }
+
+    #[test]
+    fn test_nested_callback() {
+        let _m = TEST_MUTEX.lock().unwrap();
+        let original_hook = std::panic::take_hook(); // so we can restore the original panic hook
+
+        let calls: Arc<Mutex<Vec<&str>>> = Arc::new(Mutex::new(vec![]));
+        let calls2 = calls.clone();
+        let calls3 = calls.clone();
+
+        {
+            let _g = GuardWithHook::new(move || calls2.lock().unwrap().push("outer"));
+            {
+                let _g = GuardWithHook::new(move || calls3.lock().unwrap().push("inner"));
+            }
+        }
+
+        std::panic::set_hook(original_hook);
+
+        assert_eq!(*calls.lock().unwrap(), vec!["inner", "outer"]);
+    }
+
+    #[test]
+    fn test_nested_callback_with_panic() {
+        let _m = TEST_MUTEX.lock().unwrap();
+        let original_hook = std::panic::take_hook(); // so we can restore the original panic hook
+
+        let calls: Arc<Mutex<Vec<&str>>> = Arc::new(Mutex::new(vec![]));
+        let calls2 = calls.clone();
+        let calls3 = calls.clone();
+
+        assert!(std::panic::catch_unwind(|| {
+            let _g = GuardWithHook::new(move || calls2.lock().unwrap().push("outer"));
+            {
+                let _g = GuardWithHook::new(move || calls3.lock().unwrap().push("inner"));
+                panic!("test");
+            }
+        }).is_err());
+
+        std::panic::set_hook(original_hook);
+        assert_eq!(*calls.lock().unwrap(), vec!["inner", "outer"]);
+    }
+
+    #[test]
+    fn test_nested_callback_hook_restored() {
+        let _m = TEST_MUTEX.lock().unwrap();
+        let original_hook = std::panic::take_hook(); // so we can restore the original panic hook
+
+        let calls: Arc<Mutex<Vec<&str>>> = Arc::new(Mutex::new(vec![]));
+        let calls2 = calls.clone();
+        let calls3 = calls.clone();
+        let calls4 = calls.clone();
+        let calls5 = calls.clone();
+
+        std::panic::set_hook(Box::new(move |_| calls2.lock().unwrap().push("outer hook")));
+
+        {
+            let _g = GuardWithHook::new(move || calls3.lock().unwrap().push("inner cleanup"));
+            {
+                let _g = GuardWithHook::new(move || calls4.lock().unwrap().push("inner inner cleanup"));
+
+                // just for kicks, overwrite the panic hook here to check that it get's
+                // overwritten when guard is dropped
+                std::panic::set_hook(Box::new(move |_| calls5.lock().unwrap().push("wrong")));
+            }
+
+        }
+
+        // if this assert fails, we will get no error message in stder...
+        assert_eq!(*calls.lock().unwrap(), vec!["inner inner cleanup", "inner cleanup"]);
+
+        // panic after both guards have gone out of scope, so only the outer hook should be called
+        assert!(std::panic::catch_unwind(|| {
+            panic!("test");
+        }).is_err());
+
+        // restore original hook before assert, so we see the error message if the test fails
+        std::panic::set_hook(original_hook);
+        assert_eq!(*calls.lock().unwrap(), vec!["inner inner cleanup", "inner cleanup", "outer hook"]);
+    }
+
 }
