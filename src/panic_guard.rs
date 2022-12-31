@@ -4,9 +4,9 @@ type PanicHookType = (dyn for<'r, 's> Fn(&'r std::panic::PanicInfo<'s>) + Send +
 
 /// Custom scopeguard-like struct that wraps a panic hook function and a callback ("cleanup")
 /// function, and in the case of a panic, calls the callback *before* the wrapped panic hook (i.e.
-/// printing the error message to stderr). We need this to e.g. switch back to the non-alternate
-/// screen before printing the error message, so that it doesn't disappear into the alternate
-/// screen.
+/// before printing the error message to stderr). We need this to e.g. switch back to the
+/// non-alternate screen before printing the error message, so that it doesn't disappear into the
+/// alternate screen.
 pub struct GuardWithHook<F>
 where
     F: FnOnce() + Sync + Send + 'static,
@@ -21,7 +21,7 @@ where
     F: FnOnce() + Sync + Send + 'static,
 {
     /// Store a callback function and the current panic hook, and install a new panic hook that
-    /// first calls the callback, and then the original.
+    /// first calls the callback, and then the original panic hook.
     fn new(callback: F) -> Self {
         let callback = Arc::new(Mutex::new(Some(callback)));
         let callback_copy = callback.clone();
@@ -29,13 +29,13 @@ where
         let original_hook: Arc<PanicHookType> = Arc::from(std::panic::take_hook());
         let original_hook_copy = original_hook.clone();
 
+        //TODO: use std::panic::replace_hook once it is stabilized...
         std::panic::set_hook(Box::new(move |info| {
             if let Ok(mut callback) = callback_copy.try_lock() {
                 if let Some(callback) = callback.take() {
                     callback();
                 }
             }
-
             (*original_hook_copy)(info);
         }));
 
