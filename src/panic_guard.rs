@@ -22,7 +22,7 @@ where
 {
     /// Store a callback function and the current panic hook, and install a new panic hook that
     /// first calls the callback, and then the original panic hook.
-    fn new(callback: F) -> Self {
+    pub fn new(callback: F) -> Self {
         let callback = Arc::new(Mutex::new(Some(callback)));
         let callback_copy = callback.clone();
 
