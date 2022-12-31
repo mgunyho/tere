@@ -44,7 +44,11 @@ fn main() -> Result<(), TereError> {
     //Now the mouse capture enabling (which is kind of similar) is handled there.
     execute!(std::io::stderr(), terminal::EnterAlternateScreen)?;
     let res: Result<std::path::PathBuf, TereError> = {
-        // We can use unwrap here, the guards will ensure that the panic is handled correctly.
+
+        // Use guards to ensure that we disable raw mode, show the cursor and leave the alternate
+        // screen, even in the event of a panic. We are using unwrap quite liberally here, but the
+        // guards should ensure that everything is handled correctly in the very unlikely event
+        // that terminal modification calls fail.
         let _guard = GuardWithHook::new(|| {
             execute!(std::io::stderr(), terminal::LeaveAlternateScreen).unwrap()
         });
@@ -57,8 +61,8 @@ fn main() -> Result<(), TereError> {
             {
                 let _guard = GuardWithHook::new(|| terminal::disable_raw_mode().unwrap());
 
-                // we are now inside the alternate screen, so collect all errors and attempt
-                // to leave the alt screen in case of an error
+                // We are now inside the alternate screen, with the cursor hidden and raw mode
+                // enabled. We can finally actually run the application.
 
                 let mut stderr = std::io::stderr();
 
@@ -72,7 +76,8 @@ fn main() -> Result<(), TereError> {
                     })
                     .and_then(|(settings, warnings)| TereAppState::init(settings, &warnings))
                     .and_then(|state| TereTui::init(state, &mut stderr))
-                    .and_then(|mut ui| ui.main_event_loop()) // actually run the app and return the final path
+                    // actually run the app and return the final path
+                    .and_then(|mut ui| ui.main_event_loop())
             }
         }
     };
