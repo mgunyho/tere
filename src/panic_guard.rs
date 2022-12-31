@@ -29,7 +29,7 @@ where
         let original_hook_copy = original_hook.clone();
 
         std::panic::set_hook(Box::new(move |info| {
-            //(*callback_copy)();
+            (*callback_copy)();
             (*original_hook_copy)(info);
         }));
 
