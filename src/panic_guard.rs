@@ -57,7 +57,6 @@ where
             // we're not panicking (the hook can't be modified during a panic, of course).
             let original_hook = self.original_hook.clone();
             std::panic::set_hook(Box::new(move |info| (*original_hook)(info)));
-
         }
 
         // If callback has not been called yet (i.e. it is Some), call it
@@ -86,8 +85,10 @@ mod tests {
 
         {
             let called = called.clone();
-            let _guard = GuardWithHook::new(move || {*called.lock().unwrap() += 1;});
-            // guard is dropped, should call hook
+            let _guard = GuardWithHook::new(move || {
+                *called.lock().unwrap() += 1;
+            });
+            // guard is dropped, hook should be called
         }
 
         assert_eq!(*called.lock().unwrap(), 1);
@@ -102,7 +103,9 @@ mod tests {
 
         let calls = Arc::new(Mutex::new(0));
         let calls2 = calls.clone();
-        let _guard = GuardWithHook::new(move || {*calls2.lock().unwrap() += 1;});
+        let _guard = GuardWithHook::new(move || {
+            *calls2.lock().unwrap() += 1;
+        });
         assert!(std::panic::catch_unwind(|| panic!("test")).is_err());
 
         // restore original hook before assert, so we see the error message if the test fails
@@ -188,24 +191,29 @@ mod tests {
         {
             let _g = GuardWithHook::new(move || calls3.lock().unwrap().push("inner cleanup"));
             {
-                let _g = GuardWithHook::new(move || calls4.lock().unwrap().push("inner inner cleanup"));
+                let _g =
+                    GuardWithHook::new(move || calls4.lock().unwrap().push("inner inner cleanup"));
 
                 // just for kicks, overwrite the panic hook here to check that it get's
                 // overwritten when guard is dropped
                 std::panic::set_hook(Box::new(move |_| calls5.lock().unwrap().push("wrong")));
             }
-
         }
 
         // if this assert fails, we will get no error message in stder...
-        assert_eq!(*calls.lock().unwrap(), vec!["inner inner cleanup", "inner cleanup"]);
+        assert_eq!(
+            *calls.lock().unwrap(),
+            vec!["inner inner cleanup", "inner cleanup"]
+        );
 
         // panic after both guards have gone out of scope, so only the outer hook should be called
         assert!(std::panic::catch_unwind(|| panic!("test")).is_err());
 
         // restore original hook before assert, so we see the error message if the test fails
         std::panic::set_hook(original_hook);
-        assert_eq!(*calls.lock().unwrap(), vec!["inner inner cleanup", "inner cleanup", "outer hook"]);
+        assert_eq!(
+            *calls.lock().unwrap(),
+            vec!["inner inner cleanup", "inner cleanup", "outer hook"]
+        );
     }
-
 }
