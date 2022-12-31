@@ -25,6 +25,8 @@ use ui::TereTui;
 mod error;
 use error::TereError;
 
+mod panic_guard;
+use panic_guard::GuardWithHook;
 
 fn main() -> Result<(), TereError> {
 
