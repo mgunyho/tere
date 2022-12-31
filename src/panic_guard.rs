@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 type PanicHookType = (dyn for<'r, 's> Fn(&'r std::panic::PanicInfo<'s>) + Send + Sync + 'static);
 
@@ -9,27 +9,33 @@ type PanicHookType = (dyn for<'r, 's> Fn(&'r std::panic::PanicInfo<'s>) + Send +
 /// screen.
 pub struct GuardWithHook<F>
 where
-    F: Fn() + Sync + Send + 'static,
+    F: FnOnce() + Sync + Send + 'static,
 {
     original_hook: Arc<PanicHookType>,
-    callback: Arc<F>,
+    // Use Option to deonte whether the function has been called or not.
+    callback: Arc<Mutex<Option<F>>>,
 }
 
 impl<F> GuardWithHook<F>
 where
-    F: Fn() + Sync + Send + 'static,
+    F: FnOnce() + Sync + Send + 'static,
 {
     /// Store a callback function and the current panic hook, and install a new panic hook that
     /// first calls the callback, and then the original.
     fn new(callback: F) -> Self {
-        let callback = Arc::new(callback);
+        let callback = Arc::new(Mutex::new(Some(callback)));
         let callback_copy = callback.clone();
 
         let original_hook: Arc<PanicHookType> = Arc::from(std::panic::take_hook());
         let original_hook_copy = original_hook.clone();
 
         std::panic::set_hook(Box::new(move |info| {
-            (*callback_copy)();
+            if let Ok(mut callback) = callback_copy.try_lock() {
+                if let Some(callback) = callback.take() {
+                    callback();
+                }
+            }
+
             (*original_hook_copy)(info);
         }));
 
@@ -42,19 +48,23 @@ where
 
 impl<F> Drop for GuardWithHook<F>
 where
-    F: Fn() + Sync + Send + 'static,
+    F: FnOnce() + Sync + Send + 'static,
 {
     /// Restore the original panic hook, and call the callback.
     fn drop(&mut self) {
         if !std::thread::panicking() {
             // Set the panic hook back to what it was before. Note that this can be done only if
-            // we're not panicking.
+            // we're not panicking (the hook can't be modified during a panic, of course).
             let original_hook = self.original_hook.clone();
             std::panic::set_hook(Box::new(move |info| (*original_hook)(info)));
 
-            // Only call the callback if we're not panicking, otherwise it has already been called
-            // by the panic hook.
-            (self.callback)();
+        }
+
+        // If callback has not been called yet (i.e. it is Some), call it
+        if let Ok(mut callback) = self.callback.try_lock() {
+            if let Some(callback) = callback.take() {
+                callback();
+            }
         }
     }
 }
