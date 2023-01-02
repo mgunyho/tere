@@ -1,7 +1,8 @@
 ## 1.4.0 (unreleased)
 
 - Check if the app is being run for the first time (based on whether the history file exists, and a bit of additional simple logic), and if so, prompt the user to confirm that they have updated their shell configuration (Github #83)
-- Upgrade `clap` dependency to latest version (required to catch panic)
+- If the app panics/crashes, the terminal state is properly reset, so it shouldn't produce garbled ouptut anymore
+- Upgrade `clap` dependency to latest version
 - Small improvements to setup instructions and user manual
 - Footer error message is not cleared when search is updated, only when changing the folder
 
