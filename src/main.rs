@@ -1,9 +1,5 @@
+use crossterm::{cursor, execute, terminal};
 use std::io::Write;
-use crossterm::{
-    execute,
-    terminal,
-    cursor,
-};
 
 //TODO: rustfmt
 //TODO: clippy
@@ -29,7 +25,6 @@ mod panic_guard;
 use panic_guard::GuardWithHook;
 
 fn main() -> Result<(), TereError> {
-
     let cli_args = cli_args::get_cli_args()
         .try_get_matches()
         .unwrap_or_else(|err| {
@@ -44,7 +39,6 @@ fn main() -> Result<(), TereError> {
     //Now the mouse capture enabling (which is kind of similar) is handled there.
     execute!(std::io::stderr(), terminal::EnterAlternateScreen)?;
     let res: Result<std::path::PathBuf, TereError> = {
-
         // Use guards to ensure that we disable raw mode, show the cursor and leave the alternate
         // screen, even in the event of a panic. We are using unwrap quite liberally here, but the
         // guards should ensure that everything is handled correctly in the very unlikely event
