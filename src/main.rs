@@ -1,9 +1,5 @@
+use crossterm::{cursor, execute, terminal};
 use std::io::Write;
-use crossterm::{
-    execute,
-    terminal,
-    cursor,
-};
 
 //TODO: rustfmt
 //TODO: clippy
@@ -25,9 +21,10 @@ use ui::TereTui;
 mod error;
 use error::TereError;
 
+mod panic_guard;
+use panic_guard::GuardWithHook;
 
 fn main() -> Result<(), TereError> {
-
     let cli_args = cli_args::get_cli_args()
         .try_get_matches()
         .unwrap_or_else(|err| {
@@ -38,37 +35,46 @@ fn main() -> Result<(), TereError> {
             std::process::exit(1);
         });
 
-    let mut stderr = std::io::stderr();
-
     //TODO: should this alternate screen etc initialization (and teardown) be done by the UI?
     //Now the mouse capture enabling (which is kind of similar) is handled there.
-    execute!(
-        stderr,
-        terminal::EnterAlternateScreen,
-        cursor::Hide,
-    )?;
+    execute!(std::io::stderr(), terminal::EnterAlternateScreen)?;
+    let res: Result<std::path::PathBuf, TereError> = {
+        // Use guards to ensure that we disable raw mode, show the cursor and leave the alternate
+        // screen, even in the event of a panic. We are using unwrap quite liberally here, but the
+        // guards should ensure that everything is handled correctly in the very unlikely event
+        // that terminal modification calls fail.
+        let _guard = GuardWithHook::new(|| {
+            execute!(std::io::stderr(), terminal::LeaveAlternateScreen).unwrap()
+        });
 
-    // we are now inside the alternate screen, so collect all errors and attempt
-    // to leave the alt screen in case of an error
+        execute!(std::io::stderr(), cursor::Hide).unwrap();
+        {
+            let _guard = GuardWithHook::new(|| execute!(std::io::stderr(), cursor::Show).unwrap());
 
-    let res: Result<std::path::PathBuf, TereError> = terminal::enable_raw_mode()
-        .and_then(|_| stderr.flush()).map_err(TereError::from)
-        .and_then(|_| TereSettings::parse_cli_args(&cli_args))
-        .and_then(|(settings, warnings)| { check_first_run_with_prompt(&settings, &mut stderr)?; Ok((settings, warnings)) })
-        .and_then(|(settings, warnings)| TereAppState::init(settings, &warnings))
-        .and_then(|state| TereTui::init(state, &mut stderr))
-        .and_then(|mut ui| ui.main_event_loop()); // actually run the app and return the final path
+            terminal::enable_raw_mode().unwrap();
+            {
+                let _guard = GuardWithHook::new(|| terminal::disable_raw_mode().unwrap());
 
-    // Always disable raw mode
-    let raw_mode_success = terminal::disable_raw_mode().map_err(TereError::from);
-    // this 'and' has to be in this order to keep the path if both results are ok.
-    let res = raw_mode_success.and(res);
+                // We are now inside the alternate screen, with the cursor hidden and raw mode
+                // enabled. We can finally actually run the application.
 
-    execute!(
-        stderr,
-        terminal::LeaveAlternateScreen,
-        cursor::Show,
-        )?;
+                let mut stderr = std::io::stderr();
+
+                stderr
+                    .flush()
+                    .map_err(TereError::from)
+                    .and_then(|_| TereSettings::parse_cli_args(&cli_args))
+                    .and_then(|(settings, warnings)| {
+                        check_first_run_with_prompt(&settings, &mut stderr)?;
+                        Ok((settings, warnings))
+                    })
+                    .and_then(|(settings, warnings)| TereAppState::init(settings, &warnings))
+                    .and_then(|state| TereTui::init(state, &mut stderr))
+                    // actually run the app and return the final path
+                    .and_then(|mut ui| ui.main_event_loop())
+            }
+        }
+    };
 
     // Check if there was an error
     let final_path = match res {
