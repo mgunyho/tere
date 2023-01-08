@@ -73,10 +73,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    // Need this to communicate results back to us from within callback
-    use std::sync::Mutex;
 
-    // ensure that tests don't run in parallel while we're messing with the global panic hook
+    // ensure that tests that mess with the global panic hook don't run in parallel
     static TEST_MUTEX: Mutex<()> = Mutex::new(());
 
     #[test]
