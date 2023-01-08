@@ -80,13 +80,13 @@ fn main() -> Result<(), TereError> {
                 TereError::ExitWithoutCd(msg) | TereError::FirstRunPromptCancelled(msg) => {
                     eprintln!("{}", msg);
                     std::process::exit(1);
-                },
+                }
 
                 // exit in case of any other error
                 e => return Err(e),
             }
         }
-        Ok(path) => path
+        Ok(path) => path,
     };
 
     // No error, print cwd, as returned by the app state
