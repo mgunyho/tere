@@ -325,4 +325,4 @@ Here's a checklist of things to do for a new release.
 
 ## License
 
-Copyright 2022 András Márton Gunyhó. Licensed under the EUPL, see the `LICENSE` file.
+Copyright 2023 András Márton Gunyhó. Licensed under the EUPL, see the `LICENSE` file.
