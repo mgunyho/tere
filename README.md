@@ -312,7 +312,7 @@ Here's a checklist of things to do for a new release.
 - Run `cargo test` and verify that all tests pass
 - Update version in `Cargo.toml`
 - Run `cargo build` so that `Cargo.lock` is also updated, and make a commit with the updated versions.
-- Update the release date in `CHANGELOG.md`
+- Update the release date in `CHANGELOG.md` and commit it
 - `git checkout master && git merge --no-ff develop`. The commit title should be "Version X.Y.Z" and the commit message should contain the changelog.
 - `git tag vX.Y.Z`
 - `git push && git push --tags`. Also make sure that the latest version of `develop` is pushed.
