@@ -1,16 +1,19 @@
 /// Module for managing the settings (command line arguments) of the app
+use clap::{error::ErrorKind as ClapErrorKind, ArgMatches, Error as ClapError};
+use crokey::key;
+use crossterm::event::KeyEvent;
+use std::collections::HashMap;
 use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::collections::HashMap;
-use clap::{ArgMatches, Error as ClapError, error::ErrorKind as ClapErrorKind};
-use crossterm::event::KeyEvent;
-use crokey::key;
+use strum_macros::EnumIter;
 
+use crate::error::TereError;
 use crate::ui::{Action, ActionContext};
 
 //TODO: config file?
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum CaseSensitiveMode {
     IgnoreCase,
     CaseSensitive,
@@ -34,12 +37,12 @@ impl fmt::Display for CaseSensitiveMode {
     }
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum GapSearchMode {
     NormalSearch,
     NormalSearchAnywhere,
     GapSearchFromStart,
-    GapSearchAnywere,
+    GapSearchAnywhere,
 }
 
 impl Default for GapSearchMode {
@@ -54,12 +57,13 @@ impl fmt::Display for GapSearchMode {
             GapSearchMode::GapSearchFromStart => "gap search from start",
             GapSearchMode::NormalSearch       => "normal search",
             GapSearchMode::NormalSearchAnywhere => "normal search anywhere",
-            GapSearchMode::GapSearchAnywere   => "gap search anywhere",
+            GapSearchMode::GapSearchAnywhere  => "gap search anywhere",
         };
         write!(f, "{}", text)
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Copy, Clone, EnumIter, clap::ValueEnum)]
 pub enum SortMode {
     Name,
     Created,
@@ -109,35 +113,35 @@ pub struct TereSettings {
 pub type DeprecationWarnings = Vec<&'static str>;
 
 impl TereSettings {
-    pub fn parse_cli_args(args: &ArgMatches) -> Result<(Self, DeprecationWarnings), ClapError> {
+    pub fn parse_cli_args(args: &ArgMatches) -> Result<(Self, DeprecationWarnings), TereError> {
         let mut ret = Self::default();
         let mut warnings = vec![];
 
-        if args.contains_id("folders-only") {
+        if args.get_flag("folders-only") {
             ret.folders_only = true;
         }
 
-        if args.contains_id("filter-search") {
+        if args.get_flag("filter-search") {
             ret.filter_search = true;
         }
 
-        if args.contains_id("case-sensitive") {
+        if args.get_flag("case-sensitive") {
             ret.case_sensitive = CaseSensitiveMode::CaseSensitive;
-        } else if args.contains_id("ignore-case") {
+        } else if args.get_flag("ignore-case") {
             ret.case_sensitive = CaseSensitiveMode::IgnoreCase;
-        } else if args.contains_id("smart-case") {
+        } else if args.get_flag("smart-case") {
             ret.case_sensitive = CaseSensitiveMode::SmartCase;
         }
 
-        if args.contains_id("gap-search") {
+        if args.get_flag("gap-search") {
             ret.gap_search_mode = GapSearchMode::GapSearchFromStart;
-        } else if args.contains_id("gap-search-anywhere") {
-            ret.gap_search_mode = GapSearchMode::GapSearchAnywere;
-        } else if args.contains_id("normal-search") {
+        } else if args.get_flag("gap-search-anywhere") {
+            ret.gap_search_mode = GapSearchMode::GapSearchAnywhere;
+        } else if args.get_flag("normal-search") {
             ret.gap_search_mode = GapSearchMode::NormalSearch;
-        } else if args.contains_id("normal-search-anywhere") {
+        } else if args.get_flag("normal-search-anywhere") {
             ret.gap_search_mode = GapSearchMode::NormalSearchAnywhere;
-        } else if args.contains_id("no-gap-search") {
+        } else if args.get_flag("no-gap-search") {
             warnings.push("The option 'no-gap-search' has been renamed to 'normal-search', please use that instead.");
             ret.gap_search_mode = GapSearchMode::NormalSearch;
         }
@@ -176,11 +180,11 @@ impl TereSettings {
         }
 
         // ok to unwrap, because mouse has the default value of 'off'
-        if args.get_many::<String>("mouse").unwrap().map(|v| v.as_str()).last().unwrap() == "on" {
+        if args.get_one::<String>("mouse").unwrap() == "on" {
             ret.mouse_enabled = true;
         }
 
-        if !args.is_present("clear-default-keymap") {
+        if let Some(false) = args.get_one::<bool>("clear-default-keymap") {
             ret.keymap = DEFAULT_KEYMAP
                 .iter()
                 .map(|(k, c, a)| ((*k, c.clone()), a.clone()))
@@ -203,23 +207,15 @@ impl TereSettings {
 
         if !ret.keymap.values().any(|a| a == &Action::Exit) {
             return Err(ClapError::raw(
-                ClapErrorKind::EmptyValue,
+                ClapErrorKind::InvalidValue,
                 "No keyboard mapping found for exit!\n",
-            ));
+            ).into());
         }
 
-        ret.sort_mode = match args
-            .get_many::<String>("sort")
-            .unwrap()
-            .map(|v| v.as_str())
-            .last()
-            .unwrap()
-        {
-            "created" => SortMode::Created,
-            "modified" => SortMode::Modified,
-            "name" => SortMode::Name,
-            _ => unreachable!(),
-        };
+        ret.sort_mode = args
+            .get_one::<SortMode>("sort")
+            .cloned()
+            .unwrap_or_default();
 
         Ok((ret, warnings))
     }
@@ -591,6 +587,156 @@ mod tests {
     }
 
     #[test]
+    fn test_filter_search_override() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(!settings.filter_search);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--filter-search",
+                "--no-filter-search",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(!settings.filter_search);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--filter-search",
+                "--no-filter-search",
+                "--filter-search",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(settings.filter_search);
+    }
+
+    #[test]
+    fn test_folders_only_override() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(!settings.folders_only);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--folders-only",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(settings.folders_only);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--folders-only",
+                "--no-folders-only",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(!settings.folders_only);
+    }
+
+    #[test]
+    fn test_case_sensitive_mode_override() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.case_sensitive, CaseSensitiveMode::SmartCase);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--case-sensitive",
+                "--ignore-case",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.case_sensitive, CaseSensitiveMode::IgnoreCase);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--case-sensitive",
+                "--ignore-case",
+                "--case-sensitive",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.case_sensitive, CaseSensitiveMode::CaseSensitive);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--case-sensitive",
+                "--ignore-case",
+                "--case-sensitive",
+                "--smart-case",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.case_sensitive, CaseSensitiveMode::SmartCase);
+    }
+
+    #[test]
+    fn test_gap_search_mode_override() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.gap_search_mode, GapSearchMode::GapSearchFromStart);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--gap-search",
+                "--gap-search-anywhere",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.gap_search_mode, GapSearchMode::GapSearchAnywhere);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--gap-search",
+                "--gap-search-anywhere",
+                "--normal-search-anywhere",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.gap_search_mode, GapSearchMode::NormalSearchAnywhere);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--gap-search",
+                "--gap-search-anywhere",
+                "--normal-search-anywhere",
+                "--gap-search",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.gap_search_mode, GapSearchMode::GapSearchFromStart);
+    }
+
+    #[test]
     fn test_no_gap_search_deprecated() {
         let m = crate::cli_args::get_cli_args()
             .get_matches_from(vec![
@@ -600,6 +746,71 @@ mod tests {
         let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
         assert!(!warnings.is_empty());
         assert!(settings.gap_search_mode == GapSearchMode::NormalSearch);
+    }
+
+    #[test]
+    fn test_sort_mode_override() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.sort_mode, SortMode::Name);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--sort", "created",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.sort_mode, SortMode::Created);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--sort",  "created",
+                "--sort",  "name",
+                "--sort",  "modified",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert_eq!(settings.sort_mode, SortMode::Modified);
+
+    }
+
+    #[test]
+    fn test_mouse_override() {
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(!settings.mouse_enabled);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--mouse", "off",
+                "--mouse", "on",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(settings.mouse_enabled);
+
+        let m = crate::cli_args::get_cli_args()
+            .get_matches_from(vec![
+                "foo",
+                "--mouse",  "off",
+                "--mouse",  "on",
+                "--mouse",  "off",
+            ]);
+        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
+        assert!(warnings.is_empty());
+        assert!(!settings.mouse_enabled);
+
     }
 
 }

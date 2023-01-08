@@ -8,6 +8,9 @@ pub enum TereError {
     // This is raised when the user wants to exit tere without changing the folder. A bit of a hack
     // to define this here but this is simple enough.
     ExitWithoutCd(String),
+
+    // The user cancelled the first-run prompt
+    FirstRunPromptCancelled(String),
 }
 
 impl From<std::io::Error> for TereError {

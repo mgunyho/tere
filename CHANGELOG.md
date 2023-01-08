@@ -1,3 +1,11 @@
+## 1.4.0 (2023-01-08)
+
+- Check if the app is being run for the first time (based on whether the history file exists, and a bit of additional simple logic), and if so, prompt the user to confirm that they have updated their shell configuration (Github #83)
+- If the app panics/crashes, the terminal state is properly reset, so it shouldn't produce garbled ouptut anymore
+- Upgrade `clap` dependency to latest version
+- Small improvements to setup instructions and user manual
+- Footer error message is not cleared when search is updated, only when changing the folder
+
 ## 1.3.1 (2022-12-06)
 
 - Fixed a bug where `?` didn't show the help screen on Windows by default

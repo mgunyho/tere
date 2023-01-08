@@ -1,21 +1,17 @@
-pub mod help_window;
 mod action;
+pub mod help_window;
+pub mod markup_render;
 
 use std::convert::TryFrom;
+use std::fmt::Write as _;
 use std::io::{Stderr, Write};
 use std::path::PathBuf;
-use std::fmt::Write as _;
 
+use crate::app_state::{TereAppState, NO_MATCHES_MSG};
 use crate::error::TereError;
-use crate::app_state::{
-    TereAppState,
-    CaseSensitiveMode,
-    GapSearchMode,
-    SortMode,
-    NO_MATCHES_MSG,
-};
-use help_window::get_formatted_help_text;
+use crate::settings::{CaseSensitiveMode, GapSearchMode, SortMode};
 pub use action::{Action, ActionContext};
+use help_window::get_formatted_help_text;
 
 use crossterm::{
     execute,
@@ -38,7 +34,6 @@ use crossterm::{
     Result as CTResult,
 };
 
-use clap::ArgMatches;
 use dirs::home_dir;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -62,7 +57,7 @@ fn terminal_size_usize() -> CTResult<(usize, usize)> {
 }
 
 // Dimensions (width, height) of main window
-fn main_window_size() -> CTResult<(usize, usize)> {
+pub fn main_window_size() -> CTResult<(usize, usize)> {
     let (w, h) = terminal_size_usize()?;
     Ok((
         w as usize,
@@ -71,18 +66,14 @@ fn main_window_size() -> CTResult<(usize, usize)> {
 }
 
 impl<'a> TereTui<'a> {
-    pub fn init(args: &ArgMatches, window: &'a mut Stderr) -> Result<Self, TereError> {
-        let (w, h) = main_window_size()?;
-        let state = TereAppState::init(args, w, h)?;
-        let mut ret = Self {
-            window,
-            app_state: state,
-        };
+    pub fn init(app_state: TereAppState, window: &'a mut Stderr) -> Result<Self, TereError> {
+        let mut ret = Self { window, app_state };
 
         if ret.app_state.settings().mouse_enabled {
             execute!(ret.window, EnableMouseCapture)?;
         }
 
+        ret.update_main_window_dimensions()?;
         ret.update_header()?;
         ret.redraw_all_windows()?;
         Ok(ret)
@@ -307,14 +298,13 @@ impl<'a> TereTui<'a> {
 
             // queue draw actions for each (non-)underlined segment
             for (c, underline) in &letters_underlining {
-
                 let (underline, fg, bg) = match (underline, highlight) {
                     (true, _) => (
                         Attribute::Underlined,
                         style::Color::Reset,
                         matching_letter_bg,
                     ),
-                    (false,  true) => (
+                    (false, true) => (
                         Attribute::NoUnderline,
                         highlight_fg,
                         highlight_bg,
@@ -521,8 +511,6 @@ impl<'a> TereTui<'a> {
     fn on_matches_changed(&mut self) -> CTResult<()> {
         if self.app_state.is_searching() && self.app_state.num_matching_items() == 0 {
             self.info_message(NO_MATCHES_MSG)?;
-        } else {
-            self.info_message("")?;
         }
 
         self.redraw_main_window()?;
@@ -643,8 +631,8 @@ impl<'a> TereTui<'a> {
     fn cycle_gap_search_mode(&mut self) -> CTResult<()> {
         self.app_state.set_gap_search_mode(match self.app_state.settings().gap_search_mode {
             GapSearchMode::GapSearchFromStart => GapSearchMode::NormalSearch,
-            GapSearchMode::NormalSearch => GapSearchMode::GapSearchAnywere,
-            GapSearchMode::GapSearchAnywere => GapSearchMode::NormalSearchAnywhere,
+            GapSearchMode::NormalSearch => GapSearchMode::GapSearchAnywhere,
+            GapSearchMode::GapSearchAnywhere => GapSearchMode::NormalSearchAnywhere,
             GapSearchMode::NormalSearchAnywhere => GapSearchMode::GapSearchFromStart,
         });
         self.on_matches_changed()
@@ -659,7 +647,7 @@ impl<'a> TereTui<'a> {
         self.on_matches_changed()
     }
 
-    pub fn main_event_loop(&mut self) -> Result<(), TereError> {
+    pub fn main_event_loop(&mut self) -> Result<PathBuf, TereError> {
 
         let loop_result = loop {
             match read_event()? {
@@ -672,10 +660,17 @@ impl<'a> TereTui<'a> {
 
                     let action = self
                         .app_state
-                        .settings().keymap.get(&(k, valid_ctx))
+                        .settings()
+                        .keymap
+                        .get(&(k, valid_ctx))
                         // If no mapping is found with the currently applying context, look for a
                         // mapping that applies in any context
-                        .or_else(|| self.app_state.settings().keymap.get(&(k, ActionContext::None)));
+                        .or_else(|| {
+                            self.app_state
+                                .settings()
+                                .keymap
+                                .get(&(k, ActionContext::None))
+                        });
 
                     if let Some(action) = action {
                         match action {
@@ -688,7 +683,7 @@ impl<'a> TereTui<'a> {
                                 if self.change_dir("")? {
                                     break Ok(());
                                 }
-                            },
+                            }
 
                             Action::CursorUp => self.on_cursor_up_down(true)?,
                             Action::CursorDown => self.on_cursor_up_down(false)?,
@@ -716,8 +711,10 @@ impl<'a> TereTui<'a> {
                             Action::Exit => break Ok(()),
                             Action::ExitWithoutCd => {
                                 // exit with error (ctl+c by default), to avoid cd'ing
-                                let msg = format!("{}: Exited without changing folder",
-                                                  env!("CARGO_PKG_NAME"));
+                                let msg = format!(
+                                    "{}: Exited without changing folder",
+                                    env!("CARGO_PKG_NAME")
+                                );
                                 break Err(TereError::ExitWithoutCd(msg));
                             }
 
@@ -758,8 +755,11 @@ impl<'a> TereTui<'a> {
             execute!(self.window, DisableMouseCapture)?;
         }
 
-        self.app_state.on_exit().map_err(TereError::from)
+        self.app_state
+            .on_exit()
+            .map_err(TereError::from)
             .and(loop_result)
+            .map(|_| self.current_path())
     }
 
     fn help_view_loop(&mut self) -> CTResult<()> {

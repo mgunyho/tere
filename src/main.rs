@@ -1,16 +1,19 @@
+use crossterm::{cursor, execute, terminal};
 use std::io::Write;
-use crossterm::{
-    execute,
-    terminal,
-    cursor,
-};
 
 //TODO: rustfmt
 //TODO: clippy
 
-mod app_state;
-
 mod cli_args;
+
+mod settings;
+use settings::TereSettings;
+
+mod app_state;
+use app_state::TereAppState;
+
+mod first_run_check;
+use first_run_check::check_first_run_with_prompt;
 
 mod ui;
 use ui::TereTui;
@@ -18,9 +21,10 @@ use ui::TereTui;
 mod error;
 use error::TereError;
 
+mod panic_guard;
+use panic_guard::GuardWithHook;
 
 fn main() -> Result<(), TereError> {
-
     let cli_args = cli_args::get_cli_args()
         .try_get_matches()
         .unwrap_or_else(|err| {
@@ -31,37 +35,46 @@ fn main() -> Result<(), TereError> {
             std::process::exit(1);
         });
 
-    let mut stderr = std::io::stderr();
-
     //TODO: should this alternate screen etc initialization (and teardown) be done by the UI?
     //Now the mouse capture enabling (which is kind of similar) is handled there.
-    execute!(
-        stderr,
-        terminal::EnterAlternateScreen,
-        cursor::Hide,
-    )?;
-
-    // we are now inside the alternate screen, so collect all errors and attempt
-    // to leave the alt screen in case of an error
-
-    let res: Result<std::path::PathBuf, TereError> = terminal::enable_raw_mode()
-        .and_then(|_| stderr.flush()).map_err(TereError::from)
-        .and_then(|_| TereTui::init(&cli_args, &mut stderr)) // actually run the app
-        .and_then(|mut ui| {
-            ui.main_event_loop()
-                .map(|_| ui.current_path())
+    execute!(std::io::stderr(), terminal::EnterAlternateScreen)?;
+    let res: Result<std::path::PathBuf, TereError> = {
+        // Use guards to ensure that we disable raw mode, show the cursor and leave the alternate
+        // screen, even in the event of a panic. We are using unwrap quite liberally here, but the
+        // guards should ensure that everything is handled correctly in the very unlikely event
+        // that terminal modification calls fail.
+        let _guard = GuardWithHook::new(|| {
+            execute!(std::io::stderr(), terminal::LeaveAlternateScreen).unwrap()
         });
 
-    // Always disable raw mode
-    let raw_mode_success = terminal::disable_raw_mode().map_err(TereError::from);
-    // this 'and' has to be in this order to keep the path if both results are ok.
-    let res = raw_mode_success.and(res);
+        execute!(std::io::stderr(), cursor::Hide).unwrap();
+        {
+            let _guard = GuardWithHook::new(|| execute!(std::io::stderr(), cursor::Show).unwrap());
 
-    execute!(
-        stderr,
-        terminal::LeaveAlternateScreen,
-        cursor::Show,
-        )?;
+            terminal::enable_raw_mode().unwrap();
+            {
+                let _guard = GuardWithHook::new(|| terminal::disable_raw_mode().unwrap());
+
+                // We are now inside the alternate screen, with the cursor hidden and raw mode
+                // enabled. We can finally actually run the application.
+
+                let mut stderr = std::io::stderr();
+
+                stderr
+                    .flush()
+                    .map_err(TereError::from)
+                    .and_then(|_| TereSettings::parse_cli_args(&cli_args))
+                    .and_then(|(settings, warnings)| {
+                        check_first_run_with_prompt(&settings, &mut stderr)?;
+                        Ok((settings, warnings))
+                    })
+                    .and_then(|(settings, warnings)| TereAppState::init(settings, &warnings))
+                    .and_then(|state| TereTui::init(state, &mut stderr))
+                    // actually run the app and return the final path
+                    .and_then(|mut ui| ui.main_event_loop())
+            }
+        }
+    };
 
     // Check if there was an error
     let final_path = match res {
@@ -70,16 +83,16 @@ fn main() -> Result<(), TereError> {
                 // Print pretty error message if the error was in arg parsing
                 TereError::Clap(e) => e.exit(),
 
-                TereError::ExitWithoutCd(msg) => {
+                TereError::ExitWithoutCd(msg) | TereError::FirstRunPromptCancelled(msg) => {
                     eprintln!("{}", msg);
                     std::process::exit(1);
-                },
+                }
 
                 // exit in case of any other error
                 e => return Err(e),
             }
         }
-        Ok(path) => path
+        Ok(path) => path,
     };
 
     // No error, print cwd, as returned by the app state
