@@ -194,7 +194,7 @@ mod tests {
                 let _g =
                     GuardWithHook::new(move || calls4.lock().unwrap().push("inner inner cleanup"));
 
-                // just for kicks, overwrite the panic hook here to check that it get's
+                // just for kicks, overwrite the panic hook here to check that it gets
                 // overwritten when guard is dropped
                 std::panic::set_hook(Box::new(move |_| calls5.lock().unwrap().push("wrong")));
             }
