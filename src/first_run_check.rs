@@ -31,7 +31,7 @@ pub fn check_first_run_with_prompt(
 
     // For now we use a bit of a heuristic to determine if the app is being run for the first time:
     // we assume that the app has been run before if the history file exists, or the user
-    // explicitly requests no history file. (Or one more possiblity is that the cache directory
+    // explicitly requests no history file. (Or one more possibility is that the cache directory
     // doesn't exist. In this case, we assume that the user knows what they're doing, and don't
     // prompt either.)
     //
