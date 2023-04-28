@@ -167,7 +167,7 @@ pub fn get_cli_args() -> Command {
              .short('m')
              .help("Map one or more keyboard shortcuts. See full help (with --help) for further details.")
              .long_help(format!(
-"Add one or more keyboard shortcut mappings. The basic syntax is of the form 'key-combination:action' or 'key-combination:context:action', see examples below. This option can be provided multiple times, and multiple mappings can be created by a comma-separated list of mappings. If the same key combination (with the same context) is provided multiple times, the previous mappings are overridden. Use the action 'None' to remove a previously added mapping or one of the default mappings.
+"Add one or more keyboard shortcut mappings. Mappings are of the form 'key-combination:action' or 'key-combination:context:action', see examples below. This option can be provided multiple times, and multiple mappings can be created by a comma-separated list of mappings. If the same key combination (with the same context) is provided multiple times, the previous mappings are overridden. Use the action 'None' to remove a previously added mapping or one of the default mappings.
 
 Examples:
 
@@ -175,7 +175,7 @@ Examples:
     -m ctrl-h:ChangeDirParent,ctrl-j:CursorDown,ctrl-k:CursorUp,ctrl-l:ChangeDir - Navigate using Control + hjkl in addition to the default Alt + hjkl
     -m 1:NotSearching:CursorTop - Move the cursor to the top of the listing by typing '1', but only if not already searching (so you can still search for filenames that contain '1')
     -m esc:NotSearching:ExitWithoutCd,enter:ChangeDirAndExit - Map Escape to exiting with error, and map Enter to select the directory under the cursor and exit
-    -m alt-h:None,alt-j:None,alt-k:None,alt-l:None - Disable navigation using Alt+hjkl
+    -m alt-h:None,alt-j:None,alt-k:None,alt-l:None - Disable navigation using Alt + hjkl
     -m esc:Searching:None - Don't clear the search by pressing esc, but still exit using esc (if the search query is empty)
 
 Possible actions:
@@ -235,7 +235,7 @@ justify_and_indent(
              .action(ArgAction::Set)
              .long("mouse")
              .help("Enable mouse navigation")
-             .long_help("Enable mouse navigation. If enabled, you can browse by clicking around with the mouse.")
+             .long_help("Enable mouse navigation. If enabled, you can browse by clicking around with the mouse. This is off by default to maximize compatibility.")
              .value_name("'on' or 'off'")
              .value_parser(clap::builder::PossibleValuesParser::new(["on", "off"]))
              .hide_possible_values(true)
