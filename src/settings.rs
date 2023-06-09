@@ -115,7 +115,7 @@ pub type DeprecationWarnings = Vec<&'static str>;
 impl TereSettings {
     pub fn parse_cli_args(args: &ArgMatches) -> Result<(Self, DeprecationWarnings), TereError> {
         let mut ret = Self::default();
-        let mut warnings = vec![];
+        let mut warnings: DeprecationWarnings = vec![];
 
         if args.get_flag("folders-only") {
             ret.folders_only = true;
