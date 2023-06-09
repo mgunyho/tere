@@ -65,6 +65,12 @@ impl MatchesVec {
             .iter()
             .enumerate()
             .filter_map(|(i, item)| {
+                // match only folders, not files
+                //TODO: don't always do this, only if it's enabled via settings
+                if !item.is_dir() {
+                    return None;
+                }
+
                 let target = if case_sensitive {
                     item.file_name_checked()
                 } else {
