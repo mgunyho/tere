@@ -110,6 +110,7 @@ impl fmt::Display for SortMode {
 pub struct TereSettings {
     /// If true, show only folders, not files in the listing
     pub folders_only: bool,
+    pub file_handling_mode: FileHandlingMode,
     /// If true, show only items matching the search in listing
     pub filter_search: bool,
 
