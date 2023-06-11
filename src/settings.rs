@@ -13,6 +13,25 @@ use crate::ui::{Action, ActionContext};
 
 //TODO: config file?
 
+/// How to handle files while searching
+#[derive(Debug, PartialEq, Eq)]
+pub enum FileHandlingMode {
+    /// Display files in the listing, but ignore them while searching (i.e. search only folders).
+    /// This is the default behavior.
+    Ignore,
+    /// Hide files in the listing, only show folders.
+    Hide,
+    /// Match both files and folders while searching. Note that currently `tere` doesn't do anything with
+    /// files, so matching a file just prints an error message.
+    Match,
+}
+
+impl Default for FileHandlingMode {
+    fn default() -> Self {
+        Self::Ignore
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum CaseSensitiveMode {
     IgnoreCase,
