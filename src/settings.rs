@@ -616,10 +616,30 @@ mod tests {
         ]);
         assert!(settings.folders_only);
 
+        // same as above, but with shorthand version
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "-d",
+        ]);
+        assert!(settings.folders_only);
+
         let settings = parse_cli_no_warnings(vec![
             "foo",
             "--folders-only",
             "--no-folders-only",
+        ]);
+        assert!(!settings.folders_only);
+
+        // same as above, but with shorthand versions
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "-d",
+            "-D",
+        ]);
+        assert!(!settings.folders_only);
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "-dD",
         ]);
         assert!(!settings.folders_only);
     }
