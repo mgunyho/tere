@@ -142,7 +142,7 @@ impl TereSettings {
         } else if args.get_flag("normal-search-anywhere") {
             ret.gap_search_mode = GapSearchMode::NormalSearchAnywhere;
         } else if args.get_flag("no-gap-search") {
-            warnings.push("The option 'no-gap-search' has been renamed to 'normal-search', please use that instead.");
+            warnings.push("The option '--no-gap-search' has been renamed to '--normal-search', please use that instead.");
             ret.gap_search_mode = GapSearchMode::NormalSearch;
         }
 
@@ -715,7 +715,7 @@ mod tests {
             "--no-gap-search"
         ]);
         assert_eq!(warnings.len(), 1);
-        assert!(warnings[0].contains("'no-gap-search' has been renamed"));
+        assert!(warnings[0].contains("'--no-gap-search' has been renamed"));
         assert!(settings.gap_search_mode == GapSearchMode::NormalSearch);
     }
 
