@@ -344,6 +344,19 @@ pub const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
 mod tests {
     use super::*;
 
+    /// Helper function for creating TereSettings from cli args
+    fn parse_cli(args: Vec<&str>) -> (TereSettings, DeprecationWarnings) {
+        let m = crate::cli_args::get_cli_args().get_matches_from(args);
+        return TereSettings::parse_cli_args(&m).unwrap();
+    }
+
+    /// Helper for parsing cli args which should produce no deprecation warnings
+    fn parse_cli_no_warnings(args: Vec<&str>) -> TereSettings {
+        let (settings, warnings) = parse_cli(args);
+        assert!(warnings.is_empty());
+        settings
+    }
+
     #[test]
     fn check_default_keymap_keys_unique() {
         let mut key_counts: HashMap<(KeyEvent, ActionContext), usize> = HashMap::new();
@@ -396,52 +409,40 @@ mod tests {
 
     #[test]
     fn test_keyboard_mapping_cli_option1() {
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "-m", "ctrl-x:Exit",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "-m", "ctrl-x:Exit",
+        ]);
         assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::Exit));
     }
 
     #[test]
     fn test_keyboard_mapping_cli_option2() {
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "-m", "ctrl-x:Exit,ctrl-y:ClearSearch",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "-m", "ctrl-x:Exit,ctrl-y:ClearSearch",
+        ]);
         assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::Exit));
         assert_eq!(settings.keymap.get(&(key!(ctrl-y), ActionContext::None)), Some(&Action::ClearSearch));
     }
 
     #[test]
     fn test_keyboard_mapping_cli_option3() {
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "-m", "ctrl-x:Exit,ctrl-x:ClearSearch", // repeated mapping
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "-m", "ctrl-x:Exit,ctrl-x:ClearSearch", // repeated mapping
+        ]);
         assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::ClearSearch));
     }
 
     #[test]
     fn test_keyboard_mapping_cli_option4() {
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                // provide option multiple times
-                "-m", "ctrl-x:Exit",
-                "-m", "ctrl-x:ClearSearch",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            // provide option multiple times
+            "-m", "ctrl-x:Exit",
+            "-m", "ctrl-x:ClearSearch",
+        ]);
         assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::ClearSearch));
     }
 
@@ -507,62 +508,55 @@ mod tests {
 
     #[test]
     fn test_unmap1() {
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-            ]);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-h), ActionContext::None)), Some(&Action::ChangeDirParent));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-j), ActionContext::None)), Some(&Action::CursorDown));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-k), ActionContext::None)), Some(&Action::CursorUp));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-l), ActionContext::None)), Some(&Action::ChangeDir));
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+        ]);
+        assert_eq!(settings.keymap.get(&(key!(alt-h), ActionContext::None)), Some(&Action::ChangeDirParent));
+        assert_eq!(settings.keymap.get(&(key!(alt-j), ActionContext::None)), Some(&Action::CursorDown));
+        assert_eq!(settings.keymap.get(&(key!(alt-k), ActionContext::None)), Some(&Action::CursorUp));
+        assert_eq!(settings.keymap.get(&(key!(alt-l), ActionContext::None)), Some(&Action::ChangeDir));
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "-m", "alt-h:None,alt-j:None,alt-k:None,alt-l:None",
-            ]);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-h), ActionContext::None)), None);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-j), ActionContext::None)), None);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-k), ActionContext::None)), None);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(alt-l), ActionContext::None)), None);
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "-m", "alt-h:None,alt-j:None,alt-k:None,alt-l:None",
+        ]);
+        assert_eq!(settings.keymap.get(&(key!(alt-h), ActionContext::None)), None);
+        assert_eq!(settings.keymap.get(&(key!(alt-j), ActionContext::None)), None);
+        assert_eq!(settings.keymap.get(&(key!(alt-k), ActionContext::None)), None);
+        assert_eq!(settings.keymap.get(&(key!(alt-l), ActionContext::None)), None);
     }
 
     #[test]
     fn test_unmap2() {
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-            ]);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(esc), ActionContext::NotSearching)), Some(&Action::Exit));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(esc), ActionContext::Searching)), Some(&Action::ClearSearch));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(esc), ActionContext::None)), None);
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+        ]);
+        assert_eq!(settings.keymap.get(&(key!(esc), ActionContext::NotSearching)), Some(&Action::Exit));
+        assert_eq!(settings.keymap.get(&(key!(esc), ActionContext::Searching)), Some(&Action::ClearSearch));
+        assert_eq!(settings.keymap.get(&(key!(esc), ActionContext::None)), None);
 
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(backspace), ActionContext::Searching)), Some(&Action::EraseSearchChar));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(backspace), ActionContext::NotSearching)), Some(&Action::ChangeDirParent));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(backspace), ActionContext::None)), None);
+        assert_eq!(settings.keymap.get(&(key!(backspace), ActionContext::Searching)), Some(&Action::EraseSearchChar));
+        assert_eq!(settings.keymap.get(&(key!(backspace), ActionContext::NotSearching)), Some(&Action::ChangeDirParent));
+        assert_eq!(settings.keymap.get(&(key!(backspace), ActionContext::None)), None);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "-m", "esc:Searching:None",
-                "-m", "backspace:None", // this shouldn't affect any of the mappings since they are context-dependent
-                "-m", "backspace:None:None", // this shouldn't affect any of the mappings since they are context-dependent
-            ]);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(esc), ActionContext::NotSearching)), Some(&Action::Exit));
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(esc), ActionContext::Searching)), None);
-        assert_eq!(TereSettings::parse_cli_args(&m).unwrap().0.keymap.get(&(key!(esc), ActionContext::None)), None);
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "-m", "esc:Searching:None",
+            "-m", "backspace:None", // this shouldn't affect any of the mappings since they are context-dependent
+            "-m", "backspace:None:None", // this shouldn't affect any of the mappings since they are context-dependent
+        ]);
+        assert_eq!(settings.keymap.get(&(key!(esc), ActionContext::NotSearching)), Some(&Action::Exit));
+        assert_eq!(settings.keymap.get(&(key!(esc), ActionContext::Searching)), None);
+        assert_eq!(settings.keymap.get(&(key!(esc), ActionContext::None)), None);
     }
 
     #[test]
     fn test_clear_default_keymap() {
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--clear-default-keymap",
-                "--map", "ctrl-x:Exit",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--clear-default-keymap",
+            "--map", "ctrl-x:Exit",
+        ]);
         assert!(settings.keymap.len() == 1);
     }
 
@@ -588,227 +582,165 @@ mod tests {
 
     #[test]
     fn test_filter_search_override() {
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+        ]);
         assert!(!settings.filter_search);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--filter-search",
-                "--no-filter-search",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--filter-search",
+            "--no-filter-search",
+        ]);
         assert!(!settings.filter_search);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--filter-search",
-                "--no-filter-search",
-                "--filter-search",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--filter-search",
+            "--no-filter-search",
+            "--filter-search",
+        ]);
         assert!(settings.filter_search);
     }
 
     #[test]
     fn test_folders_only_override() {
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+        ]);
         assert!(!settings.folders_only);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--folders-only",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--folders-only",
+        ]);
         assert!(settings.folders_only);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--folders-only",
-                "--no-folders-only",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--folders-only",
+            "--no-folders-only",
+        ]);
         assert!(!settings.folders_only);
     }
 
     #[test]
     fn test_case_sensitive_mode_override() {
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+        ]);
         assert_eq!(settings.case_sensitive, CaseSensitiveMode::SmartCase);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--case-sensitive",
-                "--ignore-case",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--case-sensitive",
+            "--ignore-case",
+        ]);
         assert_eq!(settings.case_sensitive, CaseSensitiveMode::IgnoreCase);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--case-sensitive",
-                "--ignore-case",
-                "--case-sensitive",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--case-sensitive",
+            "--ignore-case",
+            "--case-sensitive",
+        ]);
         assert_eq!(settings.case_sensitive, CaseSensitiveMode::CaseSensitive);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--case-sensitive",
-                "--ignore-case",
-                "--case-sensitive",
-                "--smart-case",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--case-sensitive",
+            "--ignore-case",
+            "--case-sensitive",
+            "--smart-case",
+        ]);
         assert_eq!(settings.case_sensitive, CaseSensitiveMode::SmartCase);
     }
 
     #[test]
     fn test_gap_search_mode_override() {
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+        ]);
         assert_eq!(settings.gap_search_mode, GapSearchMode::GapSearchFromStart);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--gap-search",
-                "--gap-search-anywhere",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--gap-search",
+            "--gap-search-anywhere",
+        ]);
         assert_eq!(settings.gap_search_mode, GapSearchMode::GapSearchAnywhere);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--gap-search",
-                "--gap-search-anywhere",
-                "--normal-search-anywhere",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--gap-search",
+            "--gap-search-anywhere",
+            "--normal-search-anywhere",
+        ]);
         assert_eq!(settings.gap_search_mode, GapSearchMode::NormalSearchAnywhere);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--gap-search",
-                "--gap-search-anywhere",
-                "--normal-search-anywhere",
-                "--gap-search",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--gap-search",
+            "--gap-search-anywhere",
+            "--normal-search-anywhere",
+            "--gap-search",
+        ]);
         assert_eq!(settings.gap_search_mode, GapSearchMode::GapSearchFromStart);
     }
 
     #[test]
     fn test_no_gap_search_deprecated() {
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--no-gap-search"
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(!warnings.is_empty());
+        let (settings, warnings) = parse_cli(vec![
+            "foo",
+            "--no-gap-search"
+        ]);
+        assert!(warnings[0].contains("'no-gap-search' has been renamed"));
         assert!(settings.gap_search_mode == GapSearchMode::NormalSearch);
     }
 
     #[test]
     fn test_sort_mode_override() {
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+        ]);
         assert_eq!(settings.sort_mode, SortMode::Name);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--sort", "created",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--sort", "created",
+        ]);
         assert_eq!(settings.sort_mode, SortMode::Created);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--sort",  "created",
-                "--sort",  "name",
-                "--sort",  "modified",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--sort",  "created",
+            "--sort",  "name",
+            "--sort",  "modified",
+        ]);
         assert_eq!(settings.sort_mode, SortMode::Modified);
 
     }
 
     #[test]
     fn test_mouse_override() {
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+        ]);
         assert!(!settings.mouse_enabled);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--mouse", "off",
-                "--mouse", "on",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--mouse", "off",
+            "--mouse", "on",
+        ]);
         assert!(settings.mouse_enabled);
 
-        let m = crate::cli_args::get_cli_args()
-            .get_matches_from(vec![
-                "foo",
-                "--mouse",  "off",
-                "--mouse",  "on",
-                "--mouse",  "off",
-            ]);
-        let (settings, warnings) = TereSettings::parse_cli_args(&m).unwrap();
-        assert!(warnings.is_empty());
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--mouse",  "off",
+            "--mouse",  "on",
+            "--mouse",  "off",
+        ]);
         assert!(!settings.mouse_enabled);
 
     }
