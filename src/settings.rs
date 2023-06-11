@@ -714,6 +714,7 @@ mod tests {
             "foo",
             "--no-gap-search"
         ]);
+        assert_eq!(warnings.len(), 1);
         assert!(warnings[0].contains("'no-gap-search' has been renamed"));
         assert!(settings.gap_search_mode == GapSearchMode::NormalSearch);
     }
