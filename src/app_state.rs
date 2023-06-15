@@ -767,38 +767,62 @@ impl TereAppState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempfile::TempDir;
 
-    fn create_test_filenames(n: usize) -> LsBufType {
-        let fnames: Vec<_> = (1..=n).map(|i| format!("file {}", i)).collect();
-        strings_to_ls_buf(fnames)
+    /// Create folders from a list of folder names in a temp dir.
+    fn create_test_folders(tmp: &TempDir, folder_names: &Vec<&str>) {
+        for folder_name in folder_names {
+            let p = tmp.path().join(folder_name.to_string());
+            std::fs::create_dir(p).unwrap();
+        }
+
+        // Check that the folders were actually created
+        let expected_folders: std::collections::HashSet<String> =
+            folder_names.iter().map(|s| s.to_string()).collect();
+        let actual_folders: std::collections::HashSet<String> = std::fs::read_dir(tmp.path())
+            .unwrap()
+            .map(|x| x.unwrap().file_name().into_string().unwrap())
+            .collect();
+
+        assert_eq!(expected_folders, actual_folders);
     }
 
-    fn strings_to_ls_buf<S: AsRef<std::ffi::OsStr>>(strings: Vec<S>) -> LsBufType {
-        strings
-            .iter()
-            .map(|s| CustomDirEntry::from(std::path::PathBuf::from(&s).as_ref()))
-            .collect::<Vec<CustomDirEntry>>()
-            .into()
-    }
+    /// Create folders from a list of folder names in a temp dir and initialize a test state in
+    /// that dir. Note that the cursor position for the state will be 1, since the first item is '..'.
+    fn create_test_state_with_folders(
+        tmp: &TempDir,
+        win_h: usize,
+        folder_names: Vec<&str>,
+    ) -> TereAppState {
+        create_test_folders(tmp, &folder_names);
 
-    fn create_test_state(win_h: usize, n_filenames: usize) -> TereAppState {
-        create_test_state_with_buf(win_h, create_test_filenames(n_filenames))
-    }
-
-    fn create_test_state_with_buf(win_h: usize, buf: LsBufType) -> TereAppState {
-        TereAppState {
+        let mut state = TereAppState {
             cursor_pos: 0,
             scroll_pos: 0,
             main_win_h: win_h,
             main_win_w: 10,
             current_path: "/".into(),
-            ls_output_buf: buf,
+            ls_output_buf: vec![].into(),
             header_msg: "".into(),
             info_msg: "".into(),
             search_string: "".into(),
             _settings: Default::default(),
             history: HistoryTree::from_abs_path("/"),
-        }
+        };
+        state.change_dir(tmp.path().to_str().unwrap()).unwrap();
+        state
+    }
+
+    /// Create a test state with 'n' folders named 'folder 1', 'folder 2', ... 'folder n'. Note
+    /// that the ls_output_buf of the test state will contain n + 1 folders, since it will include
+    /// the '..'.
+    fn create_test_state_with_n_folders(
+        tmp: &TempDir,
+        win_h: usize,
+        n_folders: usize,
+    ) -> TereAppState {
+        let fnames: Vec<_> = (1..=n_folders).map(|i| format!("folder {}", i)).collect();
+        create_test_state_with_folders(tmp, win_h, fnames.iter().map(|s| s.as_ref()).collect())
     }
 
     #[test]
