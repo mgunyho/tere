@@ -827,9 +827,11 @@ mod tests {
 
     #[test]
     fn test_scrolling_bufsize_less_than_window_size() {
-        let mut state = create_test_state(10, 4);
+        //TODO: create a macro to hold onto tmp?
+        let tmp = TempDir::new().unwrap();
+        let mut state = create_test_state_with_n_folders(&tmp, 10, 4);
 
-        for i in 1..=3 {
+        for i in 2..=4 {
             state.move_cursor(1, false);
             assert_eq!(state.cursor_pos, i);
             assert_eq!(state.scroll_pos, 0);
@@ -837,17 +839,17 @@ mod tests {
 
         for _ in 0..5 {
             state.move_cursor(1, false);
-            assert_eq!(state.cursor_pos, 3);
+            assert_eq!(state.cursor_pos, 4);
             assert_eq!(state.scroll_pos, 0);
         }
 
         state.move_cursor(100, false);
-        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.cursor_pos, 4);
         assert_eq!(state.scroll_pos, 0);
 
-        for i in 1..=3 {
+        for i in 1..=4 {
             state.move_cursor(-1, false);
-            assert_eq!(state.cursor_pos, 3 - i);
+            assert_eq!(state.cursor_pos, 4 - i);
             assert_eq!(state.scroll_pos, 0);
         }
 
@@ -865,7 +867,7 @@ mod tests {
 
         // test jumping all the way to the bottom and back
         state.move_cursor(100, false);
-        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.cursor_pos, 4);
         assert_eq!(state.scroll_pos, 0);
         state.move_cursor(-100, false);
         assert_eq!(state.cursor_pos, 0);
@@ -874,16 +876,17 @@ mod tests {
 
     #[test]
     fn test_scrolling_bufsize_less_than_window_size_wrap() {
-        let mut state = create_test_state(5, 4);
+        let tmp = TempDir::new().unwrap();
+        let mut state = create_test_state_with_n_folders(&tmp, 5, 4);
 
         state.move_cursor_to(0);
-        for i in 0..3 {
+        for i in 0..4 {
             state.move_cursor(1, true);
-            assert_eq!(state.cursor_pos, i+1);
+            assert_eq!(state.cursor_pos, i + 1);
             assert_eq!(state.scroll_pos, 0);
         }
         // cursor should be at the bottom of the listing
-        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.cursor_pos, 4);
         assert_eq!(state.scroll_pos, 0);
 
         // wrap around
@@ -893,15 +896,16 @@ mod tests {
 
         // wrap around backwards
         state.move_cursor(-1, true);
-        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.cursor_pos, 4);
         assert_eq!(state.scroll_pos, 0);
     }
 
     #[test]
     fn test_scrolling_bufsize_equal_to_window_size() {
-        let mut state = create_test_state(4, 4);
+        let tmp = TempDir::new().unwrap();
+        let mut state = create_test_state_with_n_folders(&tmp, 5, 4);
 
-        for i in 1..=3 {
+        for i in 2..=4 {
             state.move_cursor(1, false);
             assert_eq!(state.cursor_pos, i);
             assert_eq!(state.scroll_pos, 0);
@@ -909,30 +913,32 @@ mod tests {
 
         for _ in 0..5 {
             state.move_cursor(1, false);
-            assert_eq!(state.cursor_pos, 3);
+            assert_eq!(state.cursor_pos, 4);
             assert_eq!(state.scroll_pos, 0);
         }
 
         for i in 1..=3 {
             state.move_cursor(-1, false);
-            assert_eq!(state.cursor_pos, 3 - i);
+            assert_eq!(state.cursor_pos, 4 - i);
             assert_eq!(state.scroll_pos, 0);
         }
 
         // test jumping all the way to the bottom and back
         state.move_cursor(100, false);
-        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.cursor_pos, 4);
         assert_eq!(state.scroll_pos, 0);
         state.move_cursor(-100, false);
         assert_eq!(state.cursor_pos, 0);
         assert_eq!(state.scroll_pos, 0);
     }
 
-    // (using dev-dependencies, https://doc.rust-lang.org/rust-by-example/testing/dev_dependencies.html)
     fn test_scrolling_bufsize_larger_than_window_size_helper(win_h: usize, n_files: usize) {
-        let mut state = create_test_state(win_h, n_files);
+        let tmp = TempDir::new().unwrap();
+        let mut state = create_test_state_with_n_folders(&tmp, win_h, n_files);
         let max_cursor = win_h - 1;
-        let max_scroll = n_files - win_h;
+        let max_scroll = n_files + 1 - win_h;
+
+        state.move_cursor_to(0); // start from the top
 
         // move cursor all the way to the bottom of the window
         for i in 1..=max_cursor {
@@ -1032,11 +1038,12 @@ mod tests {
 
     #[test]
     fn test_scrolling_bufsize_larger_than_window_size_wrap() {
-        let mut state = create_test_state(4, 5);
+        let tmp = TempDir::new().unwrap();
+        let mut state = create_test_state_with_n_folders(&tmp, 4, 5);
 
-        state.move_cursor_to(5);
+        state.move_cursor_to(6);
         assert_eq!(state.cursor_pos, 3);
-        assert_eq!(state.scroll_pos, 1);
+        assert_eq!(state.scroll_pos, 2);
 
         state.move_cursor(1, true);
         assert_eq!(state.cursor_pos, 0);
@@ -1044,28 +1051,26 @@ mod tests {
 
         state.move_cursor(-1, true);
         assert_eq!(state.cursor_pos, 3);
-        assert_eq!(state.scroll_pos, 1);
+        assert_eq!(state.scroll_pos, 2);
     }
 
     #[test]
     fn test_basic_advance_search() {
-        let mut s = create_test_state_with_buf(
-            5,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 5, vec!["bar", "baz", "foo", "frob"]);
         s.move_cursor_to(2);
 
         // current state:
         //   ..
-        //   foo
-        // > frob
         //   bar
-        //   baz
+        // > baz
+        //   foo
+        //   frob
 
         assert_eq!(s.cursor_pos, 2);
         assert_eq!(s.scroll_pos, 0);
 
-        s.advance_search("b");
+        s.advance_search("f");
         assert_eq!(s.cursor_pos, 3);
         s.move_cursor_to_adjacent_match(1);
         assert_eq!(s.cursor_pos, 4);
@@ -1075,30 +1080,28 @@ mod tests {
 
     #[test]
     fn test_advance_search_wrap() {
-        let mut s = create_test_state_with_buf(
-            3,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 3, vec!["bar", "baz", "foo", "frob"]);
         s.move_cursor_to(4);
 
         // current state: ('|' shows the window position)
         //   ..
-        //   foo
-        //   frob  |
-        //   bar   |
-        // > baz   |
+        //   bar
+        //   baz   |
+        //   foo   |
+        // > frob  |
 
         assert_eq!(s.cursor_pos, 2);
         assert_eq!(s.scroll_pos, 2);
 
-        s.advance_search("f");
+        s.advance_search("b");
 
         // state should now be
         //   ..
-        // > foo   |
-        //   frob  |
-        //   bar   |
-        //   baz
+        // > bar   |
+        //   baz   |
+        //   foo   |
+        //   frob
 
         assert_eq!(s.cursor_pos, 0);
         assert_eq!(s.scroll_pos, 1);
@@ -1111,23 +1114,21 @@ mod tests {
 
     #[test]
     fn test_advance_and_erase_search_with_cursor_on_match() {
-        let mut s = create_test_state_with_buf(
-            6,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 6, vec!["bar", "baz", "foo", "frob"]);
         s.move_cursor_to(3);
 
         // current state:
         //   ..
-        //   foo
-        //   frob
-        // > bar
+        //   bar
         //   baz
+        // > foo
+        //   frob
 
         assert_eq!(s.cursor_pos, 3);
         assert_eq!(s.scroll_pos, 0);
 
-        s.advance_search("b");
+        s.advance_search("f");
 
         // state shouldn't have changed
 
@@ -1149,20 +1150,18 @@ mod tests {
 
     #[test]
     fn test_advance_and_erase_with_filter_search() {
-        let mut s = create_test_state_with_buf(
-            6,
-            strings_to_ls_buf(vec!["..", "bar", "baz", "foo", "frob"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 6, vec!["bar", "baz", "foo", "frob"]);
         s._settings.filter_search = true;
 
         // current state:
-        // > ..
-        //   bar
+        //   ..
+        // > bar
         //   baz
         //   foo
         //   frob
 
-        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
 
         s.advance_search("f");
@@ -1196,20 +1195,18 @@ mod tests {
 
     #[test]
     fn test_advance_and_clear_with_filter_search() {
-        let mut s = create_test_state_with_buf(
-            6,
-            strings_to_ls_buf(vec!["..", "bar", "baz", "foo", "forb"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 6, vec!["bar", "baz", "foo", "forb"]);
         s._settings.filter_search = true;
 
         // current state:
-        // > ..
-        //   bar
+        //   ..
+        // > bar
         //   baz
         //   foo
         //   forb
 
-        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
 
         s.advance_search("f");
@@ -1250,10 +1247,8 @@ mod tests {
 
     #[test]
     fn test_advance_search_with_filter_search_and_scrolling() {
-        let mut s = create_test_state_with_buf(
-            3,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 3, vec!["foo", "frob", "bar", "baz"]);
         s._settings.filter_search = true;
 
         s.move_cursor_to(3);
@@ -1287,35 +1282,33 @@ mod tests {
 
     #[test]
     fn test_advance_and_erase_search_with_filter_and_cursor_on_match() {
-        let mut s = create_test_state_with_buf(
-            6,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 6, vec!["bar", "baz", "foo", "frob"]);
         s._settings.filter_search = true;
         s.move_cursor_to(2);
 
         // current state:
         //   ..
-        //   foo
-        // > frob
         //   bar
-        //   baz
+        // > baz
+        //   foo
+        //   frob
 
         assert_eq!(s.cursor_pos, 2);
         assert_eq!(s.scroll_pos, 0);
 
-        s.advance_search("f");
+        s.advance_search("b");
 
         // state should now be
-        //   foo
-        // > frob
+        //   bar
+        // > baz
 
         let visible: Vec<_> = s
             .visible_items()
             .iter()
             .map(|x| x.file_name_checked())
             .collect();
-        assert_eq!(visible, vec!["foo", "frob"]);
+        assert_eq!(visible, vec!["bar", "baz"]);
         assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
 
@@ -1324,12 +1317,12 @@ mod tests {
         s.move_cursor_to_adjacent_match(1);
         assert_eq!(s.cursor_pos, 1);
 
-        // we're now at frob. erase char, we should still be at frob:
+        // we're now at baz. erase char, we should still be at baz:
         //   ..
-        //   foo
-        // > frob
         //   bar
-        //   baz
+        // > baz
+        //   foo
+        //   frob
 
         s.erase_search_char();
         assert_eq!(s.cursor_pos, 2);
@@ -1339,33 +1332,31 @@ mod tests {
             .iter()
             .map(|x| x.file_name_checked())
             .collect();
-        assert_eq!(visible, vec!["..", "foo", "frob", "bar", "baz"]);
+        assert_eq!(visible, vec!["..", "bar", "baz", "foo", "frob"]);
     }
 
     #[test]
     fn test_advance_and_erase_search_with_filter_and_cursor_on_match2() {
-        let mut s = create_test_state_with_buf(
-            6,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 6, vec!["bar", "baz", "foo", "frob"]);
         s._settings.filter_search = true;
         s.move_cursor_to(4);
 
         // current state:
         //   ..
-        //   foo
-        //   frob
         //   bar
-        // > baz
+        //   baz
+        //   foo
+        // > frob
 
         assert_eq!(s.cursor_pos, 4);
         assert_eq!(s.scroll_pos, 0);
 
-        s.advance_search("b");
+        s.advance_search("f");
 
         // state should now be
-        //   bar
-        // > baz
+        //   foo
+        // > frob
 
         assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
@@ -1392,10 +1383,8 @@ mod tests {
     fn test_advance_and_erase_search_with_filter_and_cursor_on_match3() {
         // idea: the cursor should not move if it's not necessary
 
-        let mut s = create_test_state_with_buf(
-            3,
-            strings_to_ls_buf(vec!["..", "aaa", "baa", "bab", "bba", "caa", "cab"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 3, vec!["aaa", "baa", "bab", "bba", "caa", "cab"]);
         s._settings.filter_search = true;
         s.move_cursor_to(1);
 
@@ -1440,27 +1429,25 @@ mod tests {
 
     #[test]
     fn test_advance_and_erase_search_with_filter_and_scrolling() {
-        let mut s = create_test_state_with_buf(
-            2,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 2, vec!["bar", "baz", "foo", "frob"]);
         s._settings.filter_search = true;
 
         // current state:
-        // > ..   |
-        //   foo  |
-        //   frob
-        //   bar
+        //   ..   |
+        // > bar  |
         //   baz
+        //   foo
+        //   frob
 
-        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
 
-        s.advance_search("b");
+        s.advance_search("f");
 
         // state should now be
-        // > bar
-        //   baz
+        // > foo
+        //   frob
 
         assert_eq!(s.cursor_pos, 0);
         assert_eq!(s.scroll_pos, 0);
@@ -1473,10 +1460,10 @@ mod tests {
         // we're now on 'bar'
         // erase the search char. now the state should be
         //   ..
-        //   foo
-        //   frob |
-        // > bar  |
-        //   baz
+        //   bar
+        //   baz  |
+        // > foo  |
+        //   frob
 
         s.erase_search_char();
         assert_eq!(s.cursor_pos, 1);
@@ -1485,28 +1472,26 @@ mod tests {
 
     #[test]
     fn test_advance_search_with_filter_search_and_scrolling2() {
-        let mut s = create_test_state_with_buf(
-            3,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 3, vec!["bar", "baz", "foo", "frob"]);
         s._settings.filter_search = true;
         s.move_cursor_to(4);
 
         // current state:
         //   ..
-        //   foo
-        //   frob |
-        //   bar  |
-        // > baz  |
+        //   bar
+        //   baz  |
+        //   foo  |
+        // > frob |
 
         assert_eq!(s.cursor_pos, 2);
         assert_eq!(s.scroll_pos, 2);
 
-        s.advance_search("b");
+        s.advance_search("f");
 
         // state should now be:
-        //   bar  |
-        // > baz  |
+        //   foo  |
+        // > frob |
         //        |
 
         assert_eq!(s.cursor_pos, 1);
@@ -1515,10 +1500,8 @@ mod tests {
 
     #[test]
     fn test_filter_search_toggle() {
-        let mut s = create_test_state_with_buf(
-            10,
-            strings_to_ls_buf(vec!["..", "aaa", "aab", "bbb"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["aaa", "aab", "bbb"]);
         s._settings.filter_search = false;
         s.cursor_pos = 1;
 
@@ -1541,7 +1524,10 @@ mod tests {
         assert_eq!(s.scroll_pos, 0);
         assert_eq!(s.cursor_pos, 2);
         assert_eq!(
-            s.visible_items().iter().map(|e| e.file_name_checked()).collect::<Vec<_>>(),
+            s.visible_items()
+                .iter()
+                .map(|e| e.file_name_checked())
+                .collect::<Vec<_>>(),
             vec!["..", "aaa", "aab", "bbb"]
         );
 
@@ -1555,24 +1541,25 @@ mod tests {
         assert_eq!(s.scroll_pos, 0);
         assert_eq!(s.cursor_pos, 1);
         assert_eq!(
-            s.visible_items().iter().map(|e| e.file_name_checked()).collect::<Vec<_>>(),
+            s.visible_items()
+                .iter()
+                .map(|e| e.file_name_checked())
+                .collect::<Vec<_>>(),
             vec!["aaa", "aab"]
         );
     }
 
     #[test]
     fn test_case_sensitive_mode_change() {
-        let mut s = create_test_state_with_buf(
-            10,
-            strings_to_ls_buf(vec!["..", "a", "A"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["A", "a"]);
         s.cursor_pos = 2;
         s.advance_search("a");
 
-        // current state:
+        // current state: ('*' shows the matches)
         //   ..
-        //   a  *
-        // > A  *
+        //   A  *
+        // > a  *
 
         assert_eq!(s.visible_match_indices(), vec![1, 2]);
         assert_eq!(s.cursor_pos, 2);
@@ -1584,10 +1571,8 @@ mod tests {
 
     #[test]
     fn test_gap_search_mode_change() {
-        let mut s = create_test_state_with_buf(
-            10,
-            strings_to_ls_buf(vec!["..", "aaa", "aab", "aba"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["aaa", "aab", "aba"]);
         s.cursor_pos = 1;
         s.advance_search("a");
         s.advance_search("b");
@@ -1612,5 +1597,4 @@ mod tests {
         assert_eq!(s.visible_match_indices(), vec![3]);
         assert_eq!(s.cursor_pos, 3);
     }
-
 }
