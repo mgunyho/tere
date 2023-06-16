@@ -1604,4 +1604,56 @@ mod tests {
         assert_eq!(s.visible_match_indices(), vec![3]);
         assert_eq!(s.cursor_pos, 3);
     }
+
+    #[test]
+    fn test_cd_basic() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        assert_eq!(s.current_path, tmp.path());
+        assert!(s.change_dir("foo").is_ok());
+        assert_eq!(s.current_path, tmp.path().join("foo"));
+    }
+
+    #[test]
+    fn test_cd_parent() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        assert_eq!(s.current_path, tmp.path());
+        assert!(s.change_dir("..").is_ok());
+        assert_eq!(s.current_path, tmp.path().parent().unwrap());
+    }
+
+    #[test]
+    fn test_cd_item_under_cursor() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["bar", "foo"]);
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.current_path, tmp.path());
+        assert!(s.change_dir("").is_ok());
+        assert_eq!(s.current_path, tmp.path().join("bar"));
+        assert!(s.change_dir("..").is_ok());
+        s.move_cursor(1, false);
+        assert_eq!(s.cursor_pos, 2);
+        assert!(s.change_dir("").is_ok());
+        assert_eq!(s.current_path, tmp.path().join("foo"));
+    }
+
+    #[test]
+    fn test_cd_nonexistent() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        assert_eq!(s.current_path, tmp.path());
+        assert!(s.change_dir("bar").is_err());
+        assert_eq!(s.current_path, tmp.path());
+    }
+
+    #[test]
+    fn test_cd_root() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        assert_eq!(s.current_path, tmp.path());
+        assert!(s.change_dir("/").is_ok());
+        assert_eq!(s.current_path, PathBuf::from("/"));
+    }
+
 }
