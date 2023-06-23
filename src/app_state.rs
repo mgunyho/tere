@@ -59,16 +59,15 @@ impl MatchesVec {
 
     /// Update the collection of matching items by going through all items in the full collection
     /// and testing a regex pattern against the filenames
-    pub fn update_matches(&mut self, search_ptn: &Regex, case_sensitive: bool) {
+    pub fn update_matches(&mut self, search_ptn: &Regex, case_sensitive: bool, ignore_files: bool) {
         self.matches.clear();
         self.matches = self
             .all_items
             .iter()
             .enumerate()
             .filter_map(|(i, item)| {
-                // match only folders, not files
-                //TODO: don't always do this, only if it's enabled via settings
-                if !item.is_dir() {
+                // if applicable, match only folders, not files
+                if ignore_files && !item.is_dir() {
                     return None;
                 }
 
@@ -728,7 +727,11 @@ impl TereAppState {
 
         // ok to unwrap, we have escaped the regex above
         let search_ptn = Regex::new(&regex_str).unwrap();
-        self.ls_output_buf.update_matches(&search_ptn, is_case_sensitive);
+        self.ls_output_buf.update_matches(
+            &search_ptn,
+            is_case_sensitive,
+            self.settings().file_handling_mode == FileHandlingMode::Ignore,
+        );
     }
 
     pub fn clear_search(&mut self) {
