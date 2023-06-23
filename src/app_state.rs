@@ -400,7 +400,7 @@ impl TereAppState {
     }
 
     pub fn update_ls_output_buf(&mut self) -> IOResult<()> {
-        let entries = std::fs::read_dir(std::path::Component::CurDir)?;
+        let entries = std::fs::read_dir(&self.current_path)?;
 
         let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> = Box::new(
             entries.filter_map(|e| e.ok()).map(CustomDirEntry::from),
@@ -463,6 +463,33 @@ impl TereAppState {
         };
         let target_path = PathBuf::from(target_path);
 
+        self.clear_search();
+        self.current_path = self.check_can_change_dir(&target_path)?;
+        self.update_ls_output_buf()?;
+
+        self.cursor_pos = 0;
+        self.scroll_pos = 0;
+
+        // current_path is always the absolute logical path, so we can just cd to it. This causes a
+        // bit of extra work (the history tree has to go all the way from the root to the path
+        // every time), but that's not too bad. The alernative option of using history_tree.go_up()
+        // / visit() and handling the special cases where target_path is '..' or a relative path or
+        // so on, would be much more complicated and would risk having the history tree and logical
+        // path out of sync.
+        self.history.change_dir(&self.current_path);
+
+        // move cursor one position down, so we're not at '..' if we've entered a folder with no history
+        self.move_cursor(1, false);
+        if let Some(prev_dir) = self.history.current_entry().last_visited_child_label() {
+            self.move_cursor_to_filename(prev_dir);
+        }
+
+        Ok(())
+    }
+
+    /// Check if a path is a valid cd target, and if it is, return an absolute path to it
+    fn check_can_change_dir(&self, target_path: &Path) -> IOResult<PathBuf> {
+
         // NOTE: have to manually normalize path because the std doesn't have that feature yet, as
         // of December 2021.
         // see:
@@ -498,35 +525,15 @@ impl TereAppState {
             ret
         }
 
-        let final_path = if target_path.is_absolute() {
-            target_path
+        let full_path = if target_path.is_absolute() {
+            target_path.to_path_buf()
         } else {
             normalize_path(&self.current_path.join(target_path))
         };
 
-        self.clear_search();
-        std::env::set_current_dir(&final_path)?;
-        self.current_path = PathBuf::from(&final_path);
-        self.update_ls_output_buf()?;
-
-        self.cursor_pos = 0;
-        self.scroll_pos = 0;
-
-        // final_path is always the absolute logical path, so we can just cd to it. This causes a
-        // bit of extra work (the history tree has to go all the way from the root to the path
-        // every time), but that's not too bad. The alernative option of using history_tree.go_up()
-        // / visit() and handling the special cases where target_path is '..' or a relative path or
-        // so on, would be much more complicated and would risk having the history tree and logical
-        // path out of sync.
-        self.history.change_dir(&final_path);
-
-        // move cursor one position down, so we're not at '..' if we've entered a folder with no history
-        self.move_cursor(1, false);
-        if let Some(prev_dir) = self.history.current_entry().last_visited_child_label() {
-            self.move_cursor_to_filename(prev_dir);
-        }
-
-        Ok(())
+        // try to read the dir, if this succeeds, it's a valid target for cd'ing.
+        std::fs::read_dir(&full_path)
+            .map(|_| full_path)
     }
 
     /////////////////////////////////////////////
@@ -1597,4 +1604,56 @@ mod tests {
         assert_eq!(s.visible_match_indices(), vec![3]);
         assert_eq!(s.cursor_pos, 3);
     }
+
+    #[test]
+    fn test_cd_basic() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        assert_eq!(s.current_path, tmp.path());
+        assert!(s.change_dir("foo").is_ok());
+        assert_eq!(s.current_path, tmp.path().join("foo"));
+    }
+
+    #[test]
+    fn test_cd_parent() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        assert_eq!(s.current_path, tmp.path());
+        assert!(s.change_dir("..").is_ok());
+        assert_eq!(s.current_path, tmp.path().parent().unwrap());
+    }
+
+    #[test]
+    fn test_cd_item_under_cursor() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["bar", "foo"]);
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.current_path, tmp.path());
+        assert!(s.change_dir("").is_ok());
+        assert_eq!(s.current_path, tmp.path().join("bar"));
+        assert!(s.change_dir("..").is_ok());
+        s.move_cursor(1, false);
+        assert_eq!(s.cursor_pos, 2);
+        assert!(s.change_dir("").is_ok());
+        assert_eq!(s.current_path, tmp.path().join("foo"));
+    }
+
+    #[test]
+    fn test_cd_nonexistent() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        assert_eq!(s.current_path, tmp.path());
+        assert!(s.change_dir("bar").is_err());
+        assert_eq!(s.current_path, tmp.path());
+    }
+
+    #[test]
+    fn test_cd_root() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        assert_eq!(s.current_path, tmp.path());
+        assert!(s.change_dir("/").is_ok());
+        assert_eq!(s.current_path, PathBuf::from("/"));
+    }
+
 }
