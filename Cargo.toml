@@ -27,6 +27,9 @@ version = "4"
 default-features = false
 features = ["wrap_help", "suggestions", "std", "derive", "usage"]
 
+[dev-dependencies]
+tempfile = "3.6"
+
 [profile.release]
 lto = true
 strip = "debuginfo"
