@@ -1540,6 +1540,17 @@ mod tests {
     }
 
     #[test]
+    fn test_search_folders_only() {
+        // by default, only folders should be searched
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_files_and_folders(&tmp, 3, vec!["foo"], vec!["frob"]);
+
+        s.advance_search("f");
+        assert_eq!(s.visible_match_indices(), vec![1]);
+
+    }
+
+    #[test]
     fn test_filter_search_toggle() {
         let tmp = TempDir::new().unwrap();
         let mut s = create_test_state_with_folders(&tmp, 10, vec!["aaa", "aab", "bbb"]);
