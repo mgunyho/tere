@@ -412,7 +412,7 @@ impl TereAppState {
             entries.filter_map(|e| e.ok()).map(CustomDirEntry::from),
         );
 
-        if self.settings().folders_only {
+        if self.settings().file_handling_mode == FileHandlingMode::Hide {
             entries = Box::new(entries.filter(|e| e.path().is_dir()));
         }
 
