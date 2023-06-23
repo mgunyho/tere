@@ -1655,5 +1655,4 @@ mod tests {
         assert!(s.change_dir("/").is_ok());
         assert_eq!(s.current_path, PathBuf::from("/"));
     }
-
 }
