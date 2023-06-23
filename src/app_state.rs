@@ -14,6 +14,7 @@ use regex::Regex;
 use crate::settings::{
     TereSettings,
     DeprecationWarnings,
+    FileHandlingMode,
     CaseSensitiveMode,
     GapSearchMode,
     SortMode,
@@ -1546,14 +1547,41 @@ mod tests {
     }
 
     #[test]
-    fn test_search_folders_only() {
+    fn test_search_default_file_handling_mode() {
         // by default, only folders should be searched
         let tmp = TempDir::new().unwrap();
         let mut s = create_test_state_with_files_and_folders(&tmp, 3, vec!["foo"], vec!["frob"]);
 
         s.advance_search("f");
         assert_eq!(s.visible_match_indices(), vec![1]);
+    }
 
+    #[test]
+    fn test_search_file_handling_mode_match() {
+        // match both files & folders
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_files_and_folders(&tmp, 3, vec!["foo"], vec!["frob"]);
+
+        s._settings.file_handling_mode = FileHandlingMode::Match;
+        s.advance_search("f");
+        assert_eq!(s.visible_match_indices(), vec![1, 2]);
+    }
+
+    #[test]
+    fn test_search_file_handling_mode_hide() {
+        // match only folders, and hide files
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_files_and_folders(&tmp, 3, vec!["foo"], vec!["frob"]);
+
+        s._settings.file_handling_mode = FileHandlingMode::Hide;
+        s.update_ls_output_buf().unwrap(); // to apply file handling mode
+        assert_eq!(
+            s.visible_items()
+                .iter()
+                .map(|e| e.file_name_checked())
+                .collect::<Vec<_>>(),
+            vec!["..", "frob"],
+        );
     }
 
     #[test]
