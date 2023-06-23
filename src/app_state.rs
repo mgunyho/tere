@@ -788,19 +788,43 @@ mod tests {
             folder_names.iter().map(|s| s.to_string()).collect();
         let actual_folders: std::collections::HashSet<String> = std::fs::read_dir(tmp.path())
             .unwrap()
-            .map(|x| x.unwrap().file_name().into_string().unwrap())
+            .map(|x| x.unwrap())
+            .filter(|x| x.path().is_dir())
+            .map(|x| x.file_name().into_string().unwrap())
             .collect();
 
         assert_eq!(expected_folders, actual_folders);
     }
 
-    /// Create folders from a list of folder names in a temp dir and initialize a test state in
-    /// that dir. Note that the cursor position for the state will be 1, since the first item is '..'.
-    fn create_test_state_with_folders(
+    /// Create (empty) files from a list of file names in a temp dir
+    fn create_test_files(tmp: &TempDir, file_names: &Vec<&str>) {
+        for file_name in file_names {
+            let p = tmp.path().join(file_name.to_string());
+            std::fs::File::create(p).unwrap();
+        }
+
+        let expected_files: std::collections::HashSet<String> =
+            file_names.iter().map(|s| s.to_string()).collect();
+        let actual_files: std::collections::HashSet<String> = std::fs::read_dir(tmp.path())
+            .unwrap()
+            .map(|x| x.unwrap())
+            .filter(|x| x.path().is_file())
+            .map(|x| x.file_name().into_string().unwrap())
+            .collect();
+
+        assert_eq!(expected_files, actual_files);
+    }
+
+    /// Create files and folders from lists of file and folder names in a temp dir, and initialize
+    /// a test state in the temp dir. Note that the cursor position for the state will be 1, since
+    /// the first item is '..'.
+    fn create_test_state_with_files_and_folders(
         tmp: &TempDir,
         win_h: usize,
+        file_names: Vec<&str>,
         folder_names: Vec<&str>,
     ) -> TereAppState {
+        create_test_files(tmp, &file_names);
         create_test_folders(tmp, &folder_names);
 
         let mut state = TereAppState {
@@ -818,6 +842,16 @@ mod tests {
         };
         state.change_dir(tmp.path().to_str().unwrap()).unwrap();
         state
+    }
+
+    /// Create folders from a list of folder names in a temp dir and initialize a test state in
+    /// that dir. Note that the cursor position for the state will be 1, since the first item is '..'.
+    fn create_test_state_with_folders(
+        tmp: &TempDir,
+        win_h: usize,
+        folder_names: Vec<&str>,
+    ) -> TereAppState {
+        create_test_state_with_files_and_folders(tmp, win_h, vec![], folder_names)
     }
 
     /// Create a test state with 'n' folders named 'folder 1', 'folder 2', ... 'folder n'. Note
