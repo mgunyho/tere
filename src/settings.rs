@@ -366,7 +366,7 @@ mod tests {
 
     /// Helper function for creating TereSettings from cli args
     fn parse_cli(args: Vec<&str>) -> (TereSettings, DeprecationWarnings) {
-        let m = crate::cli_args::get_cli_args().get_matches_from(args);
+        let m = crate::cli_args::get_cli_args().try_get_matches_from(args).unwrap();
         return TereSettings::parse_cli_args(&m).unwrap();
     }
 
