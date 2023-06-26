@@ -7,7 +7,7 @@ use std::fmt::Write as _;
 use std::io::{Stderr, Write};
 use std::path::PathBuf;
 
-use crate::app_state::{TereAppState, NO_MATCHES_MSG};
+use crate::app_state::TereAppState;
 use crate::error::TereError;
 use crate::settings::{CaseSensitiveMode, GapSearchMode, SortMode};
 pub use action::{Action, ActionContext};
@@ -510,7 +510,12 @@ impl<'a> TereTui<'a> {
     /// Things to do when the matches are possibly changed
     fn on_matches_changed(&mut self) -> CTResult<()> {
         if self.app_state.is_searching() && self.app_state.num_matching_items() == 0 {
-            self.info_message(NO_MATCHES_MSG)?;
+            self.info_message(
+                self.app_state
+                    .settings()
+                    .file_handling_mode
+                    .no_matches_message(),
+            )?;
         }
 
         self.redraw_main_window()?;

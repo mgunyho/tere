@@ -26,6 +26,16 @@ pub enum FileHandlingMode {
     Match,
 }
 
+impl FileHandlingMode {
+    /// When no file matches the search, display this message
+    pub fn no_matches_message(&self) -> &'static str {
+        match self {
+            FileHandlingMode::Ignore => "No folders matching search",
+            FileHandlingMode::Hide | FileHandlingMode::Match => "No matches",
+        }
+    }
+}
+
 impl Default for FileHandlingMode {
     fn default() -> Self {
         Self::Ignore
