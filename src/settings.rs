@@ -664,6 +664,10 @@ mod tests {
         assert_eq!(settings.file_handling_mode, FileHandlingMode::Hide);
         let settings = parse_cli_no_warnings(vec!["foo", "-l", "h"]);
         assert_eq!(settings.file_handling_mode, FileHandlingMode::Hide);
+        let settings = parse_cli_no_warnings(vec!["foo", "-lhide"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Hide);
+        let settings = parse_cli_no_warnings(vec!["foo", "-lh"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Hide);
 
         let settings = parse_cli_no_warnings(vec!["foo", "--files", "match"]);
         assert_eq!(settings.file_handling_mode, FileHandlingMode::Match);
