@@ -137,6 +137,20 @@ impl TereSettings {
         let mut ret = Self::default();
         let mut warnings: DeprecationWarnings = vec![];
 
+        ret.file_handling_mode = match args
+            .get_one::<String>("files")
+            // ok to unwrap because files has a default value which is always present
+            .unwrap()
+            .as_str()
+        {
+            "ignore" | "i" => FileHandlingMode::Ignore,
+            "hide" | "h" => FileHandlingMode::Hide,
+            "match" | "m" => FileHandlingMode::Match,
+            _ => unreachable!(),
+        };
+
+        // read these deprecated values afterwards, because otherwise the default value from
+        // --files will override these
         if args.get_flag("folders-only") {
             ret.file_handling_mode = FileHandlingMode::Hide;
             warnings.push("The option '--folders-only' / '-d' has been deprecated, please use '--files hide' instead.")
