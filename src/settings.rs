@@ -108,6 +108,7 @@ impl fmt::Display for SortMode {
 
 #[derive(Default)]
 pub struct TereSettings {
+    /// How to handle files: Ignore, hide or match them.
     pub file_handling_mode: FileHandlingMode,
     /// If true, show only items matching the search in listing
     pub filter_search: bool,
