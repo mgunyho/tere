@@ -138,8 +138,14 @@ impl TereSettings {
         let mut warnings: DeprecationWarnings = vec![];
 
         if args.get_flag("folders-only") {
-            ret.folders_only = true;
+            ret.file_handling_mode = FileHandlingMode::Hide;
+            warnings.push("The option '--folders-only' / '-d' has been deprecated, please use '--files hide' instead.")
         }
+
+        if args.get_flag("no-folders-only") {
+            ret.file_handling_mode = FileHandlingMode::Ignore;
+            warnings.push("The option '--no-folders-only' / '-D' has been deprecated, please use '--files ignore' or '--files match' instead.")
+         }
 
         if args.get_flag("filter-search") {
             ret.filter_search = true;
@@ -681,7 +687,7 @@ mod tests {
     fn test_folders_only_deprecated() {
         let (settings, warnings) = parse_cli(vec!["foo", "--folders-only"]);
         assert_eq!(warnings.len(), 1);
-        assert!(warnings[0].contains("'--folders-only' / '-d' has been deprecated, use '--files hide' instead"));
+        assert!(warnings[0].contains("'--folders-only' / '-d' has been deprecated, please use '--files hide' instead"));
         assert_eq!(settings.file_handling_mode, FileHandlingMode::Hide);
 
         let (settings, warnings) = parse_cli(vec!["foo", "-d"]);
@@ -690,7 +696,7 @@ mod tests {
 
         let (settings, warnings) = parse_cli(vec!["foo", "--no-folders-only"]);
         assert_eq!(warnings.len(), 1);
-        assert!(warnings[0].contains("'--no-folders-only' / '-D' has been deprecated, use '--files ignore' or '--files match' instead"));
+        assert!(warnings[0].contains("'--no-folders-only' / '-D' has been deprecated, please use '--files ignore' or '--files match' instead"));
         assert_eq!(settings.file_handling_mode, FileHandlingMode::Ignore);
 
         let (settings, warnings) = parse_cli(vec!["foo", "-D"]);
