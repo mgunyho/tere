@@ -787,7 +787,7 @@ mod tests {
     /// Create folders from a list of folder names in a temp dir.
     fn create_test_folders(tmp: &TempDir, folder_names: &Vec<&str>) {
         for folder_name in folder_names {
-            let p = tmp.path().join(folder_name.to_string());
+            let p = tmp.path().join(folder_name);
             std::fs::create_dir(p).unwrap();
         }
 
@@ -807,7 +807,7 @@ mod tests {
     /// Create (empty) files from a list of file names in a temp dir
     fn create_test_files(tmp: &TempDir, file_names: &Vec<&str>) {
         for file_name in file_names {
-            let p = tmp.path().join(file_name.to_string());
+            let p = tmp.path().join(file_name);
             std::fs::File::create(p).unwrap();
         }
 
