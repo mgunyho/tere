@@ -467,8 +467,8 @@ impl TereAppState {
         };
         let target_path = PathBuf::from(target_path);
 
-        self.clear_search();
         self.current_path = self.check_can_change_dir(&target_path)?;
+        self.clear_search(); // if cd was successful, clear the search
         self.update_ls_output_buf()?;
 
         self.cursor_pos = 0;
