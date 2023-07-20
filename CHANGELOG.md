@@ -1,3 +1,7 @@
+## 1.5.0 (unreleased)
+
+- By default, `tere` now only searches folders and not files. This can be changed with the new `--files` option. This replaces the `--folders-only` and `--no-folders-only` options, which are now deprecated. (Github #87 and #88)
+
 ## 1.4.0 (2023-01-08)
 
 - Check if the app is being run for the first time (based on whether the history file exists, and a bit of additional simple logic), and if so, prompt the user to confirm that they have updated their shell configuration (Github #83)

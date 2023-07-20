@@ -14,6 +14,7 @@ use regex::Regex;
 use crate::settings::{
     TereSettings,
     DeprecationWarnings,
+    FileHandlingMode,
     CaseSensitiveMode,
     GapSearchMode,
     SortMode,
@@ -24,8 +25,6 @@ mod history;
 use history::HistoryTree;
 
 use crate::error::TereError;
-
-pub const NO_MATCHES_MSG: &str = "No matches";
 
 /// The match locations of a given item. A list of *byte offsets* into the item's name that match
 /// the current search pattern.
@@ -58,13 +57,18 @@ impl MatchesVec {
 
     /// Update the collection of matching items by going through all items in the full collection
     /// and testing a regex pattern against the filenames
-    pub fn update_matches(&mut self, search_ptn: &Regex, case_sensitive: bool) {
+    pub fn update_matches(&mut self, search_ptn: &Regex, case_sensitive: bool, ignore_files: bool) {
         self.matches.clear();
         self.matches = self
             .all_items
             .iter()
             .enumerate()
             .filter_map(|(i, item)| {
+                // if applicable, match only folders, not files
+                if ignore_files && !item.is_dir() {
+                    return None;
+                }
+
                 let target = if case_sensitive {
                     item.file_name_checked()
                 } else {
@@ -406,7 +410,7 @@ impl TereAppState {
             entries.filter_map(|e| e.ok()).map(CustomDirEntry::from),
         );
 
-        if self.settings().folders_only {
+        if self.settings().file_handling_mode == FileHandlingMode::Hide {
             entries = Box::new(entries.filter(|e| e.path().is_dir()));
         }
 
@@ -721,7 +725,11 @@ impl TereAppState {
 
         // ok to unwrap, we have escaped the regex above
         let search_ptn = Regex::new(&regex_str).unwrap();
-        self.ls_output_buf.update_matches(&search_ptn, is_case_sensitive);
+        self.ls_output_buf.update_matches(
+            &search_ptn,
+            is_case_sensitive,
+            self.settings().file_handling_mode == FileHandlingMode::Ignore,
+        );
     }
 
     pub fn clear_search(&mut self) {
@@ -788,19 +796,43 @@ mod tests {
             folder_names.iter().map(|s| s.to_string()).collect();
         let actual_folders: std::collections::HashSet<String> = std::fs::read_dir(tmp.path())
             .unwrap()
-            .map(|x| x.unwrap().file_name().into_string().unwrap())
+            .map(|x| x.unwrap())
+            .filter(|x| x.path().is_dir())
+            .map(|x| x.file_name().into_string().unwrap())
             .collect();
 
         assert_eq!(expected_folders, actual_folders);
     }
 
-    /// Create folders from a list of folder names in a temp dir and initialize a test state in
-    /// that dir. Note that the cursor position for the state will be 1, since the first item is '..'.
-    fn create_test_state_with_folders(
+    /// Create (empty) files from a list of file names in a temp dir
+    fn create_test_files(tmp: &TempDir, file_names: &Vec<&str>) {
+        for file_name in file_names {
+            let p = tmp.path().join(file_name.to_string());
+            std::fs::File::create(p).unwrap();
+        }
+
+        let expected_files: std::collections::HashSet<String> =
+            file_names.iter().map(|s| s.to_string()).collect();
+        let actual_files: std::collections::HashSet<String> = std::fs::read_dir(tmp.path())
+            .unwrap()
+            .map(|x| x.unwrap())
+            .filter(|x| x.path().is_file())
+            .map(|x| x.file_name().into_string().unwrap())
+            .collect();
+
+        assert_eq!(expected_files, actual_files);
+    }
+
+    /// Create files and folders from lists of file and folder names in a temp dir, and initialize
+    /// a test state in the temp dir. Note that the cursor position for the state will be 1, since
+    /// the first item is '..'.
+    fn create_test_state_with_files_and_folders(
         tmp: &TempDir,
         win_h: usize,
+        file_names: Vec<&str>,
         folder_names: Vec<&str>,
     ) -> TereAppState {
+        create_test_files(tmp, &file_names);
         create_test_folders(tmp, &folder_names);
 
         let mut state = TereAppState {
@@ -818,6 +850,16 @@ mod tests {
         };
         state.change_dir(tmp.path().to_str().unwrap()).unwrap();
         state
+    }
+
+    /// Create folders from a list of folder names in a temp dir and initialize a test state in
+    /// that dir. Note that the cursor position for the state will be 1, since the first item is '..'.
+    fn create_test_state_with_folders(
+        tmp: &TempDir,
+        win_h: usize,
+        folder_names: Vec<&str>,
+    ) -> TereAppState {
+        create_test_state_with_files_and_folders(tmp, win_h, vec![], folder_names)
     }
 
     /// Create a test state with 'n' folders named 'folder 1', 'folder 2', ... 'folder n'. Note
@@ -1503,6 +1545,44 @@ mod tests {
 
         assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
+    }
+
+    #[test]
+    fn test_search_default_file_handling_mode() {
+        // by default, only folders should be searched
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_files_and_folders(&tmp, 3, vec!["foo"], vec!["frob"]);
+
+        s.advance_search("f");
+        assert_eq!(s.visible_match_indices(), vec![1]);
+    }
+
+    #[test]
+    fn test_search_file_handling_mode_match() {
+        // match both files & folders
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_files_and_folders(&tmp, 3, vec!["foo"], vec!["frob"]);
+
+        s._settings.file_handling_mode = FileHandlingMode::Match;
+        s.advance_search("f");
+        assert_eq!(s.visible_match_indices(), vec![1, 2]);
+    }
+
+    #[test]
+    fn test_search_file_handling_mode_hide() {
+        // match only folders, and hide files
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_files_and_folders(&tmp, 3, vec!["foo"], vec!["frob"]);
+
+        s._settings.file_handling_mode = FileHandlingMode::Hide;
+        s.update_ls_output_buf().unwrap(); // to apply file handling mode
+        assert_eq!(
+            s.visible_items()
+                .iter()
+                .map(|e| e.file_name_checked())
+                .collect::<Vec<_>>(),
+            vec!["..", "frob"],
+        );
     }
 
     #[test]

@@ -13,6 +13,35 @@ use crate::ui::{Action, ActionContext};
 
 //TODO: config file?
 
+/// How to handle files while searching
+#[derive(Debug, PartialEq, Eq)]
+pub enum FileHandlingMode {
+    /// Display files in the listing, but ignore them while searching (i.e. search only folders).
+    /// This is the default behavior.
+    Ignore,
+    /// Hide files in the listing, only show folders.
+    Hide,
+    /// Match both files and folders while searching. Note that currently `tere` doesn't do anything with
+    /// files, so matching a file just prints an error message.
+    Match,
+}
+
+impl FileHandlingMode {
+    /// When no file matches the search, display this message
+    pub fn no_matches_message(&self) -> &'static str {
+        match self {
+            FileHandlingMode::Ignore => "No folders matching search",
+            FileHandlingMode::Hide | FileHandlingMode::Match => "No matches",
+        }
+    }
+}
+
+impl Default for FileHandlingMode {
+    fn default() -> Self {
+        Self::Ignore
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum CaseSensitiveMode {
     IgnoreCase,
@@ -89,8 +118,8 @@ impl fmt::Display for SortMode {
 
 #[derive(Default)]
 pub struct TereSettings {
-    /// If true, show only folders, not files in the listing
-    pub folders_only: bool,
+    /// How to handle files: Ignore, hide or match them.
+    pub file_handling_mode: FileHandlingMode,
     /// If true, show only items matching the search in listing
     pub filter_search: bool,
 
@@ -117,9 +146,29 @@ impl TereSettings {
         let mut ret = Self::default();
         let mut warnings: DeprecationWarnings = vec![];
 
+        ret.file_handling_mode = match args
+            .get_one::<String>("files")
+            // ok to unwrap because files has a default value which is always present
+            .unwrap()
+            .as_str()
+        {
+            "ignore" | "i" => FileHandlingMode::Ignore,
+            "hide" | "h" => FileHandlingMode::Hide,
+            "match" | "m" => FileHandlingMode::Match,
+            _ => unreachable!(),
+        };
+
+        // read these deprecated values afterwards, because otherwise the default value from
+        // --files will override these
         if args.get_flag("folders-only") {
-            ret.folders_only = true;
+            ret.file_handling_mode = FileHandlingMode::Hide;
+            warnings.push("The option '--folders-only' / '-d' has been deprecated, please use '--files hide' instead.")
         }
+
+        if args.get_flag("no-folders-only") {
+            ret.file_handling_mode = FileHandlingMode::Ignore;
+            warnings.push("The option '--no-folders-only' / '-D' has been deprecated, please use '--files ignore' or '--files match' instead.")
+         }
 
         if args.get_flag("filter-search") {
             ret.filter_search = true;
@@ -346,7 +395,7 @@ mod tests {
 
     /// Helper function for creating TereSettings from cli args
     fn parse_cli(args: Vec<&str>) -> (TereSettings, DeprecationWarnings) {
-        let m = crate::cli_args::get_cli_args().get_matches_from(args);
+        let m = crate::cli_args::get_cli_args().try_get_matches_from(args).unwrap();
         return TereSettings::parse_cli_args(&m).unwrap();
     }
 
@@ -604,44 +653,82 @@ mod tests {
     }
 
     #[test]
-    fn test_folders_only_override() {
-        let settings = parse_cli_no_warnings(vec![
-            "foo",
-        ]);
-        assert!(!settings.folders_only);
+    fn test_files_parse() {
+        let settings = parse_cli_no_warnings(vec!["foo"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Ignore);
 
-        let settings = parse_cli_no_warnings(vec![
-            "foo",
-            "--folders-only",
-        ]);
-        assert!(settings.folders_only);
+        let settings = parse_cli_no_warnings(vec!["foo", "--files", "ignore"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Ignore);
+        let settings = parse_cli_no_warnings(vec!["foo", "--files", "i"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Ignore);
+        let settings = parse_cli_no_warnings(vec!["foo", "-l", "ignore"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Ignore);
+        let settings = parse_cli_no_warnings(vec!["foo", "-l", "i"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Ignore);
 
-        // same as above, but with shorthand version
-        let settings = parse_cli_no_warnings(vec![
-            "foo",
-            "-d",
-        ]);
-        assert!(settings.folders_only);
+        let settings = parse_cli_no_warnings(vec!["foo", "--files", "hide"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Hide);
+        let settings = parse_cli_no_warnings(vec!["foo", "--files", "h"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Hide);
+        let settings = parse_cli_no_warnings(vec!["foo", "-l", "hide"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Hide);
+        let settings = parse_cli_no_warnings(vec!["foo", "-l", "h"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Hide);
+        let settings = parse_cli_no_warnings(vec!["foo", "-lhide"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Hide);
+        let settings = parse_cli_no_warnings(vec!["foo", "-lh"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Hide);
 
-        let settings = parse_cli_no_warnings(vec![
-            "foo",
-            "--folders-only",
-            "--no-folders-only",
-        ]);
-        assert!(!settings.folders_only);
+        let settings = parse_cli_no_warnings(vec!["foo", "--files", "match"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Match);
+        let settings = parse_cli_no_warnings(vec!["foo", "--files", "m"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Match);
+        let settings = parse_cli_no_warnings(vec!["foo", "-l", "match"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Match);
+        let settings = parse_cli_no_warnings(vec!["foo", "-l", "m"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Match);
+    }
 
-        // same as above, but with shorthand versions
-        let settings = parse_cli_no_warnings(vec![
-            "foo",
-            "-d",
-            "-D",
-        ]);
-        assert!(!settings.folders_only);
-        let settings = parse_cli_no_warnings(vec![
-            "foo",
-            "-dD",
-        ]);
-        assert!(!settings.folders_only);
+    #[test]
+    #[should_panic(expected = "InvalidValue")]
+    fn test_files_missing() {
+        parse_cli_no_warnings(vec!["foo", "--files"]);
+    }
+
+    #[test]
+    #[should_panic(expected = "InvalidValue")]
+    fn test_files_invalid() {
+        parse_cli_no_warnings(vec!["foo", "--files", "xxx"]);
+    }
+
+    #[test]
+    fn test_files_override() {
+        let settings = parse_cli_no_warnings(vec!["foo", "--files", "hide", "--files", "ignore"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Ignore);
+
+        let settings = parse_cli_no_warnings(vec!["foo", "--files", "hide", "--files", "ignore", "--files", "h"]);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Hide);
+    }
+
+    #[test]
+    fn test_folders_only_deprecated() {
+        let (settings, warnings) = parse_cli(vec!["foo", "--folders-only"]);
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains("'--folders-only' / '-d' has been deprecated, please use '--files hide' instead"));
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Hide);
+
+        let (settings, warnings) = parse_cli(vec!["foo", "-d"]);
+        assert_eq!(warnings.len(), 1);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Hide);
+
+        let (settings, warnings) = parse_cli(vec!["foo", "--no-folders-only"]);
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains("'--no-folders-only' / '-D' has been deprecated, please use '--files ignore' or '--files match' instead"));
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Ignore);
+
+        let (settings, warnings) = parse_cli(vec!["foo", "-D"]);
+        assert_eq!(warnings.len(), 1);
+        assert_eq!(settings.file_handling_mode, FileHandlingMode::Ignore);
     }
 
     #[test]
