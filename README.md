@@ -182,9 +182,11 @@ If only one folder matches your current search, `tere` will highlight it, and ch
 
 To stop searching, press <kbd>Esc</kbd> or erase all search characters by pressing <kbd>Backspace</kbd>.
 
+Note that by default, `tere` searches only folders and not files, since `tere` cannot do anything with files. This can be changed with the `--files` option. For further details, see below, or check the output of `--help`.
+
 By default, the searching uses "smart case", meaning that if the query contains only lowercase letters, case is ignored, but if there are uppercase letters, the search is case sensitive. This can be changed with the `--ignore-case` and `--case-sensitive` options, or with the keyboard shortcut <kbd>Alt</kbd>-<kbd>c</kbd> by default.
 
-Additionally, in the default search mode, "gap search" (sometimes also known as fuzzy search) is enabled. This means that the search matches any folder or file name as long as it starts with the same character as the search query, and contains the rest of the query characters, even if there are other characters between them. For example, searching for `dt` would match both `DeskTop` and `DocumenTs`. With the `--gap-search-anywhere` option, the first character of the query doesn't have to match the first character of a folder/file name. The gap search can be disabled with the `--normal-search` and `--normal-search-anywhere` options, which only allow matching consecutive characters, either from the start or anywhere within the folder/file name, respsectively. The gap search behavior can also be changed with the keyboard shortcut <kbd>Ctrl</kbd>-<kbd>f</kbd> by default. See the output of the `--help` option for further details.
+Additionally, in the default search mode, "gap search" (sometimes also known as fuzzy search) is enabled. This means that the search matches any folder or file name as long as it starts with the same character as the search query, and contains the rest of the query characters, even if there are other characters between them. For example, searching for `dt` would match both `DeskTop` and `DocumenTs`. With the `--gap-search-anywhere` option, the first character of the query doesn't have to match the first character of a folder/file name. The gap search can be disabled with the `--normal-search` and `--normal-search-anywhere` options, which only allow matching consecutive characters, either from the start or anywhere within the folder/file name, respsectively. The gap search behavior can also be changed with the keyboard shortcut <kbd>Ctrl</kbd>-<kbd>f</kbd> by default. See `--help` for details.
 
 ### Mouse navigation
 
@@ -197,7 +199,7 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 - `--help` or `-h`: Print a short help and all CLI options. Note that the output goes to stderr, to not interfere with `cd` ing in the shell functions defined during the setup.
 - `--version` or `-V`: Print the version of `tere`. This also goes to stderr.
 - `--filter-search` or `-f` / `--no-filter-search` or `-F`: If `--filter-search` is set, show only items that match the current search query in the listing. Otherwise all items are shown in the listing while searching (this is the default behavior).
-- `--folders-only` or `-d` / `--no-folders-only` or `-D`: With `--folders-only`, don't show files but only folders (and symlinks pointing to folders) in the listing.
+- `--files` or `-l ignore` / `hide` / `match` (or `i` / `h` / `m`): How to handle files while searching. If `ignore` (the default), only folders are searched / matched. If `hide`, files are hidden and only folders shown and matched, and if `match`, both files and folders are matched. Note that currently `tere` cannot do anything with files, so searching for a file name with `--files=match` is mostly only useful for checking whether a file can be found in the current folder.
 - `--smart-case` or `-S` / `--ignore-case` or `-i` / `--case-sensitive` or `-s`: Set the case sensitivity mode. The default mode is smart case, which is case insensitive if the query contains only lowercase letters and case sensitive otherwise.
 - `--gap-search` or `-g` / `--gap-search-anywhere` or `-G` / `--normal-search` or `-n` / `--normal-search-anywhere` or `-N`: Configure whether to allow matches with gaps in them (see above).
 - `--sort name` / `created` / `modified`: Change the sorting order of the listing.
@@ -205,7 +207,7 @@ You can adjust the behavior of `tere` by passing the following CLI options to it
 - `--history-file`: To make browsing more convenient, `tere` saves a history of folders you have visited to this file in JSON format. It should be an absolute path. Defaults to `$CACHE_DIR/tere/history.json`, where `$CACHE_DIR` is `$XDG_CACHE_HOME` or `~/.cache`. Set to the empty string `''` to disable saving the history. Note that the history reveals parts of your folder structure if it can be read by someone else.
 - `--mouse=on` or `--mouse=off`: Enable or disable navigating with the mouse. If enabled, you can left-click to enter folders and right-click to go to the parent folder. Off by default.
 
-Some options have two or more versions that override each other (for example `--folders-only` and `--no-folders-only`). For such options, whichever is passed last wins. This way, you can have one option as the default in your shell's `rc` file, but you can sometimes manually override that option when running `tere`.
+Some options have two or more versions that override each other (for example `--filter-search` and `--no-filter-search`). For such options, whichever is passed last wins. This way, you can have one option as the default in your shell's `rc` file, but you can sometimes manually override that option when running `tere`.
 
 ## Similar projects
 
