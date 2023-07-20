@@ -37,7 +37,7 @@ pub fn get_cli_args() -> Command {
              .short('f')
              .help("Show only items matching the search in listing")
              .long_help("Show only items matching the current search query in the listing. This overrides the --no-filter-search option. You can toggle the filtering with the keyboard shortcut Alt-f by default.")
-             .overrides_with_all(&["filter-search", "no-filter-search"])
+             .overrides_with_all(["filter-search", "no-filter-search"])
             )
         .arg(Arg::new("no-filter-search")
              .action(ArgAction::SetTrue)
@@ -46,7 +46,7 @@ pub fn get_cli_args() -> Command {
              .short('F')
              .help("Show all items in the listing even when searching (default)")
              .long_help("Show all items in the listing even when searching (default). This overrides the --filter-search option. You can toggle the filtering with the keyboard shortcut Alt-f by default.")
-             .overrides_with_all(&["filter-search", "no-filter-search"])
+             .overrides_with_all(["filter-search", "no-filter-search"])
             )
         .arg(Arg::new("files")
              .action(ArgAction::Set)
@@ -86,7 +86,7 @@ pub fn get_cli_args() -> Command {
                      "ignore-case",
                      "smart-case"
             ))
-             .overrides_with_all(&["ignore-case", "smart-case", "case-sensitive"])
+             .overrides_with_all(["ignore-case", "smart-case", "case-sensitive"])
             )
         .arg(Arg::new("ignore-case")
              .action(ArgAction::SetTrue)
@@ -98,7 +98,7 @@ pub fn get_cli_args() -> Command {
                      "case-sensitive",
                      "smart-case"
                      ))
-             .overrides_with_all(&["ignore-case", "smart-case", "case-sensitive"])
+             .overrides_with_all(["ignore-case", "smart-case", "case-sensitive"])
             )
         .arg(Arg::new("smart-case")
              .action(ArgAction::SetTrue)
@@ -110,7 +110,7 @@ pub fn get_cli_args() -> Command {
                      "case-sensitive",
                      "ignore-case"
                      ))
-             .overrides_with_all(&["ignore-case", "smart-case", "case-sensitive"])
+             .overrides_with_all(["ignore-case", "smart-case", "case-sensitive"])
             )
         .arg(Arg::new("gap-search")
              .action(ArgAction::SetTrue)
@@ -123,7 +123,7 @@ pub fn get_cli_args() -> Command {
                      "normal-search",
                      "normal-search-anywhere",
                      ))
-             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
+             .overrides_with_all(["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         .arg(Arg::new("gap-search-anywhere")
              .action(ArgAction::SetTrue)
@@ -136,13 +136,13 @@ pub fn get_cli_args() -> Command {
                      "normal-search",
                      "normal-search-anywhere",
                      ))
-             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
+             .overrides_with_all(["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         // DEPRECATED in favor of normal-search, this is here only for backward compatibility
         .arg(Arg::new("no-gap-search")
              .action(ArgAction::SetTrue)
              .long("no-gap-search")
-             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
+             .overrides_with_all(["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
              .hide(true)
             )
         .arg(Arg::new("normal-search")
@@ -156,7 +156,7 @@ pub fn get_cli_args() -> Command {
                      "gap-search-anywhere",
                      "normal-search-anywhere",
                      ))
-             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
+             .overrides_with_all(["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         .arg(Arg::new("normal-search-anywhere")
              .action(ArgAction::SetTrue)
@@ -169,7 +169,7 @@ pub fn get_cli_args() -> Command {
                      "gap-search-anywhere",
                      "normal-search",
                      ))
-             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
+             .overrides_with_all(["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         .arg(Arg::new("map")
              .action(ArgAction::Append)

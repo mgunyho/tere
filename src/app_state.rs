@@ -338,11 +338,11 @@ impl TereAppState {
     /// Convert a cursor position (in the range 0..window_height) to an index
     /// into the currently visible items.
     pub fn cursor_pos_to_visible_item_index(&self, cursor_pos: usize) -> usize {
-        (cursor_pos + self.scroll_pos) as usize
+        cursor_pos + self.scroll_pos
     }
 
     pub fn get_item_at_cursor_pos(&self, cursor_pos: usize) -> Option<&CustomDirEntry> {
-        let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
+        let idx = self.cursor_pos_to_visible_item_index(cursor_pos);
         self.visible_items().get(idx).copied()
     }
 
@@ -361,7 +361,7 @@ impl TereAppState {
     }
 
     pub fn get_match_locations_at_cursor_pos(&self, cursor_pos: usize) -> Option<&MatchesLocType> {
-        let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
+        let idx = self.cursor_pos_to_visible_item_index(cursor_pos);
         if self.settings().filter_search {
             // NOTE: we assume that the matches is a sorted map
             self.ls_output_buf.matches.values().nth(idx)
@@ -787,7 +787,7 @@ mod tests {
     /// Create folders from a list of folder names in a temp dir.
     fn create_test_folders(tmp: &TempDir, folder_names: &Vec<&str>) {
         for folder_name in folder_names {
-            let p = tmp.path().join(folder_name.to_string());
+            let p = tmp.path().join(folder_name);
             std::fs::create_dir(p).unwrap();
         }
 
@@ -807,7 +807,7 @@ mod tests {
     /// Create (empty) files from a list of file names in a temp dir
     fn create_test_files(tmp: &TempDir, file_names: &Vec<&str>) {
         for file_name in file_names {
-            let p = tmp.path().join(file_name.to_string());
+            let p = tmp.path().join(file_name);
             std::fs::File::create(p).unwrap();
         }
 
@@ -870,7 +870,7 @@ mod tests {
         win_h: usize,
         n_folders: usize,
     ) -> TereAppState {
-        let fnames: Vec<_> = (1..=n_folders).map(|i| format!("folder {}", i)).collect();
+        let fnames: Vec<_> = (1..=n_folders).map(|i| format!("folder {i}")).collect();
         create_test_state_with_folders(tmp, win_h, fnames.iter().map(|s| s.as_ref()).collect())
     }
 
