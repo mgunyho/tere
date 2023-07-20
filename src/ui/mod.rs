@@ -60,8 +60,8 @@ fn terminal_size_usize() -> CTResult<(usize, usize)> {
 pub fn main_window_size() -> CTResult<(usize, usize)> {
     let (w, h) = terminal_size_usize()?;
     Ok((
-        w as usize,
-        (h as usize).saturating_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE),
+        w,
+        h.saturating_sub(HEADER_SIZE + INFO_WIN_SIZE + FOOTER_SIZE),
     ))
 }
 
@@ -105,7 +105,7 @@ impl<'a> TereTui<'a> {
             UnicodeSegmentation::graphemes(self.app_state.header_msg.as_str(), true)
                 .map(String::from)
                 .collect();
-        let n_skip = header_graphemes.len().saturating_sub(max_x as usize);
+        let n_skip = header_graphemes.len().saturating_sub(max_x);
         let header_msg = header_graphemes[n_skip..].join("");
 
         // must use variable here b/c can't borrow 'self' twice in execute!() below
@@ -211,7 +211,7 @@ impl<'a> TereTui<'a> {
             style::Print(
                 extra_msg
                     .chars()
-                    .take(w as usize)
+                    .take(w)
                     .collect::<String>()
                     .bold()
             ),
@@ -830,7 +830,7 @@ impl<'a> TereTui<'a> {
             .iter()
             .skip(scroll)
             .chain(vec![vec![]].iter().cycle()) // add empty lines at the end
-            .take(height as usize)
+            .take(height)
             .enumerate()
         {
             // Set up cursor position
