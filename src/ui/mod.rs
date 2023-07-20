@@ -458,9 +458,9 @@ impl<'a> TereTui<'a> {
         let res = match self.app_state.change_dir(path) {
             Err(e) => {
                 if cfg!(debug_assertions) {
-                    self.error_message(&format!("{:?}", e))?;
+                    self.error_message(&format!("{e:?}"))?;
                 } else {
-                    self.error_message(&format!("{}", e))?;
+                    self.error_message(&format!("{e}"))?;
                 }
                 false
             }

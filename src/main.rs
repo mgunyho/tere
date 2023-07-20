@@ -31,7 +31,7 @@ fn main() -> Result<(), TereError> {
             // custom error handling: clap writes '--help' and '--version'
             // to stdout by default, but we want to print those to stderr
             // as well to not interfere with the intended behavior of tere
-            eprint!("{}", err);
+            eprint!("{err}");
             std::process::exit(1);
         });
 
@@ -88,7 +88,7 @@ fn main() -> Result<(), TereError> {
                 TereError::Clap(e) => e.exit(),
 
                 TereError::ExitWithoutCd(msg) | TereError::FirstRunPromptCancelled(msg) => {
-                    eprintln!("{}", msg);
+                    eprintln!("{msg}");
                     std::process::exit(1);
                 }
 
@@ -101,7 +101,7 @@ fn main() -> Result<(), TereError> {
 
     // Print warnings to stderr (in addition to displaying them in the UI on startup)
     for warning in warnings {
-        eprintln!("Warning: {}", warning);
+        eprintln!("Warning: {warning}");
     }
 
     // No error, print cwd, as returned by the app state

@@ -870,7 +870,7 @@ mod tests {
         win_h: usize,
         n_folders: usize,
     ) -> TereAppState {
-        let fnames: Vec<_> = (1..=n_folders).map(|i| format!("folder {}", i)).collect();
+        let fnames: Vec<_> = (1..=n_folders).map(|i| format!("folder {i}")).collect();
         create_test_state_with_folders(tmp, win_h, fnames.iter().map(|s| s.as_ref()).collect())
     }
 

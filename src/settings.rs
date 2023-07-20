@@ -62,7 +62,7 @@ impl fmt::Display for CaseSensitiveMode {
             CaseSensitiveMode::CaseSensitive => "case sensitive",
             CaseSensitiveMode::SmartCase     => "smart case",
         };
-        write!(f, "{}", text)
+        write!(f, "{text}")
     }
 }
 
@@ -88,7 +88,7 @@ impl fmt::Display for GapSearchMode {
             GapSearchMode::NormalSearchAnywhere => "normal search anywhere",
             GapSearchMode::GapSearchAnywhere  => "gap search anywhere",
         };
-        write!(f, "{}", text)
+        write!(f, "{text}")
     }
 }
 
@@ -112,7 +112,7 @@ impl fmt::Display for SortMode {
             SortMode::Created  => "cre",
             SortMode::Modified => "mod",
         };
-        write!(f, "{}", text)
+        write!(f, "{text}")
     }
 }
 
@@ -211,7 +211,7 @@ impl TereSettings {
                     // make a difference for this error type.
                     ClapError::raw(
                         ClapErrorKind::InvalidValue,
-                        format!("Invalid value for 'autocd-timeout': '{}'\n", x),
+                        format!("Invalid value for 'autocd-timeout': '{x}'\n"),
                     )
                 })?
                 .into(),
@@ -277,17 +277,14 @@ fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>,
     fn parsekey_to_clap(mapping: &str, err: crokey::ParseKeyError) -> ClapError {
         ClapError::raw(
             ClapErrorKind::InvalidValue,
-            format!("Error parsing key combination '{}': {}\n", mapping, err),
+            format!("Error parsing key combination '{mapping}': {err}\n"),
         )
     }
 
     fn strum_to_clap(mapping: &str, attempted_value: &str, ctx_or_action: &str) -> ClapError {
         ClapError::raw(
             ClapErrorKind::InvalidValue,
-            format!(
-                "Error parsing key mapping '{}': invalid {} '{}'\n",
-                mapping, ctx_or_action, attempted_value,
-            ),
+            format!("Error parsing key mapping '{mapping}': invalid {ctx_or_action} '{attempted_value}'\n"),
         )
     }
 
@@ -295,7 +292,7 @@ fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>,
         if mapping.is_empty() {
             return Err(ClapError::raw(
                 ClapErrorKind::InvalidValue,
-                format!("Invalid mapping: '{}'\n", arg),
+                format!("Invalid mapping: '{arg}'\n"),
             ));
         }
 
