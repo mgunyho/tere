@@ -66,7 +66,7 @@ pub fn get_cli_args() -> Command {
              .action(ArgAction::SetTrue)
              .long("folders-only")
              .short('d')
-             .overrides_with_all(&["folders-only", "no-folders-only", "files"])
+             .overrides_with_all(["folders-only", "no-folders-only", "files"])
             )
         // DEPRECATED in favor of --files in > 1.4.0, here for backwards compatibility
         .arg(Arg::new("no-folders-only")
@@ -74,7 +74,7 @@ pub fn get_cli_args() -> Command {
              .action(ArgAction::SetTrue)
              .long("no-folders-only")
              .short('D')
-             .overrides_with_all(&["folders-only", "no-folders-only", "files"])
+             .overrides_with_all(["folders-only", "no-folders-only", "files"])
             )
         .arg(Arg::new("case-sensitive")
              .action(ArgAction::SetTrue)
