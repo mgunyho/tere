@@ -502,6 +502,37 @@ impl TereAppState {
         Ok(())
     }
 
+    /// Given a target path, check if it's a valid cd target, and if it isn't, go up the folder
+    /// tree until a valid (i.e. existing) folder is found
+    fn find_valid_cd_target(&self, original_target: &Path) -> IOResult<(PathBuf, CdResult)> {
+        let mut final_target = original_target;
+        let mut result = CdResult::Success;
+
+        loop {
+            match self.check_can_change_dir(final_target) {
+                Ok(p) => break Ok((p, result)),
+                Err(e) => {
+                    match e.kind() {
+                        ErrorKind::NotFound => // | PermissionDenied //TODO
+                        {
+                            final_target = final_target
+                                .parent()
+                                .unwrap_or(std::path::Component::RootDir.as_ref());
+                            match result {
+                                CdResult::Success => {
+                                    result = CdResult::MovedUpwards { root_error: e };
+                                }
+                                CdResult::MovedUpwards { .. } => {}
+                            }
+                        }
+                        // other kinds of errors we don't know how to deal with, pass them on
+                        _ => return Err(e),
+                    }
+                }
+            }
+        }
+    }
+
     /// Check if a path is a valid cd target, and if it is, return an absolute path to it
     fn check_can_change_dir(&self, target_path: &Path) -> IOResult<PathBuf> {
 
@@ -1745,5 +1776,55 @@ mod tests {
         assert_eq!(s.current_path, tmp.path());
         assert!(s.change_dir("/").is_ok());
         assert_eq!(s.current_path, PathBuf::from("/"));
+    }
+
+    #[test]
+    fn test_find_valid_cd_target() {
+        let tmp = TempDir::new().unwrap();
+        let s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+
+        // valid target
+        let (path, res) = s
+            .find_valid_cd_target(&std::path::PathBuf::from("foo"))
+            .unwrap();
+        assert_eq!(path, tmp.path().join("foo"));
+        match res {
+            CdResult::Success => {}
+            something_else => panic!("{:?}", something_else),
+        }
+
+        // target not found
+        let (path, res) = s
+            .find_valid_cd_target(&std::path::PathBuf::from("invalid"))
+            .unwrap();
+        assert_eq!(path, tmp.path());
+        match res {
+            CdResult::MovedUpwards { root_error: e } => {
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
+
+        // root
+        let (path, res) = s
+            .find_valid_cd_target(&std::path::PathBuf::from("/"))
+            .unwrap();
+        assert_eq!(path, std::path::PathBuf::from("/"));
+        match res {
+            CdResult::Success => {}
+            something_else => panic!("{:?}", something_else),
+        }
+
+        // valid target is root
+        let (path, res) = s
+            .find_valid_cd_target(&std::path::PathBuf::from("/foo/bar"))
+            .unwrap();
+        assert_eq!(path, std::path::PathBuf::from("/"));
+        match res {
+            CdResult::MovedUpwards { root_error: e } => {
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
     }
 }
