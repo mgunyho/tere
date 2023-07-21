@@ -1827,4 +1827,16 @@ mod tests {
             something_else => panic!("{:?}", something_else),
         }
     }
+
+    #[test]
+    fn test_cd_current_dir_deleted() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+
+        s.change_dir("foo").unwrap();
+        std::fs::remove_dir(tmp.path().join("foo")).unwrap();
+        let res = s.change_dir(".");
+
+        assert_eq!(s.current_path, tmp.path());
+    }
 }
