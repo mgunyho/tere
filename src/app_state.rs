@@ -171,6 +171,17 @@ impl From<&std::path::Path> for CustomDirEntry {
 /// The type of the `ls_output_buf` buffer of the app state
 type LsBufType = MatchesVec;
 
+/// Possible non-error results of 'change directory' operation
+#[derive(Debug)]
+pub enum CdResult {
+    /// The folder was changed successfully
+    Success,
+
+    /// Could not change to the desired directory, so changed to a folder that is one or more
+    /// levels upwards.
+    MovedUpwards { root_error: IOError },
+}
+
 /// This struct represents the state of the application.
 pub struct TereAppState {
     // Width and height of the main window. These values have to be updated by calling the
