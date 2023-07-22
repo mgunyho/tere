@@ -470,6 +470,8 @@ impl TereAppState {
         Ok(())
     }
 
+    /// Change the current working directory. If `path` is empty, change to the item under the
+    /// cursor, otherwise convert path to an absolute path and cd to it.
     pub fn change_dir(&mut self, path: &str) -> IOResult<CdResult> {
         // TODO: add option to use xdg-open (or similar) on files?
         // check out https://crates.io/crates/open

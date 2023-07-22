@@ -453,6 +453,8 @@ impl<'a> TereTui<'a> {
 
     /// Change the working directory. If successful, returns true. If unsuccessful, print an error
     /// message to the UI and return false.
+    /// NOTE: path is a string, so that it can be an empty string, which refers to the item under
+    /// the cursor
     fn change_dir(&mut self, path: &str) -> CTResult<bool> {
         //TODO: if there are no visible items, don't do anything?
         let res = match self.app_state.change_dir(path) {
