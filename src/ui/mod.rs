@@ -615,7 +615,11 @@ impl<'a> TereTui<'a> {
     }
 
     fn on_go_to_root(&mut self) -> CTResult<()> {
-        self.change_dir("/")?;
+        // note: this is the same as std::path::Component::RootDir
+        // using a temporary buffer to avoid allocating on the heap, because MAIN_SEPARATOR_STR is
+        // not stable yet, see https://github.com/rust-lang/rust/issues/94071
+        let mut tmp = [0u8, 4];
+        self.change_dir(std::path::MAIN_SEPARATOR.encode_utf8(&mut tmp))?;
         Ok(())
     }
 
@@ -701,6 +705,9 @@ impl<'a> TereTui<'a> {
                     if let Some(action) = action {
                         match action {
                             Action::ChangeDir => { self.change_dir("")?; },
+                            // note: ".." is the same as std::path::Component::ParentDir, but
+                            // hardcoding it avoids jumping back and forth between OsSrt. The same
+                            // applies for "." elsewhere.
                             Action::ChangeDirParent => { self.change_dir("..")?; },
                             Action::ChangeDirHome => self.on_go_to_home()?,
                             Action::ChangeDirRoot => self.on_go_to_root()?,
@@ -728,7 +735,6 @@ impl<'a> TereTui<'a> {
                             Action::ChangeSortMode => self.cycle_sort_mode()?,
 
                             Action::RefreshListing => {
-                                //TODO: use 'current dir' instead of hardcoded '.' (?, see also pardir discussion elsewhere)
                                 if self.change_dir(".")? {
                                     // only update info message if cd was successful, otherwise
                                     // we're overwriting the error message
