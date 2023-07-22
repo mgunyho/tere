@@ -3,6 +3,7 @@
 - By default, `tere` now only searches folders and not files. This can be changed with the new `--files` option. This replaces the `--folders-only` and `--no-folders-only` options, which are now deprecated. (Github #87 and #88)
 - Deprecation warnings now also get printed to stderr in addition to the in-app info bar
 - Search is no longer cleared if changing to a folder is unsuccessful
+- If the current folder (or it's parent) no longer exists or is inaccessible, automatically go up the folder tree until an existing folder is found. This way, the current working directory of the app can't be invalid.
 
 ## 1.4.0 (2023-01-08)
 

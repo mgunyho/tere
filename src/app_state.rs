@@ -171,6 +171,22 @@ impl From<&std::path::Path> for CustomDirEntry {
 /// The type of the `ls_output_buf` buffer of the app state
 type LsBufType = MatchesVec;
 
+/// Possible non-error results of 'change directory' operation
+#[derive(Debug)]
+pub enum CdResult {
+    /// The folder was changed successfully
+    Success,
+
+    /// Could not change to the desired directory, so changed to a folder that is one or more
+    /// levels upwards.
+    MovedUpwards {
+        /// The (absolute) path where we were trying to cd
+        target_abs_path: PathBuf,
+        /// The error due to which we moved to a parent directory
+        root_error: IOError,
+    },
+}
+
 /// This struct represents the state of the application.
 pub struct TereAppState {
     // Width and height of the main window. These values have to be updated by calling the
@@ -454,7 +470,7 @@ impl TereAppState {
         Ok(())
     }
 
-    pub fn change_dir(&mut self, path: &str) -> IOResult<()> {
+    pub fn change_dir(&mut self, path: &str) -> IOResult<CdResult> {
         // TODO: add option to use xdg-open (or similar) on files?
         // check out https://crates.io/crates/open
         // (or https://docs.rs/opener/0.4.1/opener/)
@@ -465,9 +481,10 @@ impl TereAppState {
         } else {
             path.to_string()
         };
-        let target_path = PathBuf::from(target_path);
 
-        self.current_path = self.check_can_change_dir(&target_path)?;
+        let (target_path, cd_result) = self.find_valid_cd_target(&PathBuf::from(target_path))?;
+
+        self.current_path = target_path;
         self.clear_search(); // if cd was successful, clear the search
         self.update_ls_output_buf()?;
 
@@ -488,47 +505,50 @@ impl TereAppState {
             self.move_cursor_to_filename(prev_dir);
         }
 
-        Ok(())
+        Ok(cd_result)
+    }
+
+    /// Given a target path, check if it's a valid cd target, and if it isn't, go up the folder
+    /// tree until a valid (i.e. existing) folder is found
+    fn find_valid_cd_target(&self, original_target: &Path) -> IOResult<(PathBuf, CdResult)> {
+        let original_target_abs = if original_target.is_absolute() {
+            original_target.to_path_buf()
+        } else {
+            normalize_path(&self.current_path.join(original_target))
+        };
+
+        let mut final_target = original_target_abs.as_ref();
+        let mut result = CdResult::Success;
+
+        loop {
+            match self.check_can_change_dir(final_target) {
+                Ok(p) => break Ok((p, result)),
+                Err(e) => {
+                    match e.kind() {
+                        ErrorKind::NotFound | ErrorKind::PermissionDenied => {
+                            final_target = final_target
+                                .parent()
+                                .unwrap_or(std::path::Component::RootDir.as_ref());
+                            match result {
+                                CdResult::Success => {
+                                    result = CdResult::MovedUpwards {
+                                        target_abs_path: original_target_abs.clone(),
+                                        root_error: e,
+                                    };
+                                }
+                                CdResult::MovedUpwards { .. } => {}
+                            }
+                        }
+                        // other kinds of errors we don't know how to deal with, pass them on
+                        _ => return Err(e),
+                    }
+                }
+            }
+        }
     }
 
     /// Check if a path is a valid cd target, and if it is, return an absolute path to it
     fn check_can_change_dir(&self, target_path: &Path) -> IOResult<PathBuf> {
-
-        // NOTE: have to manually normalize path because the std doesn't have that feature yet, as
-        // of December 2021.
-        // see:
-        // - https://github.com/rust-lang/rfcs/issues/2208
-        // - https://github.com/gdzx/rfcs/commit/3c69f787b5b32fb9c9960c1e785e5cabcc794238
-        // - abs_path crate
-        // - relative_path crate
-        // This function is copy-pasted from cargo::util::paths::normalize_path, https://docs.rs/cargo-util/0.1.1/cargo_util/paths/fn.normalize_path.html, under the MIT license
-        fn normalize_path(path: &Path) -> PathBuf {
-            let mut components = path.components().peekable();
-            let mut ret = if let Some(c @ Component::Prefix(..)) = components.peek().cloned() {
-                components.next();
-                PathBuf::from(c.as_os_str())
-            } else {
-                PathBuf::new()
-            };
-
-            for component in components {
-                match component {
-                    Component::Prefix(..) => unreachable!(),
-                    Component::RootDir => {
-                        ret.push(component.as_os_str());
-                    }
-                    Component::CurDir => {}
-                    Component::ParentDir => {
-                        ret.pop();
-                    }
-                    Component::Normal(c) => {
-                        ret.push(c);
-                    }
-                }
-            }
-            ret
-        }
-
         let full_path = if target_path.is_absolute() {
             target_path.to_path_buf()
         } else {
@@ -777,6 +797,43 @@ impl TereAppState {
             }
         };
     }
+}
+
+/// Normalize a path
+/// NOTE: have to manually implement this since the std doesn't have that feature yet, as
+/// of July 2023.
+/// see:
+/// - https://github.com/rust-lang/rfcs/issues/2208
+/// - https://github.com/rust-lang/rust/issues/92750 (std::path::absolute)
+/// - https://github.com/gdzx/rfcs/commit/3c69f787b5b32fb9c9960c1e785e5cabcc794238
+/// - abs_path crate
+/// - relative_path crate
+/// This function is copy-pasted from cargo::util::paths::normalize_path, https://docs.rs/cargo-util/0.1.1/cargo_util/paths/fn.normalize_path.html, under the MIT license
+fn normalize_path(path: &Path) -> PathBuf {
+    let mut components = path.components().peekable();
+    let mut ret = if let Some(c @ Component::Prefix(..)) = components.peek().cloned() {
+        components.next();
+        PathBuf::from(c.as_os_str())
+    } else {
+        PathBuf::new()
+    };
+
+    for component in components {
+        match component {
+            Component::Prefix(..) => unreachable!(),
+            Component::RootDir => {
+                ret.push(component.as_os_str());
+            }
+            Component::CurDir => {}
+            Component::ParentDir => {
+                ret.pop();
+            }
+            Component::Normal(c) => {
+                ret.push(c);
+            }
+        }
+    }
+    ret
 }
 
 #[cfg(test)]
@@ -1723,7 +1780,17 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
         assert_eq!(s.current_path, tmp.path());
-        assert!(s.change_dir("bar").is_err());
+        let res = s.change_dir("bar");
+        match res {
+            Ok(CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            }) => {
+                assert_eq!(p, tmp.path().join("bar"));
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            },
+            something_else => panic!("{:?}", something_else),
+        }
         assert_eq!(s.current_path, tmp.path());
     }
 
@@ -1734,5 +1801,147 @@ mod tests {
         assert_eq!(s.current_path, tmp.path());
         assert!(s.change_dir("/").is_ok());
         assert_eq!(s.current_path, PathBuf::from("/"));
+    }
+
+    #[test]
+    fn test_find_valid_cd_target() {
+        let tmp = TempDir::new().unwrap();
+        let s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+
+        // valid target
+        let (path, res) = s
+            .find_valid_cd_target(&std::path::PathBuf::from("foo"))
+            .unwrap();
+        assert_eq!(path, tmp.path().join("foo"));
+        match res {
+            CdResult::Success => {}
+            something_else => panic!("{:?}", something_else),
+        }
+
+        // target not found
+        let (path, res) = s
+            .find_valid_cd_target(&std::path::PathBuf::from("invalid"))
+            .unwrap();
+        assert_eq!(path, tmp.path());
+        match res {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, tmp.path().join("invalid"));
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
+
+        // root
+        let (path, res) = s
+            .find_valid_cd_target(&std::path::PathBuf::from("/"))
+            .unwrap();
+        assert_eq!(path, std::path::PathBuf::from("/"));
+        match res {
+            CdResult::Success => {}
+            something_else => panic!("{:?}", something_else),
+        }
+
+        // valid target is root
+        let (path, res) = s
+            .find_valid_cd_target(&std::path::PathBuf::from("/foo/bar"))
+            .unwrap();
+        assert_eq!(path, std::path::PathBuf::from("/"));
+        match res {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, std::path::PathBuf::from("/foo/bar"));
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
+    }
+
+    #[test]
+    fn test_cd_current_dir_deleted() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+
+        s.change_dir("foo").unwrap();
+        let path = tmp.path().join("foo");
+        std::fs::remove_dir(&path).unwrap();
+        let res = s.change_dir(".").unwrap();
+
+        assert_eq!(s.current_path, tmp.path());
+        match res {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, path);
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
+    }
+
+    #[test]
+    fn test_cd_current_dir_parent_deleted() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        let target_path = tmp.path().join("foo").join("bar");
+        std::fs::create_dir(&target_path).unwrap();
+
+        s.change_dir("foo").unwrap();
+        s.change_dir("bar").unwrap();
+        std::fs::remove_dir_all(tmp.path().join("foo")).unwrap();
+
+        let res = s.change_dir(".").unwrap();
+
+        assert_eq!(s.current_path, tmp.path());
+        match res {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, target_path);
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
+    }
+
+    #[test]
+    #[cfg(unix)] // permissions can only be changed on unix (see PermissionsExt) as of 2023 July
+    fn test_cd_current_dir_permission_denied() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+
+        s.change_dir("foo").unwrap();
+        assert_eq!(s.current_path, tmp.path().join("foo"));
+
+        let path = tmp.path().join("foo");
+        let original_perms = path.metadata().unwrap().permissions();
+
+        // set perms to write-only
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o222)).unwrap();
+
+        let res = s.change_dir(".").unwrap();
+
+        assert_eq!(s.current_path, tmp.path());
+        match res {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, path);
+                assert_eq!(e.kind(), ErrorKind::PermissionDenied);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
+
+        // set permissions back to original so that tempfile can delete it
+        std::fs::set_permissions(&path, original_perms).unwrap();
     }
 }
