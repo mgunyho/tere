@@ -505,7 +505,13 @@ impl TereAppState {
     /// Given a target path, check if it's a valid cd target, and if it isn't, go up the folder
     /// tree until a valid (i.e. existing) folder is found
     fn find_valid_cd_target(&self, original_target: &Path) -> IOResult<(PathBuf, CdResult)> {
-        let mut final_target = original_target;
+        let original_target_abs = if original_target.is_absolute() {
+            original_target.to_path_buf()
+        } else {
+            normalize_path(&self.current_path.join(original_target))
+        };
+
+        let mut final_target = original_target_abs.as_ref();
         let mut result = CdResult::Success;
 
         loop {
