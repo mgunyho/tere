@@ -1854,4 +1854,55 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_cd_current_dir_parent_deleted() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        std::fs::create_dir(tmp.path().join("foo").join("bar")).unwrap();
+
+        s.change_dir("foo").unwrap();
+        s.change_dir("bar").unwrap();
+        std::fs::remove_dir_all(tmp.path().join("foo")).unwrap();
+
+        let res = s.change_dir(".").unwrap();
+
+        assert_eq!(s.current_path, tmp.path());
+        match res {
+            CdResult::MovedUpwards { root_error: e } => {
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
+    }
+
+    #[test]
+    #[cfg(unix)] // permissions can only be changed on unix (see PermissionsExt) as of 2023 July
+    fn test_cd_current_dir_permission_denied() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+
+        s.change_dir("foo").unwrap();
+        assert_eq!(s.current_path, tmp.path().join("foo"));
+
+        let path = tmp.path().join("foo");
+        let original_perms = path.metadata().unwrap().permissions();
+
+        // set perms to write-only
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o222)).unwrap();
+
+        let res = s.change_dir(".").unwrap();
+
+        assert_eq!(s.current_path, tmp.path());
+        match res {
+            CdResult::MovedUpwards { root_error: e } => {
+                assert_eq!(e.kind(), ErrorKind::PermissionDenied);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
+
+        // set permissions back to original so that tempfile can delete it
+        std::fs::set_permissions(&path, original_perms).unwrap();
+    }
 }
