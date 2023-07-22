@@ -179,7 +179,12 @@ pub enum CdResult {
 
     /// Could not change to the desired directory, so changed to a folder that is one or more
     /// levels upwards.
-    MovedUpwards { root_error: IOError },
+    MovedUpwards {
+        /// The (absolute) path where we were trying to cd
+        target_abs_path: PathBuf,
+        /// The error due to which we moved to a parent directory
+        root_error: IOError,
+    },
 }
 
 /// This struct represents the state of the application.
@@ -526,7 +531,10 @@ impl TereAppState {
                                 .unwrap_or(std::path::Component::RootDir.as_ref());
                             match result {
                                 CdResult::Success => {
-                                    result = CdResult::MovedUpwards { root_error: e };
+                                    result = CdResult::MovedUpwards {
+                                        target_abs_path: original_target_abs.clone(),
+                                        root_error: e,
+                                    };
                                 }
                                 CdResult::MovedUpwards { .. } => {}
                             }
@@ -1806,7 +1814,11 @@ mod tests {
             .unwrap();
         assert_eq!(path, tmp.path());
         match res {
-            CdResult::MovedUpwards { root_error: e } => {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, tmp.path().join("invalid"));
                 assert_eq!(e.kind(), ErrorKind::NotFound);
             }
             something_else => panic!("{:?}", something_else),
@@ -1828,7 +1840,11 @@ mod tests {
             .unwrap();
         assert_eq!(path, std::path::PathBuf::from("/"));
         match res {
-            CdResult::MovedUpwards { root_error: e } => {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, std::path::PathBuf::from("/foo/bar"));
                 assert_eq!(e.kind(), ErrorKind::NotFound);
             }
             something_else => panic!("{:?}", something_else),
@@ -1841,12 +1857,17 @@ mod tests {
         let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
 
         s.change_dir("foo").unwrap();
-        std::fs::remove_dir(tmp.path().join("foo")).unwrap();
+        let path = tmp.path().join("foo");
+        std::fs::remove_dir(&path).unwrap();
         let res = s.change_dir(".").unwrap();
 
         assert_eq!(s.current_path, tmp.path());
         match res {
-            CdResult::MovedUpwards { root_error: e } => {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, path);
                 assert_eq!(e.kind(), ErrorKind::NotFound);
             }
             something_else => panic!("{:?}", something_else),
@@ -1857,7 +1878,8 @@ mod tests {
     fn test_cd_current_dir_parent_deleted() {
         let tmp = TempDir::new().unwrap();
         let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
-        std::fs::create_dir(tmp.path().join("foo").join("bar")).unwrap();
+        let target_path = tmp.path().join("foo").join("bar");
+        std::fs::create_dir(&target_path).unwrap();
 
         s.change_dir("foo").unwrap();
         s.change_dir("bar").unwrap();
@@ -1867,7 +1889,11 @@ mod tests {
 
         assert_eq!(s.current_path, tmp.path());
         match res {
-            CdResult::MovedUpwards { root_error: e } => {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, target_path);
                 assert_eq!(e.kind(), ErrorKind::NotFound);
             }
             something_else => panic!("{:?}", something_else),
@@ -1895,7 +1921,11 @@ mod tests {
 
         assert_eq!(s.current_path, tmp.path());
         match res {
-            CdResult::MovedUpwards { root_error: e } => {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, path);
                 assert_eq!(e.kind(), ErrorKind::PermissionDenied);
             }
             something_else => panic!("{:?}", something_else),
