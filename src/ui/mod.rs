@@ -463,14 +463,18 @@ impl<'a> TereTui<'a> {
                         // all good, clear info message
                         self.info_message("")?;
                         true
-                    },
-                    CdResult::MovedUpwards { root_error: e } => {
+                    }
+                    CdResult::MovedUpwards {
+                        target_abs_path: p,
+                        root_error: e,
+                    } => {
                         // couldn't change to the expected folder because it was not reachable, but
                         // we have changed to another (parent) folder, inform the user
+                        let p = p.display();
                         if cfg!(debug_assertions) {
-                            self.error_message(&format!("Couldn't change to '{path}' ({e:?})"))?;
+                            self.error_message(&format!("Couldn't enter '{p}' ({e:?})"))?;
                         } else {
-                            self.error_message(&format!("Couldn't change to '{path}' ({e})"))?;
+                            self.error_message(&format!("Couldn't enter '{p}' ({e})"))?;
                         }
                         false
                     }
