@@ -7,7 +7,7 @@ use std::fmt::Write as _;
 use std::io::{Stderr, Write};
 use std::path::PathBuf;
 
-use crate::app_state::TereAppState;
+use crate::app_state::{CdResult, TereAppState};
 use crate::error::TereError;
 use crate::settings::{CaseSensitiveMode, GapSearchMode, SortMode};
 pub use action::{Action, ActionContext};
@@ -456,6 +456,26 @@ impl<'a> TereTui<'a> {
     fn change_dir(&mut self, path: &str) -> CTResult<bool> {
         //TODO: if there are no visible items, don't do anything?
         let res = match self.app_state.change_dir(path) {
+            Ok(res) => {
+                self.update_header()?;
+                match res {
+                    CdResult::Success => {
+                        // all good, clear info message
+                        self.info_message("")?;
+                        true
+                    },
+                    CdResult::MovedUpwards { root_error: e } => {
+                        // couldn't change to the expected folder because it was not reachable, but
+                        // we have changed to another (parent) folder, inform the user
+                        if cfg!(debug_assertions) {
+                            self.error_message(&format!("Couldn't change to '{path}' ({e:?})"))?;
+                        } else {
+                            self.error_message(&format!("Couldn't change to '{path}' ({e})"))?;
+                        }
+                        false
+                    }
+                }
+            }
             Err(e) => {
                 if cfg!(debug_assertions) {
                     self.error_message(&format!("{e:?}"))?;
@@ -463,11 +483,6 @@ impl<'a> TereTui<'a> {
                     self.error_message(&format!("{e}"))?;
                 }
                 false
-            }
-            Ok(()) => {
-                self.update_header()?;
-                self.info_message("")?;
-                true
             }
         };
         self.redraw_main_window()?;
