@@ -1843,8 +1843,15 @@ mod tests {
 
         s.change_dir("foo").unwrap();
         std::fs::remove_dir(tmp.path().join("foo")).unwrap();
-        let res = s.change_dir(".");
+        let res = s.change_dir(".").unwrap();
 
         assert_eq!(s.current_path, tmp.path());
+        match res {
+            CdResult::MovedUpwards { root_error: e } => {
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
     }
+
 }
