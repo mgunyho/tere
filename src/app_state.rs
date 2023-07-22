@@ -1780,7 +1780,17 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
         assert_eq!(s.current_path, tmp.path());
-        assert!(s.change_dir("bar").is_err());
+        let res = s.change_dir("bar");
+        match res {
+            Ok(CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            }) => {
+                assert_eq!(p, tmp.path().join("bar"));
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            },
+            something_else => panic!("{:?}", something_else),
+        }
         assert_eq!(s.current_path, tmp.path());
     }
 
