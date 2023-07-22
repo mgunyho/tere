@@ -726,8 +726,12 @@ impl<'a> TereTui<'a> {
                             Action::ChangeSortMode => self.cycle_sort_mode()?,
 
                             Action::RefreshListing => {
-                                self.change_dir(".")?; //TODO: use 'current dir' instead of hardcoded '.' (?, see also pardir discussion elsewhere)
-                                self.info_message("Refreshed directory listing")?;
+                                //TODO: use 'current dir' instead of hardcoded '.' (?, see also pardir discussion elsewhere)
+                                if self.change_dir(".")? {
+                                    // only update info message if cd was successful, otherwise
+                                    // we're overwriting the error message
+                                    self.info_message("Refreshed directory listing")?;
+                                }
                             }
 
                             Action::Help => self.help_view_loop()?,
