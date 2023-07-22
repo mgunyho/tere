@@ -535,42 +535,6 @@ impl TereAppState {
 
     /// Check if a path is a valid cd target, and if it is, return an absolute path to it
     fn check_can_change_dir(&self, target_path: &Path) -> IOResult<PathBuf> {
-
-        // NOTE: have to manually normalize path because the std doesn't have that feature yet, as
-        // of December 2021.
-        // see:
-        // - https://github.com/rust-lang/rfcs/issues/2208
-        // - https://github.com/gdzx/rfcs/commit/3c69f787b5b32fb9c9960c1e785e5cabcc794238
-        // - abs_path crate
-        // - relative_path crate
-        // This function is copy-pasted from cargo::util::paths::normalize_path, https://docs.rs/cargo-util/0.1.1/cargo_util/paths/fn.normalize_path.html, under the MIT license
-        fn normalize_path(path: &Path) -> PathBuf {
-            let mut components = path.components().peekable();
-            let mut ret = if let Some(c @ Component::Prefix(..)) = components.peek().cloned() {
-                components.next();
-                PathBuf::from(c.as_os_str())
-            } else {
-                PathBuf::new()
-            };
-
-            for component in components {
-                match component {
-                    Component::Prefix(..) => unreachable!(),
-                    Component::RootDir => {
-                        ret.push(component.as_os_str());
-                    }
-                    Component::CurDir => {}
-                    Component::ParentDir => {
-                        ret.pop();
-                    }
-                    Component::Normal(c) => {
-                        ret.push(c);
-                    }
-                }
-            }
-            ret
-        }
-
         let full_path = if target_path.is_absolute() {
             target_path.to_path_buf()
         } else {
@@ -819,6 +783,43 @@ impl TereAppState {
             }
         };
     }
+}
+
+/// Normalize a path
+/// NOTE: have to manually implement this since the std doesn't have that feature yet, as
+/// of July 2023.
+/// see:
+/// - https://github.com/rust-lang/rfcs/issues/2208
+/// - https://github.com/rust-lang/rust/issues/92750 (std::path::absolute)
+/// - https://github.com/gdzx/rfcs/commit/3c69f787b5b32fb9c9960c1e785e5cabcc794238
+/// - abs_path crate
+/// - relative_path crate
+/// This function is copy-pasted from cargo::util::paths::normalize_path, https://docs.rs/cargo-util/0.1.1/cargo_util/paths/fn.normalize_path.html, under the MIT license
+fn normalize_path(path: &Path) -> PathBuf {
+    let mut components = path.components().peekable();
+    let mut ret = if let Some(c @ Component::Prefix(..)) = components.peek().cloned() {
+        components.next();
+        PathBuf::from(c.as_os_str())
+    } else {
+        PathBuf::new()
+    };
+
+    for component in components {
+        match component {
+            Component::Prefix(..) => unreachable!(),
+            Component::RootDir => {
+                ret.push(component.as_os_str());
+            }
+            Component::CurDir => {}
+            Component::ParentDir => {
+                ret.pop();
+            }
+            Component::Normal(c) => {
+                ret.push(c);
+            }
+        }
+    }
+    ret
 }
 
 #[cfg(test)]
