@@ -1,6 +1,6 @@
-use clap::{Command, Arg, ArgAction};
-use crate::ui::{Action, ActionContext};
 use crate::settings::SortMode;
+use crate::ui::{Action, ActionContext};
+use clap::{Arg, ArgAction, Command};
 use strum::IntoEnumIterator;
 
 /// The CLI options for tere
@@ -257,11 +257,16 @@ justify_and_indent(
 /// Justify the list of enum variants (i.e. `ALL_ACTIONS` or `ALL_CONTEXTS`) and their
 /// descriptions, and indent them to be printed in the help text
 fn justify_and_indent(variants: &[String], descriptions: &[String]) -> String {
-
     let indentation: String = " ".repeat(4);
-    let max_len = variants.iter().map(|x| x.len()).max().expect("list of variants is empty");
+    let max_len = variants
+        .iter()
+        .map(|x| x.len())
+        .max()
+        .expect("list of variants is empty");
 
-    let lines: Vec<String> = variants.iter().zip(descriptions)
+    let lines: Vec<String> = variants
+        .iter()
+        .zip(descriptions)
         .map(|(x, d)| indentation.clone() + x + &" ".repeat(max_len - x.len() + 2) + d)
         .collect();
 
