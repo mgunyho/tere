@@ -168,7 +168,7 @@ impl TereSettings {
         if args.get_flag("no-folders-only") {
             ret.file_handling_mode = FileHandlingMode::Ignore;
             warnings.push("The option '--no-folders-only' / '-D' has been deprecated, please use '--files ignore' or '--files match' instead.")
-         }
+        }
 
         if args.get_flag("filter-search") {
             ret.filter_search = true;
@@ -258,7 +258,8 @@ impl TereSettings {
             return Err(ClapError::raw(
                 ClapErrorKind::InvalidValue,
                 "No keyboard mapping found for exit!\n",
-            ).into());
+            )
+            .into());
         }
 
         ret.sort_mode = args
