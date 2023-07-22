@@ -465,7 +465,7 @@ impl TereAppState {
         Ok(())
     }
 
-    pub fn change_dir(&mut self, path: &str) -> IOResult<()> {
+    pub fn change_dir(&mut self, path: &str) -> IOResult<CdResult> {
         // TODO: add option to use xdg-open (or similar) on files?
         // check out https://crates.io/crates/open
         // (or https://docs.rs/opener/0.4.1/opener/)
@@ -476,9 +476,10 @@ impl TereAppState {
         } else {
             path.to_string()
         };
-        let target_path = PathBuf::from(target_path);
 
-        self.current_path = self.check_can_change_dir(&target_path)?;
+        let (target_path, cd_result) = self.find_valid_cd_target(&PathBuf::from(target_path))?;
+
+        self.current_path = target_path;
         self.clear_search(); // if cd was successful, clear the search
         self.update_ls_output_buf()?;
 
@@ -499,7 +500,7 @@ impl TereAppState {
             self.move_cursor_to_filename(prev_dir);
         }
 
-        Ok(())
+        Ok(cd_result)
     }
 
     /// Given a target path, check if it's a valid cd target, and if it isn't, go up the folder
