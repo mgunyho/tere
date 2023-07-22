@@ -520,8 +520,7 @@ impl TereAppState {
                 Ok(p) => break Ok((p, result)),
                 Err(e) => {
                     match e.kind() {
-                        ErrorKind::NotFound => // | PermissionDenied //TODO
-                        {
+                        ErrorKind::NotFound | ErrorKind::PermissionDenied => {
                             final_target = final_target
                                 .parent()
                                 .unwrap_or(std::path::Component::RootDir.as_ref());
