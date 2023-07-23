@@ -1,6 +1,6 @@
-use clap::{Command, Arg, ArgAction};
-use crate::ui::{Action, ActionContext};
 use crate::settings::SortMode;
+use crate::ui::{Action, ActionContext};
+use clap::{Arg, ArgAction, Command};
 use strum::IntoEnumIterator;
 
 /// The CLI options for tere
@@ -33,7 +33,6 @@ pub fn get_cli_args() -> Command {
         .arg(Arg::new("filter-search")
              .action(ArgAction::SetTrue)
              .long("filter-search")
-             //.visible_alias("fs") //TODO: consider
              .short('f')
              .help("Show only items matching the search in listing")
              .long_help("Show only items matching the current search query in the listing. This overrides the --no-filter-search option. You can toggle the filtering with the keyboard shortcut Alt-f by default.")
@@ -42,7 +41,6 @@ pub fn get_cli_args() -> Command {
         .arg(Arg::new("no-filter-search")
              .action(ArgAction::SetTrue)
              .long("no-filter-search")
-             //.visible_alias("nfs") //TODO: consider
              .short('F')
              .help("Show all items in the listing even when searching (default)")
              .long_help("Show all items in the listing even when searching (default). This overrides the --filter-search option. You can toggle the filtering with the keyboard shortcut Alt-f by default.")
@@ -257,11 +255,16 @@ justify_and_indent(
 /// Justify the list of enum variants (i.e. `ALL_ACTIONS` or `ALL_CONTEXTS`) and their
 /// descriptions, and indent them to be printed in the help text
 fn justify_and_indent(variants: &[String], descriptions: &[String]) -> String {
-
     let indentation: String = " ".repeat(4);
-    let max_len = variants.iter().map(|x| x.len()).max().expect("list of variants is empty");
+    let max_len = variants
+        .iter()
+        .map(|x| x.len())
+        .max()
+        .expect("list of variants is empty");
 
-    let lines: Vec<String> = variants.iter().zip(descriptions)
+    let lines: Vec<String> = variants
+        .iter()
+        .zip(descriptions)
         .map(|(x, d)| indentation.clone() + x + &" ".repeat(max_len - x.len() + 2) + d)
         .collect();
 

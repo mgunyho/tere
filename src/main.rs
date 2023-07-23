@@ -1,13 +1,10 @@
 use crossterm::{cursor, execute, terminal};
 use std::io::Write;
 
-//TODO: rustfmt
-//TODO: clippy
-
 mod cli_args;
 
 mod settings;
-use settings::{TereSettings, DeprecationWarnings};
+use settings::{DeprecationWarnings, TereSettings};
 
 mod app_state;
 use app_state::TereAppState;
@@ -68,7 +65,6 @@ fn main() -> Result<(), TereError> {
                         check_first_run_with_prompt(&settings, &mut stderr)?;
                         Ok((settings, warnings))
                     })?;
-
 
                 let final_path = TereAppState::init(settings, &warnings)
                     .and_then(|state| TereTui::init(state, &mut stderr))

@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::io::{Error as IOError, ErrorKind, Result as IOResult};
-use std::path::{Component, Path, PathBuf};
+use std::path::{Component as PathComponent, Path, PathBuf};
 use std::fmt::Write as _;
 use std::time::SystemTime;
 
@@ -104,10 +104,10 @@ impl From<Vec<CustomDirEntry>> for MatchesVec {
 /// A stripped-down version of ``std::fs::DirEntry``.
 #[derive(Clone)]
 pub struct CustomDirEntry {
-    _path: std::path::PathBuf,
+    _path: PathBuf,
     pub metadata: Option<std::fs::Metadata>,
     /// The symlink target is None if this entry is not a symlink
-    pub symlink_target: Option<std::path::PathBuf>,
+    pub symlink_target: Option<PathBuf>,
     _file_name: std::ffi::OsString,
 }
 
@@ -119,7 +119,7 @@ impl CustomDirEntry {
         self._file_name.clone().into_string().unwrap_or_default()
     }
 
-    pub fn path(&self) -> &std::path::PathBuf {
+    pub fn path(&self) -> &PathBuf {
         &self._path
     }
 
@@ -157,8 +157,8 @@ impl From<std::fs::DirEntry> for CustomDirEntry {
     }
 }
 
-impl From<&std::path::Path> for CustomDirEntry {
-    fn from(p: &std::path::Path) -> Self {
+impl From<&Path> for CustomDirEntry {
+    fn from(p: &Path) -> Self {
         Self {
             _path: p.to_path_buf(),
             metadata: p.metadata().ok(),
@@ -422,9 +422,8 @@ impl TereAppState {
     pub fn update_ls_output_buf(&mut self) -> IOResult<()> {
         let entries = std::fs::read_dir(&self.current_path)?;
 
-        let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> = Box::new(
-            entries.filter_map(|e| e.ok()).map(CustomDirEntry::from),
-        );
+        let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> =
+            Box::new(entries.filter_map(|e| e.ok()).map(CustomDirEntry::from));
 
         if self.settings().file_handling_mode == FileHandlingMode::Hide {
             entries = Box::new(entries.filter(|e| e.path().is_dir()));
@@ -463,13 +462,15 @@ impl TereAppState {
         // Add the parent directory entry after sorting to make sure it's always first
         new_output_buf.insert(
             0,
-            CustomDirEntry::from(std::path::Path::new(&std::path::Component::ParentDir))
+            CustomDirEntry::from(AsRef::<Path>::as_ref(&PathComponent::ParentDir)),
         );
 
         self.ls_output_buf = new_output_buf.into();
         Ok(())
     }
 
+    /// Change the current working directory. If `path` is empty, change to the item under the
+    /// cursor, otherwise convert path to an absolute path and cd to it.
     pub fn change_dir(&mut self, path: &str) -> IOResult<CdResult> {
         // TODO: add option to use xdg-open (or similar) on files?
         // check out https://crates.io/crates/open
@@ -528,7 +529,7 @@ impl TereAppState {
                         ErrorKind::NotFound | ErrorKind::PermissionDenied => {
                             final_target = final_target
                                 .parent()
-                                .unwrap_or(std::path::Component::RootDir.as_ref());
+                                .unwrap_or(PathComponent::RootDir.as_ref());
                             match result {
                                 CdResult::Success => {
                                     result = CdResult::MovedUpwards {
@@ -556,8 +557,7 @@ impl TereAppState {
         };
 
         // try to read the dir, if this succeeds, it's a valid target for cd'ing.
-        std::fs::read_dir(&full_path)
-            .map(|_| full_path)
+        std::fs::read_dir(&full_path).map(|_| full_path)
     }
 
     /////////////////////////////////////////////
@@ -753,9 +753,7 @@ impl TereAppState {
     }
 
     pub fn clear_search(&mut self) {
-        self.with_cursor_fixed_at_current_item(|self_|
-            self_.search_string.clear()
-        );
+        self.with_cursor_fixed_at_current_item(|self_| self_.search_string.clear());
     }
 
     pub fn advance_search(&mut self, query: &str) {
@@ -811,7 +809,7 @@ impl TereAppState {
 /// This function is copy-pasted from cargo::util::paths::normalize_path, https://docs.rs/cargo-util/0.1.1/cargo_util/paths/fn.normalize_path.html, under the MIT license
 fn normalize_path(path: &Path) -> PathBuf {
     let mut components = path.components().peekable();
-    let mut ret = if let Some(c @ Component::Prefix(..)) = components.peek().cloned() {
+    let mut ret = if let Some(c @ PathComponent::Prefix(..)) = components.peek().cloned() {
         components.next();
         PathBuf::from(c.as_os_str())
     } else {
@@ -820,15 +818,15 @@ fn normalize_path(path: &Path) -> PathBuf {
 
     for component in components {
         match component {
-            Component::Prefix(..) => unreachable!(),
-            Component::RootDir => {
+            PathComponent::Prefix(..) => unreachable!(),
+            PathComponent::RootDir => {
                 ret.push(component.as_os_str());
             }
-            Component::CurDir => {}
-            Component::ParentDir => {
+            PathComponent::CurDir => {}
+            PathComponent::ParentDir => {
                 ret.pop();
             }
-            Component::Normal(c) => {
+            PathComponent::Normal(c) => {
                 ret.push(c);
             }
         }
@@ -1490,7 +1488,8 @@ mod tests {
         // idea: the cursor should not move if it's not necessary
 
         let tmp = TempDir::new().unwrap();
-        let mut s = create_test_state_with_folders(&tmp, 3, vec!["aaa", "baa", "bab", "bba", "caa", "cab"]);
+        let mut s =
+            create_test_state_with_folders(&tmp, 3, vec!["aaa", "baa", "bab", "bba", "caa", "cab"]);
         s._settings.filter_search = true;
         s.move_cursor_to(1);
 
@@ -1788,7 +1787,7 @@ mod tests {
             }) => {
                 assert_eq!(p, tmp.path().join("bar"));
                 assert_eq!(e.kind(), ErrorKind::NotFound);
-            },
+            }
             something_else => panic!("{:?}", something_else),
         }
         assert_eq!(s.current_path, tmp.path());
@@ -1809,9 +1808,7 @@ mod tests {
         let s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
 
         // valid target
-        let (path, res) = s
-            .find_valid_cd_target(&std::path::PathBuf::from("foo"))
-            .unwrap();
+        let (path, res) = s.find_valid_cd_target(&PathBuf::from("foo")).unwrap();
         assert_eq!(path, tmp.path().join("foo"));
         match res {
             CdResult::Success => {}
@@ -1819,9 +1816,7 @@ mod tests {
         }
 
         // target not found
-        let (path, res) = s
-            .find_valid_cd_target(&std::path::PathBuf::from("invalid"))
-            .unwrap();
+        let (path, res) = s.find_valid_cd_target(&PathBuf::from("invalid")).unwrap();
         assert_eq!(path, tmp.path());
         match res {
             CdResult::MovedUpwards {
@@ -1835,26 +1830,22 @@ mod tests {
         }
 
         // root
-        let (path, res) = s
-            .find_valid_cd_target(&std::path::PathBuf::from("/"))
-            .unwrap();
-        assert_eq!(path, std::path::PathBuf::from("/"));
+        let (path, res) = s.find_valid_cd_target(&PathBuf::from("/")).unwrap();
+        assert_eq!(path, PathBuf::from("/"));
         match res {
             CdResult::Success => {}
             something_else => panic!("{:?}", something_else),
         }
 
         // valid target is root
-        let (path, res) = s
-            .find_valid_cd_target(&std::path::PathBuf::from("/foo/bar"))
-            .unwrap();
-        assert_eq!(path, std::path::PathBuf::from("/"));
+        let (path, res) = s.find_valid_cd_target(&PathBuf::from("/foo/bar")).unwrap();
+        assert_eq!(path, PathBuf::from("/"));
         match res {
             CdResult::MovedUpwards {
                 target_abs_path: p,
                 root_error: e,
             } => {
-                assert_eq!(p, std::path::PathBuf::from("/foo/bar"));
+                assert_eq!(p, PathBuf::from("/foo/bar"));
                 assert_eq!(e.kind(), ErrorKind::NotFound);
             }
             something_else => panic!("{:?}", something_else),

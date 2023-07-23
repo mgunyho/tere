@@ -208,13 +208,7 @@ impl<'a> TereTui<'a> {
                 u16::try_from(footer_win_row).unwrap_or(u16::MAX),
             ),
             style::SetAttribute(Attribute::Reset),
-            style::Print(
-                extra_msg
-                    .chars()
-                    .take(w)
-                    .collect::<String>()
-                    .bold()
-            ),
+            style::Print(extra_msg.chars().take(w).collect::<String>().bold()),
         )?;
 
         execute!(
@@ -327,7 +321,6 @@ impl<'a> TereTui<'a> {
                     style::SetForegroundColor(fg),
                     style::Print(c.to_string()),
                 )?;
-
             }
 
             if let Some(target) = symlink_target {
@@ -453,6 +446,8 @@ impl<'a> TereTui<'a> {
 
     /// Change the working directory. If successful, returns true. If unsuccessful, print an error
     /// message to the UI and return false.
+    /// NOTE: path is a string, so that it can be an empty string, which refers to the item under
+    /// the cursor
     fn change_dir(&mut self, path: &str) -> CTResult<bool> {
         //TODO: if there are no visible items, don't do anything?
         let res = match self.app_state.change_dir(path) {
@@ -519,7 +514,6 @@ impl<'a> TereTui<'a> {
         self.app_state.erase_search_char();
         self.on_matches_changed()
     }
-
 
     fn on_clear_search(&mut self) -> CTResult<()> {
         self.app_state.clear_search();
@@ -613,7 +607,11 @@ impl<'a> TereTui<'a> {
     }
 
     fn on_go_to_root(&mut self) -> CTResult<()> {
-        self.change_dir("/")?;
+        // note: this is the same as std::path::Component::RootDir
+        // using a temporary buffer to avoid allocating on the heap, because MAIN_SEPARATOR_STR is
+        // not stable yet, see https://github.com/rust-lang/rust/issues/94071
+        let mut tmp = [0u8, 4];
+        self.change_dir(std::path::MAIN_SEPARATOR.encode_utf8(&mut tmp))?;
         Ok(())
     }
 
@@ -639,40 +637,43 @@ impl<'a> TereTui<'a> {
     }
 
     fn toggle_filter_search_mode(&mut self) -> CTResult<()> {
-        self.app_state.set_filter_search(!self.app_state.settings().filter_search);
+        self.app_state
+            .set_filter_search(!self.app_state.settings().filter_search);
         self.on_matches_changed()
     }
 
     fn cycle_case_sensitive_mode(&mut self) -> CTResult<()> {
-        self.app_state.set_case_sensitive(match self.app_state.settings().case_sensitive {
-            CaseSensitiveMode::IgnoreCase => CaseSensitiveMode::CaseSensitive,
-            CaseSensitiveMode::CaseSensitive => CaseSensitiveMode::SmartCase,
-            CaseSensitiveMode::SmartCase => CaseSensitiveMode::IgnoreCase,
-        });
+        self.app_state
+            .set_case_sensitive(match self.app_state.settings().case_sensitive {
+                CaseSensitiveMode::IgnoreCase => CaseSensitiveMode::CaseSensitive,
+                CaseSensitiveMode::CaseSensitive => CaseSensitiveMode::SmartCase,
+                CaseSensitiveMode::SmartCase => CaseSensitiveMode::IgnoreCase,
+            });
         self.on_matches_changed()
     }
 
     fn cycle_gap_search_mode(&mut self) -> CTResult<()> {
-        self.app_state.set_gap_search_mode(match self.app_state.settings().gap_search_mode {
-            GapSearchMode::GapSearchFromStart => GapSearchMode::NormalSearch,
-            GapSearchMode::NormalSearch => GapSearchMode::GapSearchAnywhere,
-            GapSearchMode::GapSearchAnywhere => GapSearchMode::NormalSearchAnywhere,
-            GapSearchMode::NormalSearchAnywhere => GapSearchMode::GapSearchFromStart,
-        });
+        self.app_state
+            .set_gap_search_mode(match self.app_state.settings().gap_search_mode {
+                GapSearchMode::GapSearchFromStart => GapSearchMode::NormalSearch,
+                GapSearchMode::NormalSearch => GapSearchMode::GapSearchAnywhere,
+                GapSearchMode::GapSearchAnywhere => GapSearchMode::NormalSearchAnywhere,
+                GapSearchMode::NormalSearchAnywhere => GapSearchMode::GapSearchFromStart,
+            });
         self.on_matches_changed()
     }
 
     fn cycle_sort_mode(&mut self) -> CTResult<()> {
-        self.app_state.set_sort_mode(match self.app_state.settings().sort_mode {
-            SortMode::Name => SortMode::Created,
-            SortMode::Created => SortMode::Modified,
-            SortMode::Modified => SortMode::Name,
-        });
+        self.app_state
+            .set_sort_mode(match self.app_state.settings().sort_mode {
+                SortMode::Name => SortMode::Created,
+                SortMode::Created => SortMode::Modified,
+                SortMode::Modified => SortMode::Name,
+            });
         self.on_matches_changed()
     }
 
     pub fn main_event_loop(&mut self) -> Result<PathBuf, TereError> {
-
         let loop_result = loop {
             match read_event()? {
                 Event::Key(k) => {
@@ -699,6 +700,9 @@ impl<'a> TereTui<'a> {
                     if let Some(action) = action {
                         match action {
                             Action::ChangeDir => { self.change_dir("")?; },
+                            // note: ".." is the same as std::path::Component::ParentDir, but
+                            // hardcoding it avoids jumping back and forth between OsSrt. The same
+                            // applies for "." elsewhere.
                             Action::ChangeDirParent => { self.change_dir("..")?; },
                             Action::ChangeDirHome => self.on_go_to_home()?,
                             Action::ChangeDirRoot => self.on_go_to_root()?,
@@ -726,7 +730,6 @@ impl<'a> TereTui<'a> {
                             Action::ChangeSortMode => self.cycle_sort_mode()?,
 
                             Action::RefreshListing => {
-                                //TODO: use 'current dir' instead of hardcoded '.' (?, see also pardir discussion elsewhere)
                                 if self.change_dir(".")? {
                                     // only update info message if cd was successful, otherwise
                                     // we're overwriting the error message
@@ -747,7 +750,6 @@ impl<'a> TereTui<'a> {
                             }
 
                             Action::None => (),
-
                         }
                     } else {
                         // The key is not part of any mapping, advance the search if it's a char
@@ -764,9 +766,8 @@ impl<'a> TereTui<'a> {
 
                 Event::Mouse(event) => match event.kind {
                     MouseEventKind::Down(MouseButton::Left)
-                        | MouseEventKind::Drag(MouseButton::Left)
-                        | MouseEventKind::Up(MouseButton::Left)
-                        => self.handle_mouse_event(event)?,
+                    | MouseEventKind::Drag(MouseButton::Left)
+                    | MouseEventKind::Up(MouseButton::Left) => self.handle_mouse_event(event)?,
                     MouseEventKind::Up(MouseButton::Right) => { self.change_dir("..")?; },
 
                     //TODO: add configuration to jump multiple items on scroll
@@ -863,6 +864,7 @@ impl<'a> TereTui<'a> {
             )?;
 
             let mut col = 0; // manually count how many columns we're printing
+
             // Print the fragments (which can have different styles)
             for fragment in line {
                 queue!(
