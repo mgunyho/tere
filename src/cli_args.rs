@@ -33,7 +33,6 @@ pub fn get_cli_args() -> Command {
         .arg(Arg::new("filter-search")
              .action(ArgAction::SetTrue)
              .long("filter-search")
-             //.visible_alias("fs") //TODO: consider
              .short('f')
              .help("Show only items matching the search in listing")
              .long_help("Show only items matching the current search query in the listing. This overrides the --no-filter-search option. You can toggle the filtering with the keyboard shortcut Alt-f by default.")
@@ -42,7 +41,6 @@ pub fn get_cli_args() -> Command {
         .arg(Arg::new("no-filter-search")
              .action(ArgAction::SetTrue)
              .long("no-filter-search")
-             //.visible_alias("nfs") //TODO: consider
              .short('F')
              .help("Show all items in the listing even when searching (default)")
              .long_help("Show all items in the listing even when searching (default). This overrides the --filter-search option. You can toggle the filtering with the keyboard shortcut Alt-f by default.")

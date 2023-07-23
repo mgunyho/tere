@@ -1,9 +1,6 @@
 use crossterm::{cursor, execute, terminal};
 use std::io::Write;
 
-//TODO: rustfmt
-//TODO: clippy
-
 mod cli_args;
 
 mod settings;
