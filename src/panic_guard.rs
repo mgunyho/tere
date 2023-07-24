@@ -29,7 +29,7 @@ where
         let original_hook: Arc<PanicHookType> = Arc::from(std::panic::take_hook());
         let original_hook_copy = original_hook.clone();
 
-        // TODO: use std::panic::replace_hook once it is stabilized...
+        // TODO: use std::panic::update_hook once it is stabilized...
         // see: https://doc.rust-lang.org/std/panic/fn.update_hook.html
         // and: https://github.com/rust-lang/rust/issues/92649
         std::panic::set_hook(Box::new(move |info| {

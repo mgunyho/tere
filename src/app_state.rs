@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::io::{Error as IOError, ErrorKind, Result as IOResult};
-use std::path::{Component, Path, PathBuf};
+use std::path::{Component as PathComponent, Path, PathBuf};
 use std::fmt::Write as _;
 use std::time::SystemTime;
 
@@ -14,6 +14,7 @@ use regex::Regex;
 use crate::settings::{
     TereSettings,
     DeprecationWarnings,
+    FileHandlingMode,
     CaseSensitiveMode,
     GapSearchMode,
     SortMode,
@@ -24,8 +25,6 @@ mod history;
 use history::HistoryTree;
 
 use crate::error::TereError;
-
-pub const NO_MATCHES_MSG: &str = "No matches";
 
 /// The match locations of a given item. A list of *byte offsets* into the item's name that match
 /// the current search pattern.
@@ -58,13 +57,18 @@ impl MatchesVec {
 
     /// Update the collection of matching items by going through all items in the full collection
     /// and testing a regex pattern against the filenames
-    pub fn update_matches(&mut self, search_ptn: &Regex, case_sensitive: bool) {
+    pub fn update_matches(&mut self, search_ptn: &Regex, case_sensitive: bool, ignore_files: bool) {
         self.matches.clear();
         self.matches = self
             .all_items
             .iter()
             .enumerate()
             .filter_map(|(i, item)| {
+                // if applicable, match only folders, not files
+                if ignore_files && !item.is_dir() {
+                    return None;
+                }
+
                 let target = if case_sensitive {
                     item.file_name_checked()
                 } else {
@@ -100,10 +104,10 @@ impl From<Vec<CustomDirEntry>> for MatchesVec {
 /// A stripped-down version of ``std::fs::DirEntry``.
 #[derive(Clone)]
 pub struct CustomDirEntry {
-    _path: std::path::PathBuf,
+    _path: PathBuf,
     pub metadata: Option<std::fs::Metadata>,
     /// The symlink target is None if this entry is not a symlink
-    pub symlink_target: Option<std::path::PathBuf>,
+    pub symlink_target: Option<PathBuf>,
     _file_name: std::ffi::OsString,
 }
 
@@ -115,7 +119,7 @@ impl CustomDirEntry {
         self._file_name.clone().into_string().unwrap_or_default()
     }
 
-    pub fn path(&self) -> &std::path::PathBuf {
+    pub fn path(&self) -> &PathBuf {
         &self._path
     }
 
@@ -153,8 +157,8 @@ impl From<std::fs::DirEntry> for CustomDirEntry {
     }
 }
 
-impl From<&std::path::Path> for CustomDirEntry {
-    fn from(p: &std::path::Path) -> Self {
+impl From<&Path> for CustomDirEntry {
+    fn from(p: &Path) -> Self {
         Self {
             _path: p.to_path_buf(),
             metadata: p.metadata().ok(),
@@ -166,6 +170,22 @@ impl From<&std::path::Path> for CustomDirEntry {
 
 /// The type of the `ls_output_buf` buffer of the app state
 type LsBufType = MatchesVec;
+
+/// Possible non-error results of 'change directory' operation
+#[derive(Debug)]
+pub enum CdResult {
+    /// The folder was changed successfully
+    Success,
+
+    /// Could not change to the desired directory, so changed to a folder that is one or more
+    /// levels upwards.
+    MovedUpwards {
+        /// The (absolute) path where we were trying to cd
+        target_abs_path: PathBuf,
+        /// The error due to which we moved to a parent directory
+        root_error: IOError,
+    },
+}
 
 /// This struct represents the state of the application.
 pub struct TereAppState {
@@ -334,11 +354,11 @@ impl TereAppState {
     /// Convert a cursor position (in the range 0..window_height) to an index
     /// into the currently visible items.
     pub fn cursor_pos_to_visible_item_index(&self, cursor_pos: usize) -> usize {
-        (cursor_pos + self.scroll_pos) as usize
+        cursor_pos + self.scroll_pos
     }
 
     pub fn get_item_at_cursor_pos(&self, cursor_pos: usize) -> Option<&CustomDirEntry> {
-        let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
+        let idx = self.cursor_pos_to_visible_item_index(cursor_pos);
         self.visible_items().get(idx).copied()
     }
 
@@ -357,7 +377,7 @@ impl TereAppState {
     }
 
     pub fn get_match_locations_at_cursor_pos(&self, cursor_pos: usize) -> Option<&MatchesLocType> {
-        let idx = self.cursor_pos_to_visible_item_index(cursor_pos) as usize;
+        let idx = self.cursor_pos_to_visible_item_index(cursor_pos);
         if self.settings().filter_search {
             // NOTE: we assume that the matches is a sorted map
             self.ls_output_buf.matches.values().nth(idx)
@@ -400,13 +420,12 @@ impl TereAppState {
     }
 
     pub fn update_ls_output_buf(&mut self) -> IOResult<()> {
-        let entries = std::fs::read_dir(std::path::Component::CurDir)?;
+        let entries = std::fs::read_dir(&self.current_path)?;
 
-        let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> = Box::new(
-            entries.filter_map(|e| e.ok()).map(CustomDirEntry::from),
-        );
+        let mut entries: Box<dyn Iterator<Item = CustomDirEntry>> =
+            Box::new(entries.filter_map(|e| e.ok()).map(CustomDirEntry::from));
 
-        if self.settings().folders_only {
+        if self.settings().file_handling_mode == FileHandlingMode::Hide {
             entries = Box::new(entries.filter(|e| e.path().is_dir()));
         }
 
@@ -443,14 +462,16 @@ impl TereAppState {
         // Add the parent directory entry after sorting to make sure it's always first
         new_output_buf.insert(
             0,
-            CustomDirEntry::from(std::path::Path::new(&std::path::Component::ParentDir))
+            CustomDirEntry::from(AsRef::<Path>::as_ref(&PathComponent::ParentDir)),
         );
 
         self.ls_output_buf = new_output_buf.into();
         Ok(())
     }
 
-    pub fn change_dir(&mut self, path: &str) -> IOResult<()> {
+    /// Change the current working directory. If `path` is empty, change to the item under the
+    /// cursor, otherwise convert path to an absolute path and cd to it.
+    pub fn change_dir(&mut self, path: &str) -> IOResult<CdResult> {
         // TODO: add option to use xdg-open (or similar) on files?
         // check out https://crates.io/crates/open
         // (or https://docs.rs/opener/0.4.1/opener/)
@@ -461,64 +482,23 @@ impl TereAppState {
         } else {
             path.to_string()
         };
-        let target_path = PathBuf::from(target_path);
 
-        // NOTE: have to manually normalize path because the std doesn't have that feature yet, as
-        // of December 2021.
-        // see:
-        // - https://github.com/rust-lang/rfcs/issues/2208
-        // - https://github.com/gdzx/rfcs/commit/3c69f787b5b32fb9c9960c1e785e5cabcc794238
-        // - abs_path crate
-        // - relative_path crate
-        // This function is copy-pasted from cargo::util::paths::normalize_path, https://docs.rs/cargo-util/0.1.1/cargo_util/paths/fn.normalize_path.html, under the MIT license
-        fn normalize_path(path: &Path) -> PathBuf {
-            let mut components = path.components().peekable();
-            let mut ret = if let Some(c @ Component::Prefix(..)) = components.peek().cloned() {
-                components.next();
-                PathBuf::from(c.as_os_str())
-            } else {
-                PathBuf::new()
-            };
+        let (target_path, cd_result) = self.find_valid_cd_target(&PathBuf::from(target_path))?;
 
-            for component in components {
-                match component {
-                    Component::Prefix(..) => unreachable!(),
-                    Component::RootDir => {
-                        ret.push(component.as_os_str());
-                    }
-                    Component::CurDir => {}
-                    Component::ParentDir => {
-                        ret.pop();
-                    }
-                    Component::Normal(c) => {
-                        ret.push(c);
-                    }
-                }
-            }
-            ret
-        }
-
-        let final_path = if target_path.is_absolute() {
-            target_path
-        } else {
-            normalize_path(&self.current_path.join(target_path))
-        };
-
-        self.clear_search();
-        std::env::set_current_dir(&final_path)?;
-        self.current_path = PathBuf::from(&final_path);
+        self.current_path = target_path;
+        self.clear_search(); // if cd was successful, clear the search
         self.update_ls_output_buf()?;
 
         self.cursor_pos = 0;
         self.scroll_pos = 0;
 
-        // final_path is always the absolute logical path, so we can just cd to it. This causes a
+        // current_path is always the absolute logical path, so we can just cd to it. This causes a
         // bit of extra work (the history tree has to go all the way from the root to the path
         // every time), but that's not too bad. The alernative option of using history_tree.go_up()
         // / visit() and handling the special cases where target_path is '..' or a relative path or
         // so on, would be much more complicated and would risk having the history tree and logical
         // path out of sync.
-        self.history.change_dir(&final_path);
+        self.history.change_dir(&self.current_path);
 
         // move cursor one position down, so we're not at '..' if we've entered a folder with no history
         self.move_cursor(1, false);
@@ -526,7 +506,58 @@ impl TereAppState {
             self.move_cursor_to_filename(prev_dir);
         }
 
-        Ok(())
+        Ok(cd_result)
+    }
+
+    /// Given a target path, check if it's a valid cd target, and if it isn't, go up the folder
+    /// tree until a valid (i.e. existing) folder is found
+    fn find_valid_cd_target(&self, original_target: &Path) -> IOResult<(PathBuf, CdResult)> {
+        let original_target_abs = if original_target.is_absolute() {
+            original_target.to_path_buf()
+        } else {
+            normalize_path(&self.current_path.join(original_target))
+        };
+
+        let mut final_target = original_target_abs.as_ref();
+        let mut result = CdResult::Success;
+
+        loop {
+            match self.check_can_change_dir(final_target) {
+                Ok(p) => break Ok((p, result)),
+                Err(e) => {
+                    match e.kind() {
+                        ErrorKind::NotFound | ErrorKind::PermissionDenied => {
+                            final_target = final_target
+                                .parent()
+                                .unwrap_or(PathComponent::RootDir.as_ref());
+                            match result {
+                                CdResult::Success => {
+                                    result = CdResult::MovedUpwards {
+                                        target_abs_path: original_target_abs.clone(),
+                                        root_error: e,
+                                    };
+                                }
+                                CdResult::MovedUpwards { .. } => {}
+                            }
+                        }
+                        // other kinds of errors we don't know how to deal with, pass them on
+                        _ => return Err(e),
+                    }
+                }
+            }
+        }
+    }
+
+    /// Check if a path is a valid cd target, and if it is, return an absolute path to it
+    fn check_can_change_dir(&self, target_path: &Path) -> IOResult<PathBuf> {
+        let full_path = if target_path.is_absolute() {
+            target_path.to_path_buf()
+        } else {
+            normalize_path(&self.current_path.join(target_path))
+        };
+
+        // try to read the dir, if this succeeds, it's a valid target for cd'ing.
+        std::fs::read_dir(&full_path).map(|_| full_path)
     }
 
     /////////////////////////////////////////////
@@ -714,13 +745,15 @@ impl TereAppState {
 
         // ok to unwrap, we have escaped the regex above
         let search_ptn = Regex::new(&regex_str).unwrap();
-        self.ls_output_buf.update_matches(&search_ptn, is_case_sensitive);
+        self.ls_output_buf.update_matches(
+            &search_ptn,
+            is_case_sensitive,
+            self.settings().file_handling_mode == FileHandlingMode::Ignore,
+        );
     }
 
     pub fn clear_search(&mut self) {
-        self.with_cursor_fixed_at_current_item(|self_|
-            self_.search_string.clear()
-        );
+        self.with_cursor_fixed_at_current_item(|self_| self_.search_string.clear());
     }
 
     pub fn advance_search(&mut self, query: &str) {
@@ -764,48 +797,145 @@ impl TereAppState {
     }
 }
 
+/// Normalize a path
+/// NOTE: have to manually implement this since the std doesn't have that feature yet, as
+/// of July 2023.
+/// see:
+/// - https://github.com/rust-lang/rfcs/issues/2208
+/// - https://github.com/rust-lang/rust/issues/92750 (std::path::absolute)
+/// - https://github.com/gdzx/rfcs/commit/3c69f787b5b32fb9c9960c1e785e5cabcc794238
+/// - abs_path crate
+/// - relative_path crate
+/// This function is copy-pasted from cargo::util::paths::normalize_path, https://docs.rs/cargo-util/0.1.1/cargo_util/paths/fn.normalize_path.html, under the MIT license
+fn normalize_path(path: &Path) -> PathBuf {
+    let mut components = path.components().peekable();
+    let mut ret = if let Some(c @ PathComponent::Prefix(..)) = components.peek().cloned() {
+        components.next();
+        PathBuf::from(c.as_os_str())
+    } else {
+        PathBuf::new()
+    };
+
+    for component in components {
+        match component {
+            PathComponent::Prefix(..) => unreachable!(),
+            PathComponent::RootDir => {
+                ret.push(component.as_os_str());
+            }
+            PathComponent::CurDir => {}
+            PathComponent::ParentDir => {
+                ret.pop();
+            }
+            PathComponent::Normal(c) => {
+                ret.push(c);
+            }
+        }
+    }
+    ret
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempfile::TempDir;
 
-    fn create_test_filenames(n: usize) -> LsBufType {
-        let fnames: Vec<_> = (1..=n).map(|i| format!("file {}", i)).collect();
-        strings_to_ls_buf(fnames)
+    /// Create folders from a list of folder names in a temp dir.
+    fn create_test_folders(tmp: &TempDir, folder_names: &Vec<&str>) {
+        for folder_name in folder_names {
+            let p = tmp.path().join(folder_name);
+            std::fs::create_dir(p).unwrap();
+        }
+
+        // Check that the folders were actually created
+        let expected_folders: std::collections::HashSet<String> =
+            folder_names.iter().map(|s| s.to_string()).collect();
+        let actual_folders: std::collections::HashSet<String> = std::fs::read_dir(tmp.path())
+            .unwrap()
+            .map(|x| x.unwrap())
+            .filter(|x| x.path().is_dir())
+            .map(|x| x.file_name().into_string().unwrap())
+            .collect();
+
+        assert_eq!(expected_folders, actual_folders);
     }
 
-    fn strings_to_ls_buf<S: AsRef<std::ffi::OsStr>>(strings: Vec<S>) -> LsBufType {
-        strings
-            .iter()
-            .map(|s| CustomDirEntry::from(std::path::PathBuf::from(&s).as_ref()))
-            .collect::<Vec<CustomDirEntry>>()
-            .into()
+    /// Create (empty) files from a list of file names in a temp dir
+    fn create_test_files(tmp: &TempDir, file_names: &Vec<&str>) {
+        for file_name in file_names {
+            let p = tmp.path().join(file_name);
+            std::fs::File::create(p).unwrap();
+        }
+
+        let expected_files: std::collections::HashSet<String> =
+            file_names.iter().map(|s| s.to_string()).collect();
+        let actual_files: std::collections::HashSet<String> = std::fs::read_dir(tmp.path())
+            .unwrap()
+            .map(|x| x.unwrap())
+            .filter(|x| x.path().is_file())
+            .map(|x| x.file_name().into_string().unwrap())
+            .collect();
+
+        assert_eq!(expected_files, actual_files);
     }
 
-    fn create_test_state(win_h: usize, n_filenames: usize) -> TereAppState {
-        create_test_state_with_buf(win_h, create_test_filenames(n_filenames))
-    }
+    /// Create files and folders from lists of file and folder names in a temp dir, and initialize
+    /// a test state in the temp dir. Note that the cursor position for the state will be 1, since
+    /// the first item is '..'.
+    fn create_test_state_with_files_and_folders(
+        tmp: &TempDir,
+        win_h: usize,
+        file_names: Vec<&str>,
+        folder_names: Vec<&str>,
+    ) -> TereAppState {
+        create_test_files(tmp, &file_names);
+        create_test_folders(tmp, &folder_names);
 
-    fn create_test_state_with_buf(win_h: usize, buf: LsBufType) -> TereAppState {
-        TereAppState {
+        let mut state = TereAppState {
             cursor_pos: 0,
             scroll_pos: 0,
             main_win_h: win_h,
             main_win_w: 10,
             current_path: "/".into(),
-            ls_output_buf: buf,
+            ls_output_buf: vec![].into(),
             header_msg: "".into(),
             info_msg: "".into(),
             search_string: "".into(),
             _settings: Default::default(),
             history: HistoryTree::from_abs_path("/"),
-        }
+        };
+        state.change_dir(tmp.path().to_str().unwrap()).unwrap();
+        state
+    }
+
+    /// Create folders from a list of folder names in a temp dir and initialize a test state in
+    /// that dir. Note that the cursor position for the state will be 1, since the first item is '..'.
+    fn create_test_state_with_folders(
+        tmp: &TempDir,
+        win_h: usize,
+        folder_names: Vec<&str>,
+    ) -> TereAppState {
+        create_test_state_with_files_and_folders(tmp, win_h, vec![], folder_names)
+    }
+
+    /// Create a test state with 'n' folders named 'folder 1', 'folder 2', ... 'folder n'. Note
+    /// that the ls_output_buf of the test state will contain n + 1 folders, since it will include
+    /// the '..'.
+    fn create_test_state_with_n_folders(
+        tmp: &TempDir,
+        win_h: usize,
+        n_folders: usize,
+    ) -> TereAppState {
+        let fnames: Vec<_> = (1..=n_folders).map(|i| format!("folder {i}")).collect();
+        create_test_state_with_folders(tmp, win_h, fnames.iter().map(|s| s.as_ref()).collect())
     }
 
     #[test]
     fn test_scrolling_bufsize_less_than_window_size() {
-        let mut state = create_test_state(10, 4);
+        //TODO: create a macro to hold onto tmp?
+        let tmp = TempDir::new().unwrap();
+        let mut state = create_test_state_with_n_folders(&tmp, 10, 4);
 
-        for i in 1..=3 {
+        for i in 2..=4 {
             state.move_cursor(1, false);
             assert_eq!(state.cursor_pos, i);
             assert_eq!(state.scroll_pos, 0);
@@ -813,17 +943,17 @@ mod tests {
 
         for _ in 0..5 {
             state.move_cursor(1, false);
-            assert_eq!(state.cursor_pos, 3);
+            assert_eq!(state.cursor_pos, 4);
             assert_eq!(state.scroll_pos, 0);
         }
 
         state.move_cursor(100, false);
-        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.cursor_pos, 4);
         assert_eq!(state.scroll_pos, 0);
 
-        for i in 1..=3 {
+        for i in 1..=4 {
             state.move_cursor(-1, false);
-            assert_eq!(state.cursor_pos, 3 - i);
+            assert_eq!(state.cursor_pos, 4 - i);
             assert_eq!(state.scroll_pos, 0);
         }
 
@@ -841,7 +971,7 @@ mod tests {
 
         // test jumping all the way to the bottom and back
         state.move_cursor(100, false);
-        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.cursor_pos, 4);
         assert_eq!(state.scroll_pos, 0);
         state.move_cursor(-100, false);
         assert_eq!(state.cursor_pos, 0);
@@ -850,16 +980,17 @@ mod tests {
 
     #[test]
     fn test_scrolling_bufsize_less_than_window_size_wrap() {
-        let mut state = create_test_state(5, 4);
+        let tmp = TempDir::new().unwrap();
+        let mut state = create_test_state_with_n_folders(&tmp, 5, 4);
 
         state.move_cursor_to(0);
-        for i in 0..3 {
+        for i in 0..4 {
             state.move_cursor(1, true);
-            assert_eq!(state.cursor_pos, i+1);
+            assert_eq!(state.cursor_pos, i + 1);
             assert_eq!(state.scroll_pos, 0);
         }
         // cursor should be at the bottom of the listing
-        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.cursor_pos, 4);
         assert_eq!(state.scroll_pos, 0);
 
         // wrap around
@@ -869,15 +1000,16 @@ mod tests {
 
         // wrap around backwards
         state.move_cursor(-1, true);
-        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.cursor_pos, 4);
         assert_eq!(state.scroll_pos, 0);
     }
 
     #[test]
     fn test_scrolling_bufsize_equal_to_window_size() {
-        let mut state = create_test_state(4, 4);
+        let tmp = TempDir::new().unwrap();
+        let mut state = create_test_state_with_n_folders(&tmp, 5, 4);
 
-        for i in 1..=3 {
+        for i in 2..=4 {
             state.move_cursor(1, false);
             assert_eq!(state.cursor_pos, i);
             assert_eq!(state.scroll_pos, 0);
@@ -885,30 +1017,32 @@ mod tests {
 
         for _ in 0..5 {
             state.move_cursor(1, false);
-            assert_eq!(state.cursor_pos, 3);
+            assert_eq!(state.cursor_pos, 4);
             assert_eq!(state.scroll_pos, 0);
         }
 
         for i in 1..=3 {
             state.move_cursor(-1, false);
-            assert_eq!(state.cursor_pos, 3 - i);
+            assert_eq!(state.cursor_pos, 4 - i);
             assert_eq!(state.scroll_pos, 0);
         }
 
         // test jumping all the way to the bottom and back
         state.move_cursor(100, false);
-        assert_eq!(state.cursor_pos, 3);
+        assert_eq!(state.cursor_pos, 4);
         assert_eq!(state.scroll_pos, 0);
         state.move_cursor(-100, false);
         assert_eq!(state.cursor_pos, 0);
         assert_eq!(state.scroll_pos, 0);
     }
 
-    // (using dev-dependencies, https://doc.rust-lang.org/rust-by-example/testing/dev_dependencies.html)
     fn test_scrolling_bufsize_larger_than_window_size_helper(win_h: usize, n_files: usize) {
-        let mut state = create_test_state(win_h, n_files);
+        let tmp = TempDir::new().unwrap();
+        let mut state = create_test_state_with_n_folders(&tmp, win_h, n_files);
         let max_cursor = win_h - 1;
-        let max_scroll = n_files - win_h;
+        let max_scroll = n_files + 1 - win_h;
+
+        state.move_cursor_to(0); // start from the top
 
         // move cursor all the way to the bottom of the window
         for i in 1..=max_cursor {
@@ -1008,11 +1142,12 @@ mod tests {
 
     #[test]
     fn test_scrolling_bufsize_larger_than_window_size_wrap() {
-        let mut state = create_test_state(4, 5);
+        let tmp = TempDir::new().unwrap();
+        let mut state = create_test_state_with_n_folders(&tmp, 4, 5);
 
-        state.move_cursor_to(5);
+        state.move_cursor_to(6);
         assert_eq!(state.cursor_pos, 3);
-        assert_eq!(state.scroll_pos, 1);
+        assert_eq!(state.scroll_pos, 2);
 
         state.move_cursor(1, true);
         assert_eq!(state.cursor_pos, 0);
@@ -1020,28 +1155,26 @@ mod tests {
 
         state.move_cursor(-1, true);
         assert_eq!(state.cursor_pos, 3);
-        assert_eq!(state.scroll_pos, 1);
+        assert_eq!(state.scroll_pos, 2);
     }
 
     #[test]
     fn test_basic_advance_search() {
-        let mut s = create_test_state_with_buf(
-            5,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 5, vec!["bar", "baz", "foo", "frob"]);
         s.move_cursor_to(2);
 
         // current state:
         //   ..
-        //   foo
-        // > frob
         //   bar
-        //   baz
+        // > baz
+        //   foo
+        //   frob
 
         assert_eq!(s.cursor_pos, 2);
         assert_eq!(s.scroll_pos, 0);
 
-        s.advance_search("b");
+        s.advance_search("f");
         assert_eq!(s.cursor_pos, 3);
         s.move_cursor_to_adjacent_match(1);
         assert_eq!(s.cursor_pos, 4);
@@ -1051,30 +1184,28 @@ mod tests {
 
     #[test]
     fn test_advance_search_wrap() {
-        let mut s = create_test_state_with_buf(
-            3,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 3, vec!["bar", "baz", "foo", "frob"]);
         s.move_cursor_to(4);
 
         // current state: ('|' shows the window position)
         //   ..
-        //   foo
-        //   frob  |
-        //   bar   |
-        // > baz   |
+        //   bar
+        //   baz   |
+        //   foo   |
+        // > frob  |
 
         assert_eq!(s.cursor_pos, 2);
         assert_eq!(s.scroll_pos, 2);
 
-        s.advance_search("f");
+        s.advance_search("b");
 
         // state should now be
         //   ..
-        // > foo   |
-        //   frob  |
-        //   bar   |
-        //   baz
+        // > bar   |
+        //   baz   |
+        //   foo   |
+        //   frob
 
         assert_eq!(s.cursor_pos, 0);
         assert_eq!(s.scroll_pos, 1);
@@ -1087,23 +1218,21 @@ mod tests {
 
     #[test]
     fn test_advance_and_erase_search_with_cursor_on_match() {
-        let mut s = create_test_state_with_buf(
-            6,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 6, vec!["bar", "baz", "foo", "frob"]);
         s.move_cursor_to(3);
 
         // current state:
         //   ..
-        //   foo
-        //   frob
-        // > bar
+        //   bar
         //   baz
+        // > foo
+        //   frob
 
         assert_eq!(s.cursor_pos, 3);
         assert_eq!(s.scroll_pos, 0);
 
-        s.advance_search("b");
+        s.advance_search("f");
 
         // state shouldn't have changed
 
@@ -1125,20 +1254,18 @@ mod tests {
 
     #[test]
     fn test_advance_and_erase_with_filter_search() {
-        let mut s = create_test_state_with_buf(
-            6,
-            strings_to_ls_buf(vec!["..", "bar", "baz", "foo", "frob"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 6, vec!["bar", "baz", "foo", "frob"]);
         s._settings.filter_search = true;
 
         // current state:
-        // > ..
-        //   bar
+        //   ..
+        // > bar
         //   baz
         //   foo
         //   frob
 
-        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
 
         s.advance_search("f");
@@ -1172,20 +1299,18 @@ mod tests {
 
     #[test]
     fn test_advance_and_clear_with_filter_search() {
-        let mut s = create_test_state_with_buf(
-            6,
-            strings_to_ls_buf(vec!["..", "bar", "baz", "foo", "forb"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 6, vec!["bar", "baz", "foo", "forb"]);
         s._settings.filter_search = true;
 
         // current state:
-        // > ..
-        //   bar
+        //   ..
+        // > bar
         //   baz
         //   foo
         //   forb
 
-        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
 
         s.advance_search("f");
@@ -1226,10 +1351,8 @@ mod tests {
 
     #[test]
     fn test_advance_search_with_filter_search_and_scrolling() {
-        let mut s = create_test_state_with_buf(
-            3,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 3, vec!["foo", "frob", "bar", "baz"]);
         s._settings.filter_search = true;
 
         s.move_cursor_to(3);
@@ -1263,35 +1386,33 @@ mod tests {
 
     #[test]
     fn test_advance_and_erase_search_with_filter_and_cursor_on_match() {
-        let mut s = create_test_state_with_buf(
-            6,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 6, vec!["bar", "baz", "foo", "frob"]);
         s._settings.filter_search = true;
         s.move_cursor_to(2);
 
         // current state:
         //   ..
-        //   foo
-        // > frob
         //   bar
-        //   baz
+        // > baz
+        //   foo
+        //   frob
 
         assert_eq!(s.cursor_pos, 2);
         assert_eq!(s.scroll_pos, 0);
 
-        s.advance_search("f");
+        s.advance_search("b");
 
         // state should now be
-        //   foo
-        // > frob
+        //   bar
+        // > baz
 
         let visible: Vec<_> = s
             .visible_items()
             .iter()
             .map(|x| x.file_name_checked())
             .collect();
-        assert_eq!(visible, vec!["foo", "frob"]);
+        assert_eq!(visible, vec!["bar", "baz"]);
         assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
 
@@ -1300,12 +1421,12 @@ mod tests {
         s.move_cursor_to_adjacent_match(1);
         assert_eq!(s.cursor_pos, 1);
 
-        // we're now at frob. erase char, we should still be at frob:
+        // we're now at baz. erase char, we should still be at baz:
         //   ..
-        //   foo
-        // > frob
         //   bar
-        //   baz
+        // > baz
+        //   foo
+        //   frob
 
         s.erase_search_char();
         assert_eq!(s.cursor_pos, 2);
@@ -1315,33 +1436,31 @@ mod tests {
             .iter()
             .map(|x| x.file_name_checked())
             .collect();
-        assert_eq!(visible, vec!["..", "foo", "frob", "bar", "baz"]);
+        assert_eq!(visible, vec!["..", "bar", "baz", "foo", "frob"]);
     }
 
     #[test]
     fn test_advance_and_erase_search_with_filter_and_cursor_on_match2() {
-        let mut s = create_test_state_with_buf(
-            6,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 6, vec!["bar", "baz", "foo", "frob"]);
         s._settings.filter_search = true;
         s.move_cursor_to(4);
 
         // current state:
         //   ..
-        //   foo
-        //   frob
         //   bar
-        // > baz
+        //   baz
+        //   foo
+        // > frob
 
         assert_eq!(s.cursor_pos, 4);
         assert_eq!(s.scroll_pos, 0);
 
-        s.advance_search("b");
+        s.advance_search("f");
 
         // state should now be
-        //   bar
-        // > baz
+        //   foo
+        // > frob
 
         assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
@@ -1368,10 +1487,9 @@ mod tests {
     fn test_advance_and_erase_search_with_filter_and_cursor_on_match3() {
         // idea: the cursor should not move if it's not necessary
 
-        let mut s = create_test_state_with_buf(
-            3,
-            strings_to_ls_buf(vec!["..", "aaa", "baa", "bab", "bba", "caa", "cab"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s =
+            create_test_state_with_folders(&tmp, 3, vec!["aaa", "baa", "bab", "bba", "caa", "cab"]);
         s._settings.filter_search = true;
         s.move_cursor_to(1);
 
@@ -1416,27 +1534,25 @@ mod tests {
 
     #[test]
     fn test_advance_and_erase_search_with_filter_and_scrolling() {
-        let mut s = create_test_state_with_buf(
-            2,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 2, vec!["bar", "baz", "foo", "frob"]);
         s._settings.filter_search = true;
 
         // current state:
-        // > ..   |
-        //   foo  |
-        //   frob
-        //   bar
+        //   ..   |
+        // > bar  |
         //   baz
+        //   foo
+        //   frob
 
-        assert_eq!(s.cursor_pos, 0);
+        assert_eq!(s.cursor_pos, 1);
         assert_eq!(s.scroll_pos, 0);
 
-        s.advance_search("b");
+        s.advance_search("f");
 
         // state should now be
-        // > bar
-        //   baz
+        // > foo
+        //   frob
 
         assert_eq!(s.cursor_pos, 0);
         assert_eq!(s.scroll_pos, 0);
@@ -1449,10 +1565,10 @@ mod tests {
         // we're now on 'bar'
         // erase the search char. now the state should be
         //   ..
-        //   foo
-        //   frob |
-        // > bar  |
-        //   baz
+        //   bar
+        //   baz  |
+        // > foo  |
+        //   frob
 
         s.erase_search_char();
         assert_eq!(s.cursor_pos, 1);
@@ -1461,28 +1577,26 @@ mod tests {
 
     #[test]
     fn test_advance_search_with_filter_search_and_scrolling2() {
-        let mut s = create_test_state_with_buf(
-            3,
-            strings_to_ls_buf(vec!["..", "foo", "frob", "bar", "baz"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 3, vec!["bar", "baz", "foo", "frob"]);
         s._settings.filter_search = true;
         s.move_cursor_to(4);
 
         // current state:
         //   ..
-        //   foo
-        //   frob |
-        //   bar  |
-        // > baz  |
+        //   bar
+        //   baz  |
+        //   foo  |
+        // > frob |
 
         assert_eq!(s.cursor_pos, 2);
         assert_eq!(s.scroll_pos, 2);
 
-        s.advance_search("b");
+        s.advance_search("f");
 
         // state should now be:
-        //   bar  |
-        // > baz  |
+        //   foo  |
+        // > frob |
         //        |
 
         assert_eq!(s.cursor_pos, 1);
@@ -1490,11 +1604,47 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_search_toggle() {
-        let mut s = create_test_state_with_buf(
-            10,
-            strings_to_ls_buf(vec!["..", "aaa", "aab", "bbb"]),
+    fn test_search_default_file_handling_mode() {
+        // by default, only folders should be searched
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_files_and_folders(&tmp, 3, vec!["foo"], vec!["frob"]);
+
+        s.advance_search("f");
+        assert_eq!(s.visible_match_indices(), vec![1]);
+    }
+
+    #[test]
+    fn test_search_file_handling_mode_match() {
+        // match both files & folders
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_files_and_folders(&tmp, 3, vec!["foo"], vec!["frob"]);
+
+        s._settings.file_handling_mode = FileHandlingMode::Match;
+        s.advance_search("f");
+        assert_eq!(s.visible_match_indices(), vec![1, 2]);
+    }
+
+    #[test]
+    fn test_search_file_handling_mode_hide() {
+        // match only folders, and hide files
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_files_and_folders(&tmp, 3, vec!["foo"], vec!["frob"]);
+
+        s._settings.file_handling_mode = FileHandlingMode::Hide;
+        s.update_ls_output_buf().unwrap(); // to apply file handling mode
+        assert_eq!(
+            s.visible_items()
+                .iter()
+                .map(|e| e.file_name_checked())
+                .collect::<Vec<_>>(),
+            vec!["..", "frob"],
         );
+    }
+
+    #[test]
+    fn test_filter_search_toggle() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["aaa", "aab", "bbb"]);
         s._settings.filter_search = false;
         s.cursor_pos = 1;
 
@@ -1517,7 +1667,10 @@ mod tests {
         assert_eq!(s.scroll_pos, 0);
         assert_eq!(s.cursor_pos, 2);
         assert_eq!(
-            s.visible_items().iter().map(|e| e.file_name_checked()).collect::<Vec<_>>(),
+            s.visible_items()
+                .iter()
+                .map(|e| e.file_name_checked())
+                .collect::<Vec<_>>(),
             vec!["..", "aaa", "aab", "bbb"]
         );
 
@@ -1531,24 +1684,25 @@ mod tests {
         assert_eq!(s.scroll_pos, 0);
         assert_eq!(s.cursor_pos, 1);
         assert_eq!(
-            s.visible_items().iter().map(|e| e.file_name_checked()).collect::<Vec<_>>(),
+            s.visible_items()
+                .iter()
+                .map(|e| e.file_name_checked())
+                .collect::<Vec<_>>(),
             vec!["aaa", "aab"]
         );
     }
 
     #[test]
     fn test_case_sensitive_mode_change() {
-        let mut s = create_test_state_with_buf(
-            10,
-            strings_to_ls_buf(vec!["..", "a", "A"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["A", "a"]);
         s.cursor_pos = 2;
         s.advance_search("a");
 
-        // current state:
+        // current state: ('*' shows the matches)
         //   ..
-        //   a  *
-        // > A  *
+        //   A  *
+        // > a  *
 
         assert_eq!(s.visible_match_indices(), vec![1, 2]);
         assert_eq!(s.cursor_pos, 2);
@@ -1560,10 +1714,8 @@ mod tests {
 
     #[test]
     fn test_gap_search_mode_change() {
-        let mut s = create_test_state_with_buf(
-            10,
-            strings_to_ls_buf(vec!["..", "aaa", "aab", "aba"]),
-        );
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["aaa", "aab", "aba"]);
         s.cursor_pos = 1;
         s.advance_search("a");
         s.advance_search("b");
@@ -1589,4 +1741,198 @@ mod tests {
         assert_eq!(s.cursor_pos, 3);
     }
 
+    #[test]
+    fn test_cd_basic() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        assert_eq!(s.current_path, tmp.path());
+        assert!(s.change_dir("foo").is_ok());
+        assert_eq!(s.current_path, tmp.path().join("foo"));
+    }
+
+    #[test]
+    fn test_cd_parent() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        assert_eq!(s.current_path, tmp.path());
+        assert!(s.change_dir("..").is_ok());
+        assert_eq!(s.current_path, tmp.path().parent().unwrap());
+    }
+
+    #[test]
+    fn test_cd_item_under_cursor() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["bar", "foo"]);
+        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.current_path, tmp.path());
+        assert!(s.change_dir("").is_ok());
+        assert_eq!(s.current_path, tmp.path().join("bar"));
+        assert!(s.change_dir("..").is_ok());
+        s.move_cursor(1, false);
+        assert_eq!(s.cursor_pos, 2);
+        assert!(s.change_dir("").is_ok());
+        assert_eq!(s.current_path, tmp.path().join("foo"));
+    }
+
+    #[test]
+    fn test_cd_nonexistent() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        assert_eq!(s.current_path, tmp.path());
+        let res = s.change_dir("bar");
+        match res {
+            Ok(CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            }) => {
+                assert_eq!(p, tmp.path().join("bar"));
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
+        assert_eq!(s.current_path, tmp.path());
+    }
+
+    #[test]
+    fn test_cd_root() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        assert_eq!(s.current_path, tmp.path());
+        assert!(s.change_dir("/").is_ok());
+        assert_eq!(s.current_path, PathBuf::from("/"));
+    }
+
+    #[test]
+    fn test_find_valid_cd_target() {
+        let tmp = TempDir::new().unwrap();
+        let s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+
+        // valid target
+        let (path, res) = s.find_valid_cd_target(&PathBuf::from("foo")).unwrap();
+        assert_eq!(path, tmp.path().join("foo"));
+        match res {
+            CdResult::Success => {}
+            something_else => panic!("{:?}", something_else),
+        }
+
+        // target not found
+        let (path, res) = s.find_valid_cd_target(&PathBuf::from("invalid")).unwrap();
+        assert_eq!(path, tmp.path());
+        match res {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, tmp.path().join("invalid"));
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
+
+        // root
+        let (path, res) = s.find_valid_cd_target(&PathBuf::from("/")).unwrap();
+        assert_eq!(path, PathBuf::from("/"));
+        match res {
+            CdResult::Success => {}
+            something_else => panic!("{:?}", something_else),
+        }
+
+        // valid target is root
+        let (path, res) = s.find_valid_cd_target(&PathBuf::from("/foo/bar")).unwrap();
+        assert_eq!(path, PathBuf::from("/"));
+        match res {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, PathBuf::from("/foo/bar"));
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
+    }
+
+    #[test]
+    fn test_cd_current_dir_deleted() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+
+        s.change_dir("foo").unwrap();
+        let path = tmp.path().join("foo");
+        std::fs::remove_dir(&path).unwrap();
+        let res = s.change_dir(".").unwrap();
+
+        assert_eq!(s.current_path, tmp.path());
+        match res {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, path);
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
+    }
+
+    #[test]
+    fn test_cd_current_dir_parent_deleted() {
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+        let target_path = tmp.path().join("foo").join("bar");
+        std::fs::create_dir(&target_path).unwrap();
+
+        s.change_dir("foo").unwrap();
+        s.change_dir("bar").unwrap();
+        std::fs::remove_dir_all(tmp.path().join("foo")).unwrap();
+
+        let res = s.change_dir(".").unwrap();
+
+        assert_eq!(s.current_path, tmp.path());
+        match res {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, target_path);
+                assert_eq!(e.kind(), ErrorKind::NotFound);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
+    }
+
+    #[test]
+    #[cfg(unix)] // permissions can only be changed on unix (see PermissionsExt) as of 2023 July
+    fn test_cd_current_dir_permission_denied() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let tmp = TempDir::new().unwrap();
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
+
+        s.change_dir("foo").unwrap();
+        assert_eq!(s.current_path, tmp.path().join("foo"));
+
+        let path = tmp.path().join("foo");
+        let original_perms = path.metadata().unwrap().permissions();
+
+        // set perms to write-only
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o222)).unwrap();
+
+        let res = s.change_dir(".").unwrap();
+
+        assert_eq!(s.current_path, tmp.path());
+        match res {
+            CdResult::MovedUpwards {
+                target_abs_path: p,
+                root_error: e,
+            } => {
+                assert_eq!(p, path);
+                assert_eq!(e.kind(), ErrorKind::PermissionDenied);
+            }
+            something_else => panic!("{:?}", something_else),
+        }
+
+        // set permissions back to original so that tempfile can delete it
+        std::fs::set_permissions(&path, original_perms).unwrap();
+    }
 }

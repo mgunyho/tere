@@ -1,6 +1,6 @@
-use clap::{Command, Arg, ArgAction};
-use crate::ui::{Action, ActionContext};
 use crate::settings::SortMode;
+use crate::ui::{Action, ActionContext};
+use clap::{Arg, ArgAction, Command};
 use strum::IntoEnumIterator;
 
 /// The CLI options for tere
@@ -33,38 +33,46 @@ pub fn get_cli_args() -> Command {
         .arg(Arg::new("filter-search")
              .action(ArgAction::SetTrue)
              .long("filter-search")
-             //.visible_alias("fs") //TODO: consider
              .short('f')
              .help("Show only items matching the search in listing")
              .long_help("Show only items matching the current search query in the listing. This overrides the --no-filter-search option. You can toggle the filtering with the keyboard shortcut Alt-f by default.")
-             .overrides_with_all(&["filter-search", "no-filter-search"])
+             .overrides_with_all(["filter-search", "no-filter-search"])
             )
         .arg(Arg::new("no-filter-search")
              .action(ArgAction::SetTrue)
              .long("no-filter-search")
-             //.visible_alias("nfs") //TODO: consider
              .short('F')
              .help("Show all items in the listing even when searching (default)")
              .long_help("Show all items in the listing even when searching (default). This overrides the --filter-search option. You can toggle the filtering with the keyboard shortcut Alt-f by default.")
-             .overrides_with_all(&["filter-search", "no-filter-search"])
+             .overrides_with_all(["filter-search", "no-filter-search"])
             )
+        .arg(Arg::new("files")
+             .action(ArgAction::Set)
+             .long("files")
+             .short('l') // 'f' and 'i' are taken, this is the next letter in "files"
+             .help("How to handle files while searching")
+             .long_help("How to handle files while searching. If 'ignore', both files and folders are listed but searching matches only folders. If 'hide', files are hidden. If 'match', files are also matched while searching. Note that currently, tere cannot do anything with files, so 'ignore' is the default behavior.")
+             .overrides_with_all(["folders-only", "no-folders-only", "files"])
+             .value_name("'ignore', 'i', 'hide', 'h', 'match', or 'm'")
+             .value_parser(clap::builder::PossibleValuesParser::new(["ignore", "i", "hide", "h", "match", "m"]))
+             .hide_possible_values(true)
+             .default_value("ignore")
+            )
+        // DEPRECATED in favor of --files in > 1.4.0, here for backwards compatibility
         .arg(Arg::new("folders-only")
+             .hide(true)
              .action(ArgAction::SetTrue)
              .long("folders-only")
-             //.visible_alias("fo") //TODO: consider
              .short('d')
-             .help("Show only folders in the listing")
-             .long_help("Show only folders (and symlinks pointing to folders) in the listing. This overrides the --no-folders-only option.")
-             .overrides_with_all(&["folders-only", "no-folders-only"])
+             .overrides_with_all(["folders-only", "no-folders-only", "files"])
             )
+        // DEPRECATED in favor of --files in > 1.4.0, here for backwards compatibility
         .arg(Arg::new("no-folders-only")
+             .hide(true)
              .action(ArgAction::SetTrue)
              .long("no-folders-only")
-             //.visible_alias("nfo") //TODO: consider
              .short('D')
-             .help("Show files and folders in the listing (default)")
-             .long_help("Show both files and folders in the listing. This is the default view mode. This overrides the --folders-only option.")
-             .overrides_with_all(&["folders-only", "no-folders-only"])
+             .overrides_with_all(["folders-only", "no-folders-only", "files"])
             )
         .arg(Arg::new("case-sensitive")
              .action(ArgAction::SetTrue)
@@ -76,7 +84,7 @@ pub fn get_cli_args() -> Command {
                      "ignore-case",
                      "smart-case"
             ))
-             .overrides_with_all(&["ignore-case", "smart-case", "case-sensitive"])
+             .overrides_with_all(["ignore-case", "smart-case", "case-sensitive"])
             )
         .arg(Arg::new("ignore-case")
              .action(ArgAction::SetTrue)
@@ -88,7 +96,7 @@ pub fn get_cli_args() -> Command {
                      "case-sensitive",
                      "smart-case"
                      ))
-             .overrides_with_all(&["ignore-case", "smart-case", "case-sensitive"])
+             .overrides_with_all(["ignore-case", "smart-case", "case-sensitive"])
             )
         .arg(Arg::new("smart-case")
              .action(ArgAction::SetTrue)
@@ -100,7 +108,7 @@ pub fn get_cli_args() -> Command {
                      "case-sensitive",
                      "ignore-case"
                      ))
-             .overrides_with_all(&["ignore-case", "smart-case", "case-sensitive"])
+             .overrides_with_all(["ignore-case", "smart-case", "case-sensitive"])
             )
         .arg(Arg::new("gap-search")
              .action(ArgAction::SetTrue)
@@ -113,7 +121,7 @@ pub fn get_cli_args() -> Command {
                      "normal-search",
                      "normal-search-anywhere",
                      ))
-             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
+             .overrides_with_all(["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         .arg(Arg::new("gap-search-anywhere")
              .action(ArgAction::SetTrue)
@@ -126,13 +134,13 @@ pub fn get_cli_args() -> Command {
                      "normal-search",
                      "normal-search-anywhere",
                      ))
-             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
+             .overrides_with_all(["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         // DEPRECATED in favor of normal-search, this is here only for backward compatibility
         .arg(Arg::new("no-gap-search")
              .action(ArgAction::SetTrue)
              .long("no-gap-search")
-             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
+             .overrides_with_all(["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
              .hide(true)
             )
         .arg(Arg::new("normal-search")
@@ -146,7 +154,7 @@ pub fn get_cli_args() -> Command {
                      "gap-search-anywhere",
                      "normal-search-anywhere",
                      ))
-             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
+             .overrides_with_all(["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         .arg(Arg::new("normal-search-anywhere")
              .action(ArgAction::SetTrue)
@@ -159,7 +167,7 @@ pub fn get_cli_args() -> Command {
                      "gap-search-anywhere",
                      "normal-search",
                      ))
-             .overrides_with_all(&["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
+             .overrides_with_all(["gap-search", "gap-search-anywhere", "normal-search", "normal-search-anywhere", "no-gap-search"])
             )
         .arg(Arg::new("map")
              .action(ArgAction::Append)
@@ -247,11 +255,16 @@ justify_and_indent(
 /// Justify the list of enum variants (i.e. `ALL_ACTIONS` or `ALL_CONTEXTS`) and their
 /// descriptions, and indent them to be printed in the help text
 fn justify_and_indent(variants: &[String], descriptions: &[String]) -> String {
-
     let indentation: String = " ".repeat(4);
-    let max_len = variants.iter().map(|x| x.len()).max().expect("list of variants is empty");
+    let max_len = variants
+        .iter()
+        .map(|x| x.len())
+        .max()
+        .expect("list of variants is empty");
 
-    let lines: Vec<String> = variants.iter().zip(descriptions)
+    let lines: Vec<String> = variants
+        .iter()
+        .zip(descriptions)
         .map(|(x, d)| indentation.clone() + x + &" ".repeat(max_len - x.len() + 2) + d)
         .collect();
 

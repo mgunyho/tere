@@ -394,7 +394,7 @@ mod tests_for_history_tree {
         let mut tree = HistoryTree::from_abs_path("/foo/bar/baz");
         tree.change_dir("/foo/bar/boo");
         tree.change_dir("/qux/zoo");
-        println!("{:#?}", tree);
+        println!("{tree:#?}");
         //panic!(); // uncomment this to see print
     }
 
@@ -411,12 +411,12 @@ mod tests_for_history_tree {
         //let mut tree = HistoryTree::from_abs_path("/");
         let mut tree = HistoryTree::from_abs_path("/foo/bar");
         tree.change_dir("/foo/baz");
-        println!("{:#?}", tree);
+        println!("{tree:#?}");
 
         let ser = serde_json::to_string(&tree).unwrap();
-        println!("{}", ser); //{"label":"/","last_visited_child":null,"children":[]}
+        println!("{ser}"); //{"label":"/","last_visited_child":null,"children":[]}
         let tree2: HistoryTree = serde_json::from_str(&ser).unwrap();
-        println!("{:#?}", tree2);
+        println!("{tree2:#?}");
 
         assert_eq!(ser, serde_json::to_string(&tree2).unwrap());
 
