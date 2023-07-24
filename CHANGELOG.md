@@ -1,4 +1,4 @@
-## 1.5.0 (unreleased)
+## 1.5.0 (2023-07-24)
 
 - By default, `tere` now only searches folders and not files. This can be changed with the new `--files` option. This replaces the `--folders-only` and `--no-folders-only` options, which are now deprecated. (Github #87 and #88)
 - Deprecation warnings now also get printed to stderr in addition to the in-app info bar
