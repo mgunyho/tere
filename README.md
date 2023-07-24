@@ -174,7 +174,7 @@ For further details and examples, see the output of `--help`.
 
 ### Searching
 
-To search for an item in the current folder, just type some letters. `tere` will incrementally highlight all folders and files that match the search query.
+To search for an item in the current folder, just type some letters. `tere` will incrementally highlight all folders that match the search query.
 
 While searching, moving the cursor up or down jumps between only the items that match the search. The search query, as well as the number of matching items is shown at the bottom of the screen.
 
@@ -186,7 +186,7 @@ Note that by default, `tere` searches only folders and not files, since `tere` c
 
 By default, the searching uses "smart case", meaning that if the query contains only lowercase letters, case is ignored, but if there are uppercase letters, the search is case sensitive. This can be changed with the `--ignore-case` and `--case-sensitive` options, or with the keyboard shortcut <kbd>Alt</kbd>-<kbd>c</kbd> by default.
 
-Additionally, in the default search mode, "gap search" (sometimes also known as fuzzy search) is enabled. This means that the search matches any folder or file name as long as it starts with the same character as the search query, and contains the rest of the query characters, even if there are other characters between them. For example, searching for `dt` would match both `DeskTop` and `DocumenTs`. With the `--gap-search-anywhere` option, the first character of the query doesn't have to match the first character of a folder/file name. The gap search can be disabled with the `--normal-search` and `--normal-search-anywhere` options, which only allow matching consecutive characters, either from the start or anywhere within the folder/file name, respsectively. The gap search behavior can also be changed with the keyboard shortcut <kbd>Ctrl</kbd>-<kbd>f</kbd> by default. See `--help` for details.
+Additionally, in the default search mode, "gap search" (sometimes also known as fuzzy search) is enabled. This means that the search matches any folder name as long as it starts with the same character as the search query, and contains the rest of the query characters, even if there are other characters between them. For example, searching for `dt` would match both `DeskTop` and `DocumenTs`. With the `--gap-search-anywhere` option, the first character of the query doesn't have to match the first character of a folder/file name. The gap search can be disabled with the `--normal-search` and `--normal-search-anywhere` options, which only allow matching consecutive characters, either from the start or anywhere within the folder/file name, respsectively. The gap search behavior can also be changed with the keyboard shortcut <kbd>Ctrl</kbd>-<kbd>f</kbd> by default. See `--help` for details.
 
 ### Mouse navigation
 
