@@ -66,12 +66,14 @@ fn main() -> Result<(), TereError> {
                         Ok((settings, warnings))
                     })?;
 
-                let final_path = TereAppState::init(settings, &warnings)
+                match TereAppState::init(settings, &warnings)
                     .and_then(|state| TereTui::init(state, &mut stderr))
                     // actually run the app and return the final path
-                    .and_then(|mut ui| ui.main_event_loop())?;
-
-                Ok((final_path, warnings))
+                    .and_then(|mut ui| ui.main_event_loop())
+                {
+                    Ok(final_path) => Ok((final_path, warnings)),
+                    Err(e) => Err(e),
+                }
             }
         }
     };
