@@ -229,7 +229,7 @@ folder in the terminal and then `cd` to it.
 - [xplr](https://github.com/sayanarijit/xplr) - Lots of features, fully customizable. Not entirely focused on navigation, has file management features. Navigation by searching requires jumping between typing and pressing arrow keys.
 - [deer](https://github.com/Vifon/deer) - zsh only, searching requires extra keystrokes.
 - [cdir](https://github.com/EskelinenAntti/cdir) - Basically exactly the same idea as `tere`, but in written in Python. Doesn't have Vim-like keyboard navigation, and it's not a standalone binary.
-- [llama](https://github.com/antonmedv/llama) - Very similar to `tere`, written in Go.
+- [walk](https://github.com/antonmedv/walk) - Very similar to `tere`, written in Go. Requires typing `/` to enter search mode. Has the option to delete files and open files in an editor.
 - [sdn](https://git.janouch.name/p/sdn) - Also very similar to `tere`, even in terms of the UI as well. Type-ahead search mode is not the default, searching requires a couple of extra keystrokes.
 
 ### Fuzzy matching and history-based navigation
