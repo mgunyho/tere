@@ -45,6 +45,26 @@ fn get_cmd() -> Command {
 }
 
 #[test]
+fn basic_run() -> Result<(), RexpectError> {
+    let mut cmd = get_cmd();
+    let tmp = tempdir().expect("error creating temporary folder");
+    cmd.current_dir(tmp.path())
+        // note: have to set PWD for this to work...
+        .env("PWD", tmp.path().as_os_str());
+
+    let mut proc = run_app_with_cmd(cmd);
+    // 0x1b == 0o33 == 27 escape
+    proc.send("\x1b")?;
+    proc.writer.flush()?;
+
+    let output = proc.exp_eof()?;
+    let output = strip_until_alternate_screen_exit(&output);
+    assert_eq!(output, format!("{}\r\n", tmp.path().display()));
+
+    Ok(())
+}
+
+#[test]
 fn output_on_exit_without_cd() -> Result<(), RexpectError> {
     let mut proc = run_app();
 
