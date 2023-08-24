@@ -18,17 +18,6 @@ fn strip_until_alternate_screen_exit(text: &str) -> &str {
     }
 }
 
-/// Initialize the app and wait until it has entered the alternate screen. Returns a handle to the
-/// rexpect PtySession, which is ready for input. Panics if initializing the app fails.
-fn run_app() -> PtySession {
-    let mut cmd = get_cmd();
-    // explicitly pass empty history file so we don't get first run prompt
-    // NOTE: cannot directly chain this with get_cmd(), otherwise we get a mutable ref which we
-    // can't move into run_app_with_cmd.
-    cmd.args(["--history-file", ""]);
-    run_app_with_cmd(cmd)
-}
-
 /// Initialize app with the given Command object and wait until it has entered the alternate screen.
 /// Returns a handle to the rexpect PtySession, which is ready for input. Panics if initializing
 /// the app fails.
@@ -44,9 +33,19 @@ fn get_cmd() -> Command {
     Command::new(env!("CARGO_BIN_EXE_tere"))
 }
 
+/// Initialize the app command with the history file explicitly set to empty, so that we don't get
+/// the first run prompt
+fn get_cmd_no_first_run_prompt() -> Command {
+    let mut cmd = get_cmd();
+    // NOTE: cannot directly chain this with get_cmd(), otherwise we get a mutable ref which we
+    // can't move out of this function
+    cmd.args(["--history-file", ""]);
+    cmd
+}
+
 #[test]
 fn basic_run() -> Result<(), RexpectError> {
-    let mut cmd = get_cmd();
+    let mut cmd = get_cmd_no_first_run_prompt();
     let tmp = tempdir().expect("error creating temporary folder");
     cmd.current_dir(tmp.path())
         // note: have to set PWD for this to work...
@@ -66,7 +65,7 @@ fn basic_run() -> Result<(), RexpectError> {
 
 #[test]
 fn output_on_exit_without_cd() -> Result<(), RexpectError> {
-    let mut proc = run_app();
+    let mut proc = run_app_with_cmd(get_cmd_no_first_run_prompt());
 
     proc.send_control('c')?;
     proc.writer.flush()?;
@@ -97,7 +96,7 @@ fn first_run_prompt_cancel() -> Result<(), RexpectError> {
     assert!(ptn.find(&output).is_some());
 
     // check that having pressed 'n' prints the expected message
-    assert_eq!(strip_until_alternate_screen_exit(&output), "Cancelled.");
+    assert_eq!(strip_until_alternate_screen_exit(&output), "Cancelled.\r\n");
 
     Ok(())
 }
