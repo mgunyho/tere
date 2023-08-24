@@ -311,8 +311,9 @@ For further details, see the [`rustup` guide](https://rust-lang.github.io/rustup
 
 ### Making a new release
 
-Here's a checklist of things to do for a new release.
+Here's a checklist of things to do for a new release. The release binaries should be compiled on Linux with a suitably old version of glibc for compatibility (Ubuntu 20.04 LTS as of 2023 July).
 
+- Change to the `develop` branch (all changes should be merged to it)
 - Run `cargo test` and verify that all tests pass
 - Update version in `Cargo.toml`
 - Run `cargo build` so that `Cargo.lock` is also updated, and make a commit with the updated versions.
