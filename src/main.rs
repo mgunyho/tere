@@ -56,22 +56,21 @@ fn main() -> Result<(), TereError> {
                 // enabled. We can finally actually run the application.
 
                 let mut stderr = std::io::stderr();
-
-                let (settings, warnings) = stderr
+                stderr
                     .flush()
                     .map_err(TereError::from)
                     .and_then(|_| TereSettings::parse_cli_args(&cli_args))
                     .and_then(|(settings, warnings)| {
                         check_first_run_with_prompt(&settings, &mut stderr)?;
                         Ok((settings, warnings))
-                    })?;
-
-                let final_path = TereAppState::init(settings, &warnings)
-                    .and_then(|state| TereTui::init(state, &mut stderr))
-                    // actually run the app and return the final path
-                    .and_then(|mut ui| ui.main_event_loop())?;
-
-                Ok((final_path, warnings))
+                    })
+                    .and_then(|(settings, warnings)| {
+                        TereAppState::init(settings, &warnings)
+                            .and_then(|state| TereTui::init(state, &mut stderr))
+                            // actually run the app and return the final path
+                            .and_then(|mut ui| ui.main_event_loop())
+                            .map(|final_path| (final_path, warnings))
+                    })
             }
         }
     };
