@@ -29,6 +29,7 @@ features = ["wrap_help", "suggestions", "std", "derive", "usage"]
 
 [dev-dependencies]
 tempfile = "3.6"
+rexpect = "0.5"
 
 [profile.release]
 lto = true
