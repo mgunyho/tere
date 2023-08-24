@@ -1,6 +1,7 @@
 ## 1.5.1 (unreleased)
 
 - Update dependencies
+- Improved tests
 
 ## 1.5.0 (2023-07-24)
 
