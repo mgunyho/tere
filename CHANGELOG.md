@@ -1,5 +1,6 @@
 ## 1.5.1 (unreleased)
 
+- Fix output formatting when exiting the app without cd, or when canceling the first run prompt (Thanks @orhun, Github #91, #92)
 - Update dependencies
 - Improved tests
 
