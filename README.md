@@ -134,7 +134,7 @@ If you get libc errors on Linux, try the `musl` version.
 
 ### Basic navigation
 
-You can navigate folders in `tere` by moving the cursor around and by typing to search. By default, the cursor can be moved up or down using the arrow keys, and pressing <kbd>Enter</kbd> or the right arrow <kbd>→</kbd> to enter the highlighted folder. You can move to the parent folder by pressing <kbd>Enter</kbd> on the parent folder item `..`, or with the left arrow <kbd>←</kbd>. Once you have navigated to the folder you want, exit `tere` by perssing <kbd>Esc</kbd>. If you have configured your shell correctly, your shell's current working directory should now be set to that folder.
+You can navigate folders in `tere` by moving the cursor around and by typing to search. By default, the cursor can be moved up or down using the arrow keys, and pressing <kbd>Enter</kbd> or the right arrow <kbd>→</kbd> to enter the highlighted folder. You can move to the parent folder by pressing <kbd>Enter</kbd> on the parent folder item `..`, or with the left arrow <kbd>←</kbd>. Once you have navigated to the folder you want, exit `tere` by pressing <kbd>Esc</kbd>. If you have configured your shell correctly, your shell's current working directory should now be set to that folder.
 
 ### Keyboard shortcuts
 
