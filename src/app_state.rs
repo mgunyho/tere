@@ -1696,20 +1696,20 @@ mod tests {
     fn test_case_sensitive_mode_change() {
         let tmp = TempDir::new().unwrap();
         let mut s = create_test_state_with_folders(&tmp, 10, vec!["A", "a"]);
-        s.cursor_pos = 2;
+        s.cursor_pos = 1;
         s.advance_search("a");
 
         // current state: ('*' shows the matches)
         //   ..
-        //   A  *
-        // > a  *
+        // > A  *
+        //   a  *
 
         assert_eq!(s.visible_match_indices(), vec![1, 2]);
-        assert_eq!(s.cursor_pos, 2);
+        assert_eq!(s.cursor_pos, 1);
 
         s.set_case_sensitive(CaseSensitiveMode::CaseSensitive);
-        assert_eq!(s.visible_match_indices(), vec![1]);
-        assert_eq!(s.cursor_pos, 1);
+        assert_eq!(s.visible_match_indices(), vec![2]);
+        assert_eq!(s.cursor_pos, 2);
     }
 
     #[test]
