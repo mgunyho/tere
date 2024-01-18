@@ -119,6 +119,7 @@ Note that if you want to make `tere` work with *both* PowerShell and CMD, you sh
 If `tere` is not in your `PATH`, use an absolute path to the tere binary in your shell config file. For example, for Bash/Zsh, you would need to replace `local result=$(command tere "$@")` with `local result=$(/path/to/tere "$@")`, or for PowerShell, replace `(Get-Command -CommandType Application tere)` with `C:\path\to\tere.exe`.
 
 If instructions for your shell are missing, feel free to send a pull request that includes them!
+See [the instructions below](#testing-a-new-shell-integration) for some more information.
 
 ### Step 3: That's it
 
@@ -308,6 +309,14 @@ rustup target add aarch64-unknown-linux-gnu
 Then, the `build-release.sh` script should work.
 
 For further details, see the [`rustup` guide](https://rust-lang.github.io/rustup/cross-compilation.html), and the [`rustc` platform support page](https://doc.rust-lang.org/nightly/rustc/platform-support.html), and consult your favourite search engine for help on cross-compilation.
+
+### Testing a new shell integration
+
+To check that a new shell alias works correctly, you should verify the following:
+
+- Navigating some folders using `tere` works and actually changes the directory as expected
+- Running `tere --version` and `tere --help` print the version and help information, respectively, and don't output any error like `no such folder: tere vX.Y.Z`
+- Arguments get passed to `tere`, so running `tere --filter-search` starts in filter-search mode
 
 ### Making a new release
 
