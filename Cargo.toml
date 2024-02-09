@@ -34,3 +34,6 @@ rexpect = "0.5"
 [profile.release]
 lto = true
 strip = "debuginfo"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["fileapi"] }
