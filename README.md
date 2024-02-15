@@ -119,6 +119,7 @@ Note that if you want to make `tere` work with *both* PowerShell and CMD, you sh
 If `tere` is not in your `PATH`, use an absolute path to the tere binary in your shell config file. For example, for Bash/Zsh, you would need to replace `local result=$(command tere "$@")` with `local result=$(/path/to/tere "$@")`, or for PowerShell, replace `(Get-Command -CommandType Application tere)` with `C:\path\to\tere.exe`.
 
 If instructions for your shell are missing, feel free to send a pull request that includes them!
+See [the instructions below](#testing-a-new-shell-integration) for some more information.
 
 ### Step 3: That's it
 
@@ -134,7 +135,7 @@ If you get libc errors on Linux, try the `musl` version.
 
 ### Basic navigation
 
-You can navigate folders in `tere` by moving the cursor around and by typing to search. By default, the cursor can be moved up or down using the arrow keys, and pressing <kbd>Enter</kbd> or the right arrow <kbd>→</kbd> to enter the highlighted folder. You can move to the parent folder by pressing <kbd>Enter</kbd> on the parent folder item `..`, or with the left arrow <kbd>←</kbd>. Once you have navigated to the folder you want, exit `tere` by perssing <kbd>Esc</kbd>. If you have configured your shell correctly, your shell's current working directory should now be set to that folder.
+You can navigate folders in `tere` by moving the cursor around and by typing to search. By default, the cursor can be moved up or down using the arrow keys, and pressing <kbd>Enter</kbd> or the right arrow <kbd>→</kbd> to enter the highlighted folder. You can move to the parent folder by pressing <kbd>Enter</kbd> on the parent folder item `..`, or with the left arrow <kbd>←</kbd>. Once you have navigated to the folder you want, exit `tere` by pressing <kbd>Esc</kbd>. If you have configured your shell correctly, your shell's current working directory should now be set to that folder.
 
 ### Keyboard shortcuts
 
@@ -229,7 +230,7 @@ folder in the terminal and then `cd` to it.
 - [xplr](https://github.com/sayanarijit/xplr) - Lots of features, fully customizable. Not entirely focused on navigation, has file management features. Navigation by searching requires jumping between typing and pressing arrow keys.
 - [deer](https://github.com/Vifon/deer) - zsh only, searching requires extra keystrokes.
 - [cdir](https://github.com/EskelinenAntti/cdir) - Basically exactly the same idea as `tere`, but in written in Python. Doesn't have Vim-like keyboard navigation, and it's not a standalone binary.
-- [llama](https://github.com/antonmedv/llama) - Very similar to `tere`, written in Go.
+- [walk](https://github.com/antonmedv/walk) - Very similar to `tere`, written in Go. Requires typing `/` to enter search mode. Has the option to delete files and open files in an editor.
 - [sdn](https://git.janouch.name/p/sdn) - Also very similar to `tere`, even in terms of the UI as well. Type-ahead search mode is not the default, searching requires a couple of extra keystrokes.
 
 ### Fuzzy matching and history-based navigation
@@ -308,6 +309,14 @@ rustup target add aarch64-unknown-linux-gnu
 Then, the `build-release.sh` script should work.
 
 For further details, see the [`rustup` guide](https://rust-lang.github.io/rustup/cross-compilation.html), and the [`rustc` platform support page](https://doc.rust-lang.org/nightly/rustc/platform-support.html), and consult your favourite search engine for help on cross-compilation.
+
+### Testing a new shell integration
+
+To check that a new shell alias works correctly, you should verify the following:
+
+- Navigating some folders using `tere` works and actually changes the directory as expected
+- Running `tere --version` and `tere --help` print the version and help information, respectively, and don't output any error like `no such folder: tere vX.Y.Z`
+- Arguments get passed to `tere`, so running `tere --filter-search` starts in filter-search mode
 
 ### Making a new release
 
