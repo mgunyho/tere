@@ -1800,7 +1800,10 @@ mod tests {
         let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
         assert_eq!(s.current_path, tmp.path());
         assert!(s.change_dir("/").is_ok());
+        #[cfg(unix)]
         assert_eq!(s.current_path, PathBuf::from("/"));
+        #[cfg(windows)]
+        assert_eq!(s.current_path, PathBuf::from("C:\\"));
     }
 
     #[test]
@@ -1832,7 +1835,12 @@ mod tests {
 
         // root
         let (path, res) = s.find_valid_cd_target(&PathBuf::from("/")).unwrap();
+
+        #[cfg(unix)]
         assert_eq!(path, PathBuf::from("/"));
+        #[cfg(windows)]
+        assert_eq!(path, PathBuf::from("C:\\"));
+
         match res {
             CdResult::Success => {}
             something_else => panic!("{:?}", something_else),
@@ -1840,13 +1848,22 @@ mod tests {
 
         // valid target is root
         let (path, res) = s.find_valid_cd_target(&PathBuf::from("/foo/bar")).unwrap();
+
+        #[cfg(unix)]
         assert_eq!(path, PathBuf::from("/"));
+        #[cfg(windows)]
+        assert_eq!(path, PathBuf::from("C:\\"));
+
         match res {
             CdResult::MovedUpwards {
                 target_abs_path: p,
                 root_error: e,
             } => {
+                #[cfg(unix)]
                 assert_eq!(p, PathBuf::from("/foo/bar"));
+                #[cfg(windows)]
+                assert_eq!(p, PathBuf::from("C:\\foo\\bar"));
+
                 assert_eq!(e.kind(), ErrorKind::NotFound);
             }
             something_else => panic!("{:?}", something_else),
