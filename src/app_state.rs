@@ -1695,14 +1695,15 @@ mod tests {
     #[test]
     fn test_case_sensitive_mode_change() {
         let tmp = TempDir::new().unwrap();
-        let mut s = create_test_state_with_folders(&tmp, 10, vec!["A", "a"]);
+        // Note: on windows we can't create folders named 'A' and 'a'.
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["Ab", "ac"]);
         s.cursor_pos = 1;
         s.advance_search("a");
 
         // current state: ('*' shows the matches)
         //   ..
-        // > A  *
-        //   a  *
+        // > Ab *
+        //   ac *
 
         assert_eq!(s.visible_match_indices(), vec![1, 2]);
         assert_eq!(s.cursor_pos, 1);
