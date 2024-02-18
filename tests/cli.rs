@@ -166,4 +166,39 @@ fn skip_first_run_prompt() -> Result<(), RexpectError> {
 
     Ok(())
 }
+
+#[test]
+fn minimum_escape_codes() -> Result<(), RexpectError> {
+    // The app should ouptut the minimum amount of escape codes, and not any redundant ones
+
+    let mut cmd = get_cmd_no_first_run_prompt();
+    let tmp = tempdir().expect("error creating temporary folder");
+
+    // create some folders
+    for folder_name in vec!["foo", "bar"] {
+        let p = tmp.path().join(folder_name);
+        std::fs::create_dir(p).unwrap();
+    }
+
+    cmd.current_dir(tmp.path())
+        // note: have to set PWD for this to work...
+        .env("PWD", tmp.path().as_os_str());
+
+    let mut proc = run_app_with_cmd(cmd);
+    // 0x1b == 0o33 == 27 escape
+    proc.send("\x1b")?;
+    proc.writer.flush()?;
+
+    let output = proc.exp_eof()?;
+    let expected_output = include_str!("expected-output-basic.txt");
+
+    let tmp_path_str = format!("{}", tmp.path().display());
+    // The path of the temporary folder will vary, but everything else should be the same as in the
+    // example output
+    assert_eq!(
+        output.replace(&tmp_path_str, "/tmp/xxxxxxxxxx"),
+        expected_output,
+    );
+    Ok(())
+}
 }
