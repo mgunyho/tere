@@ -701,7 +701,7 @@ impl<'a> TereTui<'a> {
                         match action {
                             Action::ChangeDir => { self.change_dir("")?; },
                             // note: ".." is the same as std::path::Component::ParentDir, but
-                            // hardcoding it avoids jumping back and forth between OsSrt. The same
+                            // hardcoding it avoids jumping back and forth between OsStr. The same
                             // applies for "." elsewhere.
                             Action::ChangeDirParent => { self.change_dir("..")?; },
                             Action::ChangeDirHome => self.on_go_to_home()?,
