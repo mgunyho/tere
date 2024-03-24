@@ -14,7 +14,9 @@
 
           src = ./.;
 
-          cargoHash = "sha256-EnAO82q8ErchCDjn1bXNxHyx+sXRJB1NpSATpOtTs9s=";
+          cargoLock = {
+            lockFile = ./Cargo.lock;
+          };
 
           postPatch = ''
           rm .cargo/config.toml;
