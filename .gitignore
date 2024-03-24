@@ -1,2 +1,6 @@
 /target
 /release
+
+# Nix files
+/result
+/.direnv
