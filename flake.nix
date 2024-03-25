@@ -14,9 +14,14 @@
 
           src = ./.;
 
+          # this fails with git cargo dependencies, if needed switch to cargoHash
           cargoLock = {
             lockFile = ./Cargo.lock;
           };
+
+          preBuild = ''
+          export RUST_BACKTRACE=1
+          '';
 
           postPatch = ''
           rm .cargo/config.toml;
