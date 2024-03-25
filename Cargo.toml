@@ -29,6 +29,8 @@ features = ["wrap_help", "suggestions", "std", "derive", "usage"]
 
 [dev-dependencies]
 tempfile = "3.6"
+
+[target.'cfg(unix)'.dev-dependencies]
 rexpect = "0.5"
 
 [profile.release]

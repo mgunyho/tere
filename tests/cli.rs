@@ -1,4 +1,6 @@
-//use regex::bytes::Regex;
+#[cfg(unix)]
+mod tests {
+
 use regex::Regex;
 use rexpect::error::Error as RexpectError;
 use rexpect::session::{spawn_command, PtySession};
@@ -135,4 +137,5 @@ fn first_run_prompt_accept() -> Result<(), RexpectError> {
     assert!(tmp.path().join("tere").join("history.json").exists());
 
     Ok(())
+}
 }
