@@ -32,6 +32,15 @@
               maintainers = with maintainers; [ ProducerMatt ];
               mainProgram = "tere";
             };});
+
+          ## run the tests via the script command so that the integration tests have a TTY
+          #checkPhase = ''
+          #script -c 'cargo test'
+          #'';
+
+          #buildInputs = [
+          #  util-linux  # 'script' command
+          #];
       in {
         checks.default = mkTere {};
         packages.default = mkTere {};
