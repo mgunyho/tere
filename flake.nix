@@ -19,13 +19,25 @@
 
       perSystem = { system, pkgs, lib, inputs', ... }:
       let
-        mkTere = {pkgs ? pkgs}:
-          ((inputs.crate2nix.tools.${system}.appliedCargoNix {
-            name = "tere";
+        mkTere = ({buildPkgs ? pkgs}:
+          buildPkgs.rustPlatform.buildRustPackage {
+            pname = "tere";
+            version = "1.5.1";
             src = ./.;
-          }).rootCrate.build.override {
-              runTests = true;
-            } // {
+
+            cargoLock = {
+                lockFile = ./Cargo.lock;
+            };
+
+            # run the tests via the script command so that the integration tests have a TTY
+            checkPhase = ''
+            script -c 'cargo test'
+            '';
+
+            nativeBuildInputs = [
+              pkgs.unixtools.script  # 'script' command
+            ];
+
             meta = with lib; {
               description = "A faster alternative to cd + ls";
               homepage = "https://github.com/mgunyho/tere";
@@ -34,19 +46,11 @@
               mainProgram = "tere";
             };});
 
-          ## run the tests via the script command so that the integration tests have a TTY
-          #checkPhase = ''
-          #script -c 'cargo test'
-          #'';
-
-          #buildInputs = [
-          #  util-linux  # 'script' command
-          #];
       in {
         checks.default = mkTere {};
         packages.default = mkTere {};
-        checks.musl = mkTere {pkgs = pkgs.pkgsMusl;};
-        packages.musl = mkTere {pkgs = pkgs.pkgsMusl;};
+        checks.musl = mkTere {buildPkgs = pkgs.pkgsMusl;};
+        packages.musl = mkTere {buildPkgs = pkgs.pkgsMusl;};
         devShells.default = with pkgs;
           mkShell {
             buildInputs = [
