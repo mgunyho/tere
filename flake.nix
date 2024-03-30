@@ -1,11 +1,23 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    utils.url = "github:numtide/flake-utils";
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
+    #crate2nix.url = "github:nix-community/crate2nix";
   };
 
-  outputs = { self, nixpkgs, utils }:
-    utils.lib.eachDefaultSystem (system:
+  outputs = inputs@{ self, nixpkgs, flake-parts, ... }:
+  flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "x86_64-linux"
+        "aarch64-darwin"
+      ];
+
+      perSystem = { system, pkgs, lib, inputs', ... }:
       let
         pkgs = import nixpkgs { inherit system; };
         tere = with pkgs; rustPlatform.buildRustPackage {
@@ -37,8 +49,8 @@
         };
 
       in {
-        defaultPackage = tere;
-        devShell = with pkgs;
+        packages.default = tere;
+        devShells.default = with pkgs;
           mkShell {
             buildInputs = [
               # rust packages
@@ -55,5 +67,5 @@
             ];
             RUST_SRC_PATH = rustPlatform.rustLibSrc;
           };
-      });
+      };};
 }
