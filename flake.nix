@@ -23,8 +23,9 @@
           ((inputs.crate2nix.tools.${system}.appliedCargoNix {
             name = "tere";
             src = ./.;
-          }).rootCrate.build // {
-            runTests = true;
+          }).rootCrate.build.override {
+              runTests = true;
+            } // {
             meta = with lib; {
               description = "A faster alternative to cd + ls";
               homepage = "https://github.com/mgunyho/tere";
