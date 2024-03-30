@@ -23,9 +23,18 @@
           export RUST_BACKTRACE=1
           '';
 
+          # run the tests via the script command so that the integration tests have a TTY
+          checkPhase = ''
+          script -c 'cargo test'
+          '';
+
           postPatch = ''
           rm .cargo/config.toml;
           '';
+
+          buildInputs = [
+            util-linux  # 'script' command
+          ];
 
           meta = with lib; {
             description = "A faster alternative to cd + ls";
