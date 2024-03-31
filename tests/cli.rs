@@ -32,7 +32,7 @@ fn run_app_with_cmd(cmd: Command) -> PtySession {
 }
 
 fn get_cmd() -> Command {
-    Command::new(std::env::var("CARGO_BIN_EXE_tere").unwrap())
+    Command::new(env!("CARGO_BIN_EXE_tere"))
 }
 
 /// Initialize the app command with the history file explicitly set to empty, so that we don't get
