@@ -21,20 +21,41 @@
       url = "github:rustsec/advisory-db";
       flake = false;
     };
+
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+      };
+    };
   };
 
-  outputs = { nixpkgs, crane, fenix, flake-utils, advisory-db, ... }:
+  outputs = { nixpkgs, crane, fenix, flake-utils, advisory-db, rust-overlay, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ (import rust-overlay) ];
+        };
 
         inherit (pkgs) lib;
+
+        rustWithWasiTarget = pkgs.rust-bin.stable.latest.default.override {
+          targets = [ "x86_64-unknown-linux-musl" ];
+        };
+
+        # NB: we don't need to overlay our custom toolchain for the *entire*
+        # pkgs (which would require rebuidling anything else which uses rust).
+        # Instead, we just want to update the scope that crane will use by appending
+        # our specific toolchain there.
+        craneLibMusl = (crane.mkLib pkgs).overrideToolchain rustWithWasiTarget;
 
         craneLib = crane.lib.${system};
         src = (craneLib.path ./.);
 
         # Common arguments can be set here to avoid repeating them later
-        commonArgs = {
+        commonArgs = (buildMusl: {
           inherit src;
           strictDeps = true;
 
@@ -49,13 +70,11 @@
           export RUST_BACKTRACE=1
           '';
 
-          postPatch = ''
-          rm .cargo/config.toml;
-          '';
-
           checkPhase = ''
             ${pkgs.unixtools.script}/bin/script -qfec 'cargo test' /dev/null
           '';
+
+          doCheck = false;
 
           meta = with lib; {
             description = "A faster alternative to cd + ls";
@@ -64,7 +83,11 @@
             maintainers = with maintainers; [ ProducerMatt ];
             mainProgram = "tere";
           };
-        };
+        } // (lib.optionalAttrs buildMusl {
+          target = "x86_64-unknown-linux-musl";
+          cargoExtraArgs = "--target x86_64-unknown-linux-musl";
+          #CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER = "${pkgs.llvmPackages.lld}/bin/lld";
+        }));
 
         craneLibLLvmTools = craneLib.overrideToolchain
           (fenix.packages.${system}.complete.withComponents [
@@ -75,18 +98,19 @@
 
         # Build *just* the cargo dependencies, so we can reuse
         # all of that work (e.g. via cachix) when running in CI
-        cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+        cargoArtifacts = buildMusl: (if buildMusl then craneLibMusl else craneLib).buildDepsOnly (commonArgs buildMusl);
 
         # Build the actual crate itself, reusing the dependency
         # artifacts from above.
-        my-crate = craneLib.buildPackage (commonArgs // {
-          inherit cargoArtifacts;
+        my-crate = buildMusl: (if buildMusl then craneLibMusl else craneLib).buildPackage (commonArgs buildMusl // {
+          cargoArtifacts = cargoArtifacts buildMusl;
         });
       in
       {
         checks = {
           # Build the crate as part of `nix flake check` for convenience
-          inherit my-crate;
+          my-crate = my-crate false;
+          my-crate-musl = my-crate true;
 
           # Run clippy (and deny all warnings) on the crate source,
           # again, reusing the dependency artifacts from above.
@@ -119,7 +143,8 @@
           };
         };
         packages = {
-          default = my-crate;
+          default = my-crate false;
+          musl = my-crate true;
         } // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
           my-crate-llvm-coverage = craneLibLLvmTools.cargoLlvmCov (commonArgs // {
             inherit cargoArtifacts;
@@ -127,7 +152,11 @@
         };
 
         apps.default = flake-utils.lib.mkApp {
-          drv = my-crate;
+          drv = my-crate false;
+        };
+
+        apps.musl = flake-utils.lib.mkApp {
+          drv = my-crate true;
         };
 
         devShells.default = with pkgs; craneLib.devShell {
