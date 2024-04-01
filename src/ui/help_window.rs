@@ -251,7 +251,7 @@ mod tests {
                 .collect();
             for k in key_combos {
                 key_mappings
-                    .entry(k)
+                    .entry(k.into())
                     .and_modify(|a| a.push(action.clone()))
                     .or_insert_with(|| vec![action.clone()]);
             }
@@ -277,8 +277,8 @@ mod tests {
                 continue;
             }
 
-            let key_combo_str = crokey::KeyEventFormat::default().to_string(*key_combo);
-            let actions = key_mappings.get(key_combo).unwrap_or_else(|| {
+            let key_combo_str = crokey::KeyCombinationFormat::default().to_string(*key_combo);
+            let actions = key_mappings.get(&(*key_combo).into()).unwrap_or_else(|| {
                 panic!(
                     "Key mapping {}:{} not found in README",
                     key_combo_str, expected_action,

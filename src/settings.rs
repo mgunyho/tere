@@ -419,7 +419,7 @@ mod tests {
 
         DEFAULT_KEYMAP
             .iter()
-            .for_each(|(k, c, _)| *key_counts.entry((*k, c.clone())).or_default() += 1);
+            .for_each(|(k, c, _)| *key_counts.entry(((*k).into(), c.clone())).or_default() += 1);
 
         for (k, v) in key_counts {
             assert_eq!(v, 1, "found {} entries for key {:?} in context {:?}", v, k.0, k.1);
@@ -446,7 +446,7 @@ mod tests {
         let m = parse_keymap_arg("ctrl-x:Exit").unwrap();
         assert_eq!(m.len(), 1);
         let (e, c, a) = &m[0];
-        assert_eq!(e, &key!(ctrl-x));
+        assert_eq!(e, &key!(ctrl-x).into());
         assert_eq!(c, &ActionContext::None);
         assert_eq!(a, &Action::Exit);
     }
@@ -455,10 +455,10 @@ mod tests {
     fn test_parse_keymap_arg2() {
         let m = parse_keymap_arg("ctrl-x:Exit,ctrl-j:NotSearching:CursorUp").unwrap();
         assert_eq!(m.len(), 2);
-        assert_eq!(m[0].0, key!(ctrl-x));
+        assert_eq!(m[0].0, key!(ctrl-x).into());
         assert_eq!(m[0].1, ActionContext::None);
         assert_eq!(m[0].2, Action::Exit);
-        assert_eq!(m[1].0, key!(ctrl-j));
+        assert_eq!(m[1].0, key!(ctrl-j).into());
         assert_eq!(m[1].1, ActionContext::NotSearching);
         assert_eq!(m[1].2, Action::CursorUp);
     }
@@ -469,7 +469,7 @@ mod tests {
             "foo",
             "-m", "ctrl-x:Exit",
         ]);
-        assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::Exit));
+        assert_eq!(settings.keymap.get(&(key!(ctrl-x).into(), ActionContext::None)), Some(&Action::Exit));
     }
 
     #[test]
@@ -478,8 +478,8 @@ mod tests {
             "foo",
             "-m", "ctrl-x:Exit,ctrl-y:ClearSearch",
         ]);
-        assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::Exit));
-        assert_eq!(settings.keymap.get(&(key!(ctrl-y), ActionContext::None)), Some(&Action::ClearSearch));
+        assert_eq!(settings.keymap.get(&(key!(ctrl-x).into(), ActionContext::None)), Some(&Action::Exit));
+        assert_eq!(settings.keymap.get(&(key!(ctrl-y).into(), ActionContext::None)), Some(&Action::ClearSearch));
     }
 
     #[test]
@@ -488,7 +488,7 @@ mod tests {
             "foo",
             "-m", "ctrl-x:Exit,ctrl-x:ClearSearch", // repeated mapping
         ]);
-        assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::ClearSearch));
+        assert_eq!(settings.keymap.get(&(key!(ctrl-x).into(), ActionContext::None)), Some(&Action::ClearSearch));
     }
 
     #[test]
@@ -499,7 +499,7 @@ mod tests {
             "-m", "ctrl-x:Exit",
             "-m", "ctrl-x:ClearSearch",
         ]);
-        assert_eq!(settings.keymap.get(&(key!(ctrl-x), ActionContext::None)), Some(&Action::ClearSearch));
+        assert_eq!(settings.keymap.get(&(key!(ctrl-x).into(), ActionContext::None)), Some(&Action::ClearSearch));
     }
 
     #[test]
@@ -567,19 +567,19 @@ mod tests {
         let settings = parse_cli_no_warnings(vec![
             "foo",
         ]);
-        assert_eq!(settings.keymap.get(&(key!(alt-h), ActionContext::None)), Some(&Action::ChangeDirParent));
-        assert_eq!(settings.keymap.get(&(key!(alt-j), ActionContext::None)), Some(&Action::CursorDown));
-        assert_eq!(settings.keymap.get(&(key!(alt-k), ActionContext::None)), Some(&Action::CursorUp));
-        assert_eq!(settings.keymap.get(&(key!(alt-l), ActionContext::None)), Some(&Action::ChangeDir));
+        assert_eq!(settings.keymap.get(&(key!(alt-h).into(), ActionContext::None)), Some(&Action::ChangeDirParent));
+        assert_eq!(settings.keymap.get(&(key!(alt-j).into(), ActionContext::None)), Some(&Action::CursorDown));
+        assert_eq!(settings.keymap.get(&(key!(alt-k).into(), ActionContext::None)), Some(&Action::CursorUp));
+        assert_eq!(settings.keymap.get(&(key!(alt-l).into(), ActionContext::None)), Some(&Action::ChangeDir));
 
         let settings = parse_cli_no_warnings(vec![
             "foo",
             "-m", "alt-h:None,alt-j:None,alt-k:None,alt-l:None",
         ]);
-        assert_eq!(settings.keymap.get(&(key!(alt-h), ActionContext::None)), None);
-        assert_eq!(settings.keymap.get(&(key!(alt-j), ActionContext::None)), None);
-        assert_eq!(settings.keymap.get(&(key!(alt-k), ActionContext::None)), None);
-        assert_eq!(settings.keymap.get(&(key!(alt-l), ActionContext::None)), None);
+        assert_eq!(settings.keymap.get(&(key!(alt-h).into(), ActionContext::None)), None);
+        assert_eq!(settings.keymap.get(&(key!(alt-j).into(), ActionContext::None)), None);
+        assert_eq!(settings.keymap.get(&(key!(alt-k).into(), ActionContext::None)), None);
+        assert_eq!(settings.keymap.get(&(key!(alt-l).into(), ActionContext::None)), None);
     }
 
     #[test]
@@ -587,13 +587,13 @@ mod tests {
         let settings = parse_cli_no_warnings(vec![
             "foo",
         ]);
-        assert_eq!(settings.keymap.get(&(key!(esc), ActionContext::NotSearching)), Some(&Action::Exit));
-        assert_eq!(settings.keymap.get(&(key!(esc), ActionContext::Searching)), Some(&Action::ClearSearch));
-        assert_eq!(settings.keymap.get(&(key!(esc), ActionContext::None)), None);
+        assert_eq!(settings.keymap.get(&(key!(esc).into(), ActionContext::NotSearching)), Some(&Action::Exit));
+        assert_eq!(settings.keymap.get(&(key!(esc).into(), ActionContext::Searching)), Some(&Action::ClearSearch));
+        assert_eq!(settings.keymap.get(&(key!(esc).into(), ActionContext::None)), None);
 
-        assert_eq!(settings.keymap.get(&(key!(backspace), ActionContext::Searching)), Some(&Action::EraseSearchChar));
-        assert_eq!(settings.keymap.get(&(key!(backspace), ActionContext::NotSearching)), Some(&Action::ChangeDirParent));
-        assert_eq!(settings.keymap.get(&(key!(backspace), ActionContext::None)), None);
+        assert_eq!(settings.keymap.get(&(key!(backspace).into(), ActionContext::Searching)), Some(&Action::EraseSearchChar));
+        assert_eq!(settings.keymap.get(&(key!(backspace).into(), ActionContext::NotSearching)), Some(&Action::ChangeDirParent));
+        assert_eq!(settings.keymap.get(&(key!(backspace).into(), ActionContext::None)), None);
 
         let settings = parse_cli_no_warnings(vec![
             "foo",
@@ -601,9 +601,9 @@ mod tests {
             "-m", "backspace:None", // this shouldn't affect any of the mappings since they are context-dependent
             "-m", "backspace:None:None", // this shouldn't affect any of the mappings since they are context-dependent
         ]);
-        assert_eq!(settings.keymap.get(&(key!(esc), ActionContext::NotSearching)), Some(&Action::Exit));
-        assert_eq!(settings.keymap.get(&(key!(esc), ActionContext::Searching)), None);
-        assert_eq!(settings.keymap.get(&(key!(esc), ActionContext::None)), None);
+        assert_eq!(settings.keymap.get(&(key!(esc).into(), ActionContext::NotSearching)), Some(&Action::Exit));
+        assert_eq!(settings.keymap.get(&(key!(esc).into(), ActionContext::Searching)), None);
+        assert_eq!(settings.keymap.get(&(key!(esc).into(), ActionContext::None)), None);
     }
 
     #[test]
