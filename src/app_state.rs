@@ -603,7 +603,7 @@ impl TereAppState {
     pub fn move_cursor(&mut self, amount: isize, wrap: bool) {
         let old_cursor_pos = self.cursor_pos;
         let n_visible_items = self.visible_items().len();
-        let max_cursor_pos = self.main_win_h - 1;
+        let max_cursor_pos = self.main_win_h.saturating_sub(1);
         let old_scroll_pos = self.scroll_pos;
 
         // pointer_pos: the global location of the cursor in ls_output_buf

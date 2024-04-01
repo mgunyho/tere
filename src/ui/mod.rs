@@ -126,7 +126,7 @@ impl<'a> TereTui<'a> {
 
     fn redraw_info_window(&mut self) -> IoResult<()> {
         let (w, h) = terminal_size_usize()?;
-        let info_win_row = h - FOOTER_SIZE - INFO_WIN_SIZE;
+        let info_win_row = h.saturating_sub(FOOTER_SIZE + INFO_WIN_SIZE);
 
         self.queue_clear_row(info_win_row)?;
         let mut win = self.window;
@@ -159,7 +159,7 @@ impl<'a> TereTui<'a> {
 
     fn redraw_footer(&mut self) -> IoResult<()> {
         let (w, h) = terminal_size_usize()?;
-        let footer_win_row = h - FOOTER_SIZE;
+        let footer_win_row = h.saturating_sub(FOOTER_SIZE);
         self.queue_clear_row(footer_win_row)?;
 
         let mut win = self.window;
