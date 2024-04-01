@@ -776,6 +776,13 @@ impl<'a> TereTui<'a> {
                     //e => self.info_message(&format!("{:?}", e))?, // for debugging
                     _ => (),
                 },
+
+                // Don't do anything for these. As of crossterm 0.27, FocusGained / Lost is only
+                // available on Windows anyway.
+                Event::FocusGained => (),
+                Event::FocusLost => (),
+                Event::Paste(_) => (),
+
             }
         };
 
