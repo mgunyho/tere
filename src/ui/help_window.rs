@@ -77,7 +77,7 @@ fn get_keyboard_shortcuts_table() -> &'static str {
 fn get_justified_keyboard_shortcuts_table(
     key_mapping: &HashMap<(KeyEvent, ActionContext), Action>,
 ) -> String {
-    let formatter = crokey::KeyEventFormat::default();
+    let formatter = crokey::KeyCombinationFormat::default();
 
     let keyboard_shortcuts = get_keyboard_shortcuts_table();
 
@@ -156,7 +156,7 @@ fn invert_key_mapping_sorted(
     // probably not the right place for this, but I'll move
     // it out if I need it elsewhere.
     fn cmp_key_events(k1: &KeyEvent, k2: &KeyEvent) -> std::cmp::Ordering {
-        let formatter = crokey::KeyEventFormat::default();
+        let formatter = crokey::KeyCombinationFormat::default();
         match (k1.modifiers.is_empty(), k2.modifiers.is_empty()) {
             (true, true) | (false, false) => {
                 // both or neither have modifiers, sort alphabetically

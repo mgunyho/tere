@@ -238,7 +238,8 @@ impl TereSettings {
         if let Some(false) = args.get_one::<bool>("clear-default-keymap") {
             ret.keymap = DEFAULT_KEYMAP
                 .iter()
-                .map(|(k, c, a)| ((*k, c.clone()), a.clone()))
+                // (*k).into() converts crokey KeyCombinaton to crossterm KeyEvent
+                .map(|(k, c, a)| (((*k).into(), c.clone()), a.clone()))
                 .collect();
         }
 
@@ -322,7 +323,7 @@ fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>,
                     ))
         };
 
-        ret.push((k, c, a));
+        ret.push((k.into(), c, a));
     }
 
     Ok(ret)
@@ -330,7 +331,9 @@ fn parse_keymap_arg(arg: &str) -> Result<Vec<(KeyEvent, ActionContext, Action)>,
 
 // NOTE: can't create a const hashmap (without an extra dependency like phf), so just using a slice
 // of tuples.
-pub const DEFAULT_KEYMAP: &[(KeyEvent, ActionContext, Action)] = &[
+// NOTE: The key combinations are saved as crokey KeyCombinations, and converted to crossterm
+// KeyEvents when this array is read during initialization
+pub const DEFAULT_KEYMAP: &[(crokey::KeyCombination, ActionContext, Action)] = &[
 
     (key!(enter),    ActionContext::None, Action::ChangeDir),
     (key!(right),    ActionContext::None, Action::ChangeDir),
