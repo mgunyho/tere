@@ -4,7 +4,7 @@ pub mod markup_render;
 
 use std::convert::TryFrom;
 use std::fmt::Write as _;
-use std::io::{Stderr, Write};
+use std::io::{Stderr, Write, Result as IoResult};
 use std::path::PathBuf;
 
 use crate::app_state::{CdResult, TereAppState};
@@ -31,7 +31,6 @@ use crossterm::{
         EnableMouseCapture,
         DisableMouseCapture,
     },
-    Result as CTResult,
 };
 
 use dirs::home_dir;
@@ -51,13 +50,13 @@ pub struct TereTui<'a> {
 
 /// Return the current terminal size as a pair of `(usize, usize)` instead of `(u16, 16)` as
 /// is done by crossterm.
-fn terminal_size_usize() -> CTResult<(usize, usize)> {
+fn terminal_size_usize() -> IoResult<(usize, usize)> {
     let (w, h): (u16, u16) = terminal::size()?;
     Ok((w as usize, h as usize))
 }
 
 // Dimensions (width, height) of main window
-pub fn main_window_size() -> CTResult<(usize, usize)> {
+pub fn main_window_size() -> IoResult<(usize, usize)> {
     let (w, h) = terminal_size_usize()?;
     Ok((
         w,
@@ -86,7 +85,7 @@ impl<'a> TereTui<'a> {
 
     /// Queue up a command to clear a given row (starting from 0). Must be executed/flushed
     /// separately.
-    fn queue_clear_row(&mut self, row: usize) -> CTResult<()> {
+    fn queue_clear_row(&mut self, row: usize) -> IoResult<()> {
         queue!(
             self.window,
             cursor::MoveTo(0, u16::try_from(row).unwrap_or(u16::MAX)),
@@ -94,7 +93,7 @@ impl<'a> TereTui<'a> {
         )
     }
 
-    fn redraw_header(&mut self) -> CTResult<()> {
+    fn redraw_header(&mut self) -> IoResult<()> {
         //TODO: what to do if window is narrower than path?
         // add "..." to beginning? or collapse folder names? make configurable?
         // at least, truncate towards the left instead of to the right
@@ -119,13 +118,13 @@ impl<'a> TereTui<'a> {
         )
     }
 
-    fn update_header(&mut self) -> CTResult<()> {
+    fn update_header(&mut self) -> IoResult<()> {
         self.app_state.update_header();
         // TODO: consider removing redraw here... (is inconsistent with the rest of the 'update' functions)
         self.redraw_header()
     }
 
-    fn redraw_info_window(&mut self) -> CTResult<()> {
+    fn redraw_info_window(&mut self) -> IoResult<()> {
         let (w, h) = terminal_size_usize()?;
         let info_win_row = h - FOOTER_SIZE - INFO_WIN_SIZE;
 
@@ -146,19 +145,19 @@ impl<'a> TereTui<'a> {
     }
 
     /// Set/update the current info message and redraw the info window
-    fn info_message(&mut self, msg: &str) -> CTResult<()> {
+    fn info_message(&mut self, msg: &str) -> IoResult<()> {
         //TODO: add thread with timeout that will clear the info message after x seconds?
         self.app_state.info_msg = msg.to_string();
         self.redraw_info_window()
     }
 
-    fn error_message(&mut self, msg: &str) -> CTResult<()> {
+    fn error_message(&mut self, msg: &str) -> IoResult<()> {
         //TODO: red color (also: make it configurable)
         let error_msg = format!("error: {}", &msg);
         self.info_message(&error_msg)
     }
 
-    fn redraw_footer(&mut self) -> CTResult<()> {
+    fn redraw_footer(&mut self) -> IoResult<()> {
         let (w, h) = terminal_size_usize()?;
         let footer_win_row = h - FOOTER_SIZE;
         self.queue_clear_row(footer_win_row)?;
@@ -231,7 +230,7 @@ impl<'a> TereTui<'a> {
         )
     }
 
-    fn draw_main_window_row(&mut self, row: usize, highlight: bool) -> CTResult<()> {
+    fn draw_main_window_row(&mut self, row: usize, highlight: bool) -> IoResult<()> {
         let row_abs = row + HEADER_SIZE;
         let width: usize = main_window_size()?.0;
 
@@ -371,17 +370,17 @@ impl<'a> TereTui<'a> {
     }
 
     // redraw row 'row' (relative to the top of the main window) without highlighting
-    fn unhighlight_row(&mut self, row: usize) -> CTResult<()> {
+    fn unhighlight_row(&mut self, row: usize) -> IoResult<()> {
         self.draw_main_window_row(row, false)
     }
 
-    fn highlight_row(&mut self, row: usize) -> CTResult<()> {
+    fn highlight_row(&mut self, row: usize) -> IoResult<()> {
         // Highlight the row `row` in the main window. Row 0 is the first row of
         // the main window
         self.draw_main_window_row(row, true)
     }
 
-    fn queue_clear_main_window(&mut self) -> CTResult<()> {
+    fn queue_clear_main_window(&mut self) -> IoResult<()> {
         let (_, h) = main_window_size()?;
         for row in HEADER_SIZE..(h + HEADER_SIZE) {
             self.queue_clear_row(row)?;
@@ -389,14 +388,14 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    fn highlight_row_exclusive(&mut self, row: usize) -> CTResult<()> {
+    fn highlight_row_exclusive(&mut self, row: usize) -> IoResult<()> {
         // Highlight the row `row` exclusively, and hide all other rows.
         self.queue_clear_main_window()?;
         self.highlight_row(row)?;
         Ok(())
     }
 
-    fn redraw_main_window(&mut self) -> CTResult<()> {
+    fn redraw_main_window(&mut self) -> IoResult<()> {
         let (_, max_y) = main_window_size()?;
         let mut win = self.window;
 
@@ -417,7 +416,7 @@ impl<'a> TereTui<'a> {
         win.flush()
     }
 
-    fn redraw_all_windows(&mut self) -> CTResult<()> {
+    fn redraw_all_windows(&mut self) -> IoResult<()> {
         self.redraw_header()?;
         self.redraw_info_window()?;
         self.redraw_footer()?;
@@ -427,7 +426,7 @@ impl<'a> TereTui<'a> {
 
     /// Update the app state by moving the cursor by the specified amount, and
     /// redraw the view as necessary.
-    fn move_cursor(&mut self, amount: isize, wrap: bool) -> CTResult<()> {
+    fn move_cursor(&mut self, amount: isize, wrap: bool) -> IoResult<()> {
         let old_cursor_pos = self.app_state.cursor_pos;
         let old_scroll_pos = self.app_state.scroll_pos;
 
@@ -448,7 +447,7 @@ impl<'a> TereTui<'a> {
     /// message to the UI and return false.
     /// NOTE: path is a string, so that it can be an empty string, which refers to the item under
     /// the cursor
-    fn change_dir(&mut self, path: &str) -> CTResult<bool> {
+    fn change_dir(&mut self, path: &str) -> IoResult<bool> {
         //TODO: if there are no visible items, don't do anything?
         let res = match self.app_state.change_dir(path) {
             Ok(res) => {
@@ -489,7 +488,7 @@ impl<'a> TereTui<'a> {
         Ok(res)
     }
 
-    fn on_search_char(&mut self, c: char) -> CTResult<()> {
+    fn on_search_char(&mut self, c: char) -> IoResult<()> {
         self.app_state.advance_search(&c.to_string());
         let n_matches = self.app_state.num_matching_items();
         if n_matches == 1 {
@@ -510,18 +509,18 @@ impl<'a> TereTui<'a> {
         self.on_matches_changed()
     }
 
-    fn erase_search_char(&mut self) -> CTResult<()> {
+    fn erase_search_char(&mut self) -> IoResult<()> {
         self.app_state.erase_search_char();
         self.on_matches_changed()
     }
 
-    fn on_clear_search(&mut self) -> CTResult<()> {
+    fn on_clear_search(&mut self) -> IoResult<()> {
         self.app_state.clear_search();
         self.on_matches_changed()
     }
 
     /// Things to do when the matches are possibly changed
-    fn on_matches_changed(&mut self) -> CTResult<()> {
+    fn on_matches_changed(&mut self) -> IoResult<()> {
         if self.app_state.is_searching() && self.app_state.num_matching_items() == 0 {
             self.info_message(
                 self.app_state
@@ -536,13 +535,13 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    fn update_main_window_dimensions(&mut self) -> CTResult<()> {
+    fn update_main_window_dimensions(&mut self) -> IoResult<()> {
         let (w, h) = main_window_size()?;
         self.app_state.update_main_window_dimensions(w, h);
         Ok(())
     }
 
-    fn on_cursor_up_down(&mut self, up: bool) -> CTResult<()> {
+    fn on_cursor_up_down(&mut self, up: bool) -> IoResult<()> {
         let dir = if up { -1 } else { 1 };
         if self.app_state.is_searching() {
             //TODO: handle case where 'is_searching' but there are no matches - move cursor?
@@ -555,7 +554,7 @@ impl<'a> TereTui<'a> {
     }
 
     // When scroling up or down by a screenful (i.e. 'page up' or 'page down')
-    fn on_cursor_up_down_screen(&mut self, up: bool) -> CTResult<()> {
+    fn on_cursor_up_down_screen(&mut self, up: bool) -> IoResult<()> {
         if !self.app_state.is_searching() {
             let (_, h) = main_window_size()?;
             let delta = ((h - 1) as isize) * if up { -1 } else { 1 };
@@ -566,7 +565,7 @@ impl<'a> TereTui<'a> {
     }
 
     // When moving the cursor to the top or bottom of the listing
-    fn on_cursor_top_bottom(&mut self, top: bool) -> CTResult<()> {
+    fn on_cursor_top_bottom(&mut self, top: bool) -> IoResult<()> {
         let searching = self.app_state.is_searching();
         let match_indices = self.app_state.visible_match_indices();
 
@@ -597,7 +596,7 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    fn on_go_to_home(&mut self) -> CTResult<()> {
+    fn on_go_to_home(&mut self) -> IoResult<()> {
         if let Some(path) = home_dir() {
             if let Some(path) = path.to_str() {
                 self.change_dir(path)?;
@@ -606,7 +605,7 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    fn on_go_to_root(&mut self) -> CTResult<()> {
+    fn on_go_to_root(&mut self) -> IoResult<()> {
         // note: this is the same as std::path::Component::RootDir
         // using a temporary buffer to avoid allocating on the heap, because MAIN_SEPARATOR_STR is
         // not stable yet, see https://github.com/rust-lang/rust/issues/94071
@@ -615,7 +614,7 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    fn handle_mouse_event(&mut self, event: MouseEvent) -> CTResult<()> {
+    fn handle_mouse_event(&mut self, event: MouseEvent) -> IoResult<()> {
         if event.row == 0 {
             //TODO: change to folder by clicking on path component in header
             return Ok(());
@@ -636,13 +635,13 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
-    fn toggle_filter_search_mode(&mut self) -> CTResult<()> {
+    fn toggle_filter_search_mode(&mut self) -> IoResult<()> {
         self.app_state
             .set_filter_search(!self.app_state.settings().filter_search);
         self.on_matches_changed()
     }
 
-    fn cycle_case_sensitive_mode(&mut self) -> CTResult<()> {
+    fn cycle_case_sensitive_mode(&mut self) -> IoResult<()> {
         self.app_state
             .set_case_sensitive(match self.app_state.settings().case_sensitive {
                 CaseSensitiveMode::IgnoreCase => CaseSensitiveMode::CaseSensitive,
@@ -652,7 +651,7 @@ impl<'a> TereTui<'a> {
         self.on_matches_changed()
     }
 
-    fn cycle_gap_search_mode(&mut self) -> CTResult<()> {
+    fn cycle_gap_search_mode(&mut self) -> IoResult<()> {
         self.app_state
             .set_gap_search_mode(match self.app_state.settings().gap_search_mode {
                 GapSearchMode::GapSearchFromStart => GapSearchMode::NormalSearch,
@@ -663,7 +662,7 @@ impl<'a> TereTui<'a> {
         self.on_matches_changed()
     }
 
-    fn cycle_sort_mode(&mut self) -> CTResult<()> {
+    fn cycle_sort_mode(&mut self) -> IoResult<()> {
         self.app_state
             .set_sort_mode(match self.app_state.settings().sort_mode {
                 SortMode::Name => SortMode::Created,
@@ -791,7 +790,7 @@ impl<'a> TereTui<'a> {
             .map(|_| self.current_path())
     }
 
-    fn help_view_loop(&mut self) -> CTResult<()> {
+    fn help_view_loop(&mut self) -> IoResult<()> {
         self.info_message("Use ↓/↑ or j/k to scroll. Press Esc, 'q', '?' or Ctrl+c to exit help.")?;
 
         // We don't need the help view scroll state anywhere else, so not worth it to put in
@@ -841,7 +840,7 @@ impl<'a> TereTui<'a> {
         }
     }
 
-    fn draw_help_view(&mut self, scroll: usize) -> CTResult<()> {
+    fn draw_help_view(&mut self, scroll: usize) -> IoResult<()> {
         queue!(
             self.window,
             style::SetAttribute(Attribute::Reset),
