@@ -23,9 +23,10 @@
           export RUST_BACKTRACE=1
           '';
 
-          # run the tests via the script command so that the integration tests have a TTY
+          # Make ncurses availble in PATH so that the tput command can be run, see https://github.com/mgunyho/tere/pull/100
           checkPhase = ''
-          ${pkgs.util-linux}/bin/script -c 'cargo test'
+          export PATH=${pkgs.ncurses}/bin:$PATH
+          cargo test
           '';
 
           postPatch = ''
@@ -33,7 +34,7 @@
           '';
 
           buildInputs = [
-            util-linux  # 'script' command
+            ncurses  # provides the tput command needed for integration tests
           ];
 
           meta = with lib; {
