@@ -95,7 +95,7 @@ fn first_run_prompt_cancel() -> Result<(), RexpectError> {
 
     let ptn = Regex::new("It seems like you are running.*for the first time").unwrap();
     // check that first run prompt message is there
-    assert!(ptn.find(&output).is_some());
+    assert!(ptn.find(&output).is_some(), "Could not find pattern {:?} in output {:?}", ptn, output);
 
     // check that having pressed 'n' prints the expected message
     assert_eq!(strip_until_alternate_screen_exit(&output), "Cancelled.\r\n");
@@ -125,7 +125,7 @@ fn first_run_prompt_accept() -> Result<(), RexpectError> {
 
     let ptn = Regex::new("It seems like you are running.*for the first time").unwrap();
     // check that first run prompt message was printed
-    assert!(ptn.find(&output).is_some());
+    assert!(ptn.find(&output).is_some(), "Could not find pattern {:?} in output {:?}", ptn, output);
 
     // check that having pressed 'y' and then esc proceeded to the normal operation
     // and the history file was created
