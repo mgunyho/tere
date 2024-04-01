@@ -71,15 +71,16 @@
             # compile-time dependencies
             buildInputs =
               [
+                # default dependencies would go here
               ]
               ++ lib.optionals pkgs.stdenv.isDarwin [
                 # Additional darwin specific inputs can be set here
-                pkgs.libiconv
+                #pkgs.libiconv
               ];
 
             # compile and test/runtime dependencies
             nativeBuildInputs = [
-                pkgs.ncurses
+              pkgs.ncurses
             ];
 
             preBuild = ''
@@ -118,7 +119,7 @@
         # artifacts from above.
         my-crate = craneLib.buildPackage (commonArgs
           // {
-            cargoArtifacts = cargoArtifacts;
+            inherit cargoArtifacts;
           });
       in {
         checks =
@@ -192,7 +193,7 @@
           };
       };
     in
-      (lib.fold lib.recursiveUpdate {} [
+      lib.fold lib.recursiveUpdate {} [
         (mkDrv {})
         (mkDrv {musl = true;})
         {
@@ -215,5 +216,5 @@
               RUST_SRC_PATH = rustPlatform.rustLibSrc;
             };
         }
-      ]));
+      ]);
 }
