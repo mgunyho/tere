@@ -69,18 +69,20 @@
             strictDeps = true;
 
             # compile-time dependencies
-            buildInputs =
+            buildInputs = with pkgs;
               [
                 # default dependencies would go here
               ]
-              ++ lib.optionals pkgs.stdenv.isDarwin [
+              ++ lib.optionals stdenv.isDarwin [
                 # Additional darwin specific inputs can be set here
-                #pkgs.libiconv
+                libiconv
               ];
 
             # compile and test/runtime dependencies
-            nativeBuildInputs = [
-              pkgs.ncurses
+            nativeBuildInputs = with pkgs; [
+              # ncurses provides the tput command needed for integration tests
+              # https://github.com/mgunyho/tere/issues/93#issuecomment-2029624187
+              ncurses
             ];
 
             preBuild = ''
