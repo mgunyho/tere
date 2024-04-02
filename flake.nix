@@ -126,8 +126,8 @@
           lib.mapAttrs'
           (n: v:
             if musl
-            then lib.mkKeyValue "${n}-musl" v
-            else lib.mkKeyValue n v) {
+            then lib.nameValuePair "${n}-musl" v
+            else lib.nameValuePair n v) {
             # Build the crate as part of `nix flake check` for convenience
             inherit my-crate;
 
