@@ -27,6 +27,12 @@ pub fn check_first_run_with_prompt(
     settings: &TereSettings,
     window: &mut Stderr,
 ) -> Result<(), TereError> {
+    // If the user has explicitly requested to skip the first run promt, then we don't need to
+    // determine if the app is being run for the first time and return early.
+    if settings.skip_first_run_prompt {
+        return Ok(());
+    }
+
     let hist_file = &settings.history_file;
 
     // For now we use a bit of a heuristic to determine if the app is being run for the first time:
