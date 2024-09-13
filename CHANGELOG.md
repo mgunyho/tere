@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Add a cli flag named `--skip-first-run-prompt` that disables the welcome message shown on the first launch of tere, which prompts the user to update their shell configuration for proper directory changing functionality.
 - Update dependencies
 
 ## 1.5.1 (2023-08-24)
