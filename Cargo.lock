@@ -565,7 +565,7 @@ dependencies = [
 
 [[package]]
 name = "tere"
-version = "1.5.2"
+version = "1.6.0"
 dependencies = [
  "clap",
  "crokey",
