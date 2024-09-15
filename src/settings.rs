@@ -137,6 +137,8 @@ pub struct TereSettings {
     pub mouse_enabled: bool,
 
     pub keymap: HashMap<(KeyEvent, ActionContext), Action>,
+
+    pub skip_first_run_prompt: bool,
 }
 
 pub type DeprecationWarnings = Vec<&'static str>;
@@ -266,6 +268,10 @@ impl TereSettings {
             .get_one::<SortMode>("sort")
             .cloned()
             .unwrap_or_default();
+
+        if args.get_flag("skip-first-run-prompt") {
+            ret.skip_first_run_prompt = true;
+        }
 
         Ok((ret, warnings))
     }
@@ -849,6 +855,20 @@ mod tests {
         ]);
         assert!(!settings.mouse_enabled);
 
+    }
+
+    #[test]
+    fn test_skip_first_run_prompt() {
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+        ]);
+        assert!(!settings.skip_first_run_prompt);
+
+        let settings = parse_cli_no_warnings(vec![
+            "foo",
+            "--skip-first-run-prompt",
+        ]);
+        assert!(settings.skip_first_run_prompt);
     }
 
 }

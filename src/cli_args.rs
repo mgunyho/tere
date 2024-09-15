@@ -250,6 +250,12 @@ justify_and_indent(
              .default_value("off")
              .overrides_with("mouse")
             )
+        .arg(Arg::new("skip-first-run-prompt")
+            .action(ArgAction::SetTrue)
+            .long("skip-first-run-prompt")
+            .help("Skip the first run prompt")
+            .long_help("Disables the welcome message shown on the first launch of tere, which prompts the user to update their shell configuration for proper directory changing functionality. Use this flag if you have already configured your shell or want to bypass the prompt for other reasons.")
+            )
 }
 
 /// Justify the list of enum variants (i.e. `ALL_ACTIONS` or `ALL_CONTEXTS`) and their

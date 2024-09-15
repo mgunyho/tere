@@ -1,3 +1,11 @@
+## Unreleased
+
+
+## 1.5.2 (2024-09-15)
+
+- Add a cli flag named `--skip-first-run-prompt` that disables the welcome message shown on the first launch of tere, which prompts the user to update their shell configuration for proper directory changing functionality. (Thanks to Timon Schelling, Github #104)
+- Update dependencies
+
 ## 1.5.1 (2023-08-24)
 
 - Fix output formatting when exiting the app without cd, or when canceling the first run prompt (Thanks @orhun, Github #91, #92)

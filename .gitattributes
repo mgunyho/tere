@@ -1,0 +1,8 @@
+# To render parts of the built-in help screen, tere reads the README file at
+# compile time and splits it at runtime by newlines \n. This breaks on Windows
+# if using the default Git setting of using CR+LF instead of just LF. Here we
+# specify that the README should always be checked out as LF to avoid this
+# (it's simpler to do this way than to change the program logic to handle both
+# CRLF and LF).
+
+README.md text eol=lf

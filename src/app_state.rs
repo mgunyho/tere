@@ -1695,14 +1695,15 @@ mod tests {
     #[test]
     fn test_case_sensitive_mode_change() {
         let tmp = TempDir::new().unwrap();
-        let mut s = create_test_state_with_folders(&tmp, 10, vec!["A", "a"]);
+        // Note: on windows we can't create folders named 'A' and 'a'.
+        let mut s = create_test_state_with_folders(&tmp, 10, vec!["Ab", "ac"]);
         s.cursor_pos = 1;
         s.advance_search("a");
 
         // current state: ('*' shows the matches)
         //   ..
-        // > A  *
-        //   a  *
+        // > Ab *
+        //   ac *
 
         assert_eq!(s.visible_match_indices(), vec![1, 2]);
         assert_eq!(s.cursor_pos, 1);
@@ -1799,7 +1800,10 @@ mod tests {
         let mut s = create_test_state_with_folders(&tmp, 10, vec!["foo"]);
         assert_eq!(s.current_path, tmp.path());
         assert!(s.change_dir("/").is_ok());
+        #[cfg(unix)]
         assert_eq!(s.current_path, PathBuf::from("/"));
+        #[cfg(windows)]
+        assert_eq!(s.current_path, PathBuf::from("C:\\"));
     }
 
     #[test]
@@ -1831,7 +1835,12 @@ mod tests {
 
         // root
         let (path, res) = s.find_valid_cd_target(&PathBuf::from("/")).unwrap();
+
+        #[cfg(unix)]
         assert_eq!(path, PathBuf::from("/"));
+        #[cfg(windows)]
+        assert_eq!(path, PathBuf::from("C:\\"));
+
         match res {
             CdResult::Success => {}
             something_else => panic!("{:?}", something_else),
@@ -1839,13 +1848,22 @@ mod tests {
 
         // valid target is root
         let (path, res) = s.find_valid_cd_target(&PathBuf::from("/foo/bar")).unwrap();
+
+        #[cfg(unix)]
         assert_eq!(path, PathBuf::from("/"));
+        #[cfg(windows)]
+        assert_eq!(path, PathBuf::from("C:\\"));
+
         match res {
             CdResult::MovedUpwards {
                 target_abs_path: p,
                 root_error: e,
             } => {
+                #[cfg(unix)]
                 assert_eq!(p, PathBuf::from("/foo/bar"));
+                #[cfg(windows)]
+                assert_eq!(p, PathBuf::from("C:\\foo\\bar"));
+
                 assert_eq!(e.kind(), ErrorKind::NotFound);
             }
             something_else => panic!("{:?}", something_else),
