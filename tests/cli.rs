@@ -166,3 +166,4 @@ fn skip_first_run_prompt() -> Result<(), RexpectError> {
 
     Ok(())
 }
+}
