@@ -138,4 +138,32 @@ fn first_run_prompt_accept() -> Result<(), RexpectError> {
 
     Ok(())
 }
+
+#[test]
+fn skip_first_run_prompt() -> Result<(), RexpectError> {
+    let mut cmd = get_cmd();
+
+    // set the XDG_CACHE_HOME to point to a temporary folder so that we always get the first run prompt
+    let tmp = tempdir().expect("error creating temporary folder");
+    cmd.env("XDG_CACHE_HOME", tmp.path().as_os_str())
+        .current_dir(tmp.path())
+        .env("PWD", tmp.path())
+        .args(["--skip-first-run-prompt"]);
+
+    let mut proc = run_app_with_cmd(cmd);
+
+    // 0x1b = escape
+    proc.send("\x1b")?;
+    proc.writer.flush()?;
+
+    let output = proc.exp_eof()?;
+
+    let ptn = Regex::new("It seems like you are running.*for the first time").unwrap();
+    // check that first run prompt message was not printed
+    assert!(ptn.find(&output).is_none());
+
+    assert!(tmp.path().join("tere").join("history.json").exists());
+
+    Ok(())
+}
 }
