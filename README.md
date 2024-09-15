@@ -291,7 +291,7 @@ This will place the `tere` binary in the folder `target/debug`, or `target/relea
 
 New features should go on the `develop` branch before they are released, and they should be mentioned in `CHANGELOG.md`.
 
-To set up cross-compilation for other platforms (e.g. when making a release), run (on Ubuntu):
+To set up cross-compilation for other platforms (e.g. when making a release), run (on Debian):
 ```shell
 # Support for linux without dependence on glibc
 rustup target add x86_64-unknown-linux-musl
@@ -320,7 +320,7 @@ To check that a new shell alias works correctly, you should verify the following
 
 ### Making a new release
 
-Here's a checklist of things to do for a new release. The release binaries should be compiled on Linux with a suitably old version of glibc for compatibility (Ubuntu 20.04 LTS as of 2023 July).
+Here's a checklist of things to do for a new release. The release binaries should be compiled on Linux with a suitably old version of glibc for compatibility (Debian 11 / glibc 2.31 as of 2024 September).
 
 - Change to the `develop` branch (all changes should be merged to it)
 - Run `cargo test` and verify that all tests pass
@@ -330,11 +330,11 @@ Here's a checklist of things to do for a new release. The release binaries shoul
 - `git checkout master && git merge --no-ff develop`. The commit title should be "Version X.Y.Z" and the commit message should contain the changelog.
 - `git tag vX.Y.Z`
 - `git push && git push --tags`. Also make sure that the latest version of `develop` is pushed.
-- `sh ./build-release.sh` to build the binaries. They are zipped and placed in the folder `release/`.
+- On a suitable distro (using e.g. [Distrobox](https://distrobox.it/)), run `sh ./build-release.sh` to build the binaries. They are zipped and placed in the folder `release/`.
 - Upload binaries to github and copy-paste the changelog from the commit message
 - `cargo publish` to upload to crates.io
 
 
 ## License
 
-Copyright 2023 András Márton Gunyhó. Licensed under the EUPL, see the `LICENSE` file.
+Copyright 2024 András Márton Gunyhó. Licensed under the EUPL, see the `LICENSE` file.
