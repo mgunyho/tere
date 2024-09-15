@@ -580,6 +580,7 @@ dependencies = [
  "tempfile",
  "textwrap",
  "unicode-segmentation",
+ "winapi",
 ]
 
 [[package]]

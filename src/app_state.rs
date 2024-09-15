@@ -32,7 +32,7 @@ pub type MatchesLocType = Vec<(usize, usize)>;
 
 /// A vector that keeps track of items that are 'filtered'. It offers indexing/viewing
 /// both the vector of filtered items and the whole unfiltered vector.
-struct MatchesVec {
+pub struct MatchesVec {
     all_items: Vec<CustomDirEntry>,
     // Each key-value pair in this map corresponds to an item in `all_items` that matches the
     // current search. The key is the item's index in `all_items`, while the value contains the
@@ -112,6 +112,16 @@ pub struct CustomDirEntry {
 }
 
 impl CustomDirEntry {
+    pub fn custom(path_buf: PathBuf) -> CustomDirEntry {
+        Self{
+            _path: path_buf.clone(),
+            // TODO: Don't let this hack survive! But we need it to properly respond for `is_dir`
+            metadata: Some(std::fs::metadata("/").unwrap()),
+            symlink_target: None,
+            _file_name: std::ffi::OsString::from(path_buf.clone()),
+        }
+    }
+
     /// Return the file name of this directory entry. The file name is an OsString,
     /// which may not be possible to convert to a String. In this case, this
     /// function returns an empty string.
@@ -169,7 +179,7 @@ impl From<&Path> for CustomDirEntry {
 }
 
 /// The type of the `ls_output_buf` buffer of the app state
-type LsBufType = MatchesVec;
+pub type LsBufType = MatchesVec;
 
 /// Possible non-error results of 'change directory' operation
 #[derive(Debug)]
@@ -196,7 +206,7 @@ pub struct TereAppState {
 
     // This vector will hold the list of files/folders in the current directory,
     // including ".." (the parent folder).
-    ls_output_buf: LsBufType,
+    pub ls_output_buf: LsBufType,
 
     // Have to manually keep track of the logical absolute path of our app, see https://stackoverflow.com/a/70309860/5208725
     pub current_path: PathBuf,
