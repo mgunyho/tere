@@ -337,4 +337,4 @@ Here's a checklist of things to do for a new release. The release binaries shoul
 
 ## License
 
-Copyright 2023 András Márton Gunyhó. Licensed under the EUPL, see the `LICENSE` file.
+Copyright 2024 András Márton Gunyhó. Licensed under the EUPL, see the `LICENSE` file.
