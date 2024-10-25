@@ -83,6 +83,21 @@ aliases["tere"] = _tere
 </details>
 
 <details>
+<summary>Nushell</summary>
+
+Put this in your `config.nu`:
+
+```nushell
+def --wrapped --env tere [...args]: {
+    let result = ( ^tere ...$args )
+    if $result != "" {
+        cd $result
+    }
+}
+```
+</details>
+
+<details>
 <summary>PowerShell</summary>
 
 Put this in your `$PROFILE`:
@@ -114,21 +129,6 @@ IF ["%OUTPUT%"] == [""] goto :EOF
 cd %OUTPUT%
 ```
 Note that if you want to make `tere` work with *both* PowerShell and CMD, you should *not* put `tere.exe` to a location that is in your `PATH`, because then the `.exe` will be run instead of the `.bat`. Place `tere.exe` somewhere that is not in your `PATH`, and use the full path to the exe in both the `.bat` file and in the PowerShell `$PROFILE`.
-</details>
-
-<details>
-<summary>Nushell</summary>
-
-Put this in your `config.nu`:
-
-```nushell
-def --wrapped --env tere [...args]: {
-	let result = ( ^tere ...$args )
-	if $result != "" {
-		cd $result
-	}
-}
-```
 </details>
 
 If `tere` is not in your `PATH`, use an absolute path to the tere binary in your shell config file. For example, for Bash/Zsh, you would need to replace `local result=$(command tere "$@")` with `local result=$(/path/to/tere "$@")`, or for PowerShell, replace `(Get-Command -CommandType Application tere)` with `C:\path\to\tere.exe`.
