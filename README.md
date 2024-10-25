@@ -85,7 +85,7 @@ aliases["tere"] = _tere
 <details>
 <summary>Nushell</summary>
 
-Put this in your `config.nu` (Nusbell 0.88.0 or newer is required):
+Put this in your `config.nu` (Nushell 0.88.0 or newer is required):
 
 ```nushell
 def --wrapped --env tere [...args]: {
