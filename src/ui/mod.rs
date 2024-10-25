@@ -2,12 +2,17 @@ mod action;
 pub mod help_window;
 pub mod markup_render;
 
+#[cfg(windows)]
+extern crate winapi;
+
 use std::convert::TryFrom;
+use std::error::Error;
+use std::ffi::CString;
 use std::fmt::Write as _;
 use std::io::{Stderr, Write};
 use std::path::PathBuf;
 
-use crate::app_state::{CdResult, TereAppState};
+use crate::app_state::{CdResult, CustomDirEntry, TereAppState};
 use crate::error::TereError;
 use crate::settings::{CaseSensitiveMode, GapSearchMode, SortMode};
 pub use action::{Action, ActionContext};
@@ -606,6 +611,54 @@ impl<'a> TereTui<'a> {
         Ok(())
     }
 
+    #[cfg(windows)]
+    fn get_roots() -> CTResult<Vec<String>> {
+        use winapi::um::fileapi::{
+            GetDriveTypeA,
+            GetLogicalDrives,
+        };
+
+        let mut results: Vec<String> = Vec::new();
+
+        unsafe {
+            let mut drives = GetLogicalDrives();
+            let mut drive_letter = 'A';
+
+            while drives != 0 {
+                if drives & 1 == 1 {
+                    let str = drive_letter.to_string() + ":\\";
+                    let cstr = CString::new(str.clone())?;
+                    let x = GetDriveTypeA(cstr.as_ptr());
+                    if x == 3 || x == 2 {
+                        results.push(str);
+                    }
+                }
+                drive_letter = std::char::from_u32((drive_letter as u32) + 1).unwrap();
+                drives >>= 1;
+            }
+        }
+
+        Ok(results)
+    }
+
+    #[cfg(windows)]
+    fn on_go_to_root(&mut self) -> CTResult<()> {
+        let drive_letters: Vec<CustomDirEntry> = Self::get_roots()?
+            .iter()
+            .map(|r| PathBuf::from(r))
+            .map(|p| CustomDirEntry::custom(p))
+            .collect();
+
+        self.info_message("Select drive to browse")?;
+        self.app_state.ls_output_buf = drive_letters.into();
+
+        self.redraw_header()?;
+        self.redraw_main_window()?;
+        self.redraw_footer()?;
+        Ok(())
+    }
+
+    #[cfg(not(windows))]
     fn on_go_to_root(&mut self) -> CTResult<()> {
         // note: this is the same as std::path::Component::RootDir
         // using a temporary buffer to avoid allocating on the heap, because MAIN_SEPARATOR_STR is
