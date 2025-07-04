@@ -554,7 +554,7 @@ impl<'a> TereTui<'a> {
         self.redraw_footer()
     }
 
-    // When scroling up or down by a screenful (i.e. 'page up' or 'page down')
+    // When scrolling up or down by a screenful (i.e. 'page up' or 'page down')
     fn on_cursor_up_down_screen(&mut self, up: bool) -> CTResult<()> {
         if !self.app_state.is_searching() {
             let (_, h) = main_window_size()?;
