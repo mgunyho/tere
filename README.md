@@ -83,6 +83,21 @@ aliases["tere"] = _tere
 </details>
 
 <details>
+<summary>Nushell</summary>
+
+Put this in your `config.nu` (Nushell 0.88.0 or newer is required):
+
+```nushell
+def --wrapped --env tere [...args]: {
+    let result = ( ^tere ...$args )
+    if $result != "" {
+        cd $result
+    }
+}
+```
+</details>
+
+<details>
 <summary>PowerShell</summary>
 
 Put this in your `$PROFILE`:
