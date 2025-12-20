@@ -207,9 +207,10 @@ fn minimum_escape_codes() -> Result<(), RexpectError> {
         include_str!("expected-output-basic.txt")
     );
 
-    assert_eq!(
-        output,
-        expected_output,
+    pretty_assertions::assert_eq!(
+        // explicitly convert to debug representation, otherwise the control codes will be included
+        format!("{:?}", expected_output),
+        format!("{:?}", output),
     );
     Ok(())
 }

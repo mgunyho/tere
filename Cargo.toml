@@ -28,6 +28,7 @@ default-features = false
 features = ["wrap_help", "suggestions", "std", "derive", "usage"]
 
 [dev-dependencies]
+pretty_assertions = "1.4.1"
 tempfile = "3.12"
 
 [target.'cfg(unix)'.dev-dependencies]
