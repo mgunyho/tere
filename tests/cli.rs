@@ -189,14 +189,26 @@ fn minimum_escape_codes() -> Result<(), RexpectError> {
     proc.send("\x1b")?;
     proc.writer.flush()?;
 
-    let output = proc.exp_eof()?;
-    let expected_output = include_str!("expected-output-basic.txt");
+    fn normalize_version(content: &str) -> String {
+        let ptn = Regex::new(r"tere \d+\.\d+\.\d+").unwrap();
+        ptn.replace(
+            &content,
+            "tere x.y.z",
+        ).to_string()
+    }
 
     let tmp_path_str = format!("{}", tmp.path().display());
-    // The path of the temporary folder will vary, but everything else should be the same as in the
-    // example output
+    // The path of the temporary folder and version string will vary, but everything else should be
+    // the same as in the example output
+    let output = normalize_version(
+        &proc.exp_eof()?
+    ).replace(&tmp_path_str, "/tmp/xxxxxxxxxx");
+    let expected_output = normalize_version(
+        include_str!("expected-output-basic.txt")
+    );
+
     assert_eq!(
-        output.replace(&tmp_path_str, "/tmp/xxxxxxxxxx"),
+        output,
         expected_output,
     );
     Ok(())
