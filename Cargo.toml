@@ -32,7 +32,7 @@ pretty_assertions = "1.4.1"
 tempfile = "3.12"
 
 [target.'cfg(unix)'.dev-dependencies]
-rexpect = "0.5"
+rexpect = "0.6"
 
 [profile.release]
 lto = true
