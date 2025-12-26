@@ -90,6 +90,7 @@ impl<'a> TereTui<'a> {
         queue!(
             self.window,
             cursor::MoveTo(0, u16::try_from(row).unwrap_or(u16::MAX)),
+            style::ResetColor,
             terminal::Clear(terminal::ClearType::CurrentLine),
         )
     }
@@ -369,11 +370,8 @@ impl<'a> TereTui<'a> {
             }
         }
 
-        execute!(
-            self.window,
-            style::ResetColor,
-            style::SetAttribute(Attribute::Reset),
-        )
+        // actually draw
+        execute!(self.window)
     }
 
     // redraw row 'row' (relative to the top of the main window) without highlighting
