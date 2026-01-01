@@ -27,7 +27,7 @@ macro_rules! gap_search_mode_template {
 
 pub fn get_cli_args() -> Command {
     Command::new(env!("CARGO_PKG_NAME"))
-        .version(env!("CARGO_PKG_VERSION"))
+        .version(env!("GIT_DESCRIPTION"))
         .about(env!("CARGO_PKG_DESCRIPTION"))
         //.author(env!("CARGO_PKG_AUTHORS")) // TODO: rest of these https://stackoverflow.com/a/27841363
         .arg(Arg::new("filter-search")
