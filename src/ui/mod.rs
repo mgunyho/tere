@@ -90,6 +90,7 @@ impl<'a> TereTui<'a> {
         queue!(
             self.window,
             cursor::MoveTo(0, u16::try_from(row).unwrap_or(u16::MAX)),
+            style::ResetColor,
             terminal::Clear(terminal::ClearType::CurrentLine),
         )
     }
@@ -291,6 +292,7 @@ impl<'a> TereTui<'a> {
                     .collect();
 
             // queue draw actions for each (non-)underlined segment
+            let mut prev = (Attribute::NoUnderline, style::Color::Reset, style::Color::Reset);
             for (c, underline) in &letters_underlining {
                 let (underline, fg, bg) = match (underline, highlight) {
                     (true, _) => (
@@ -314,13 +316,18 @@ impl<'a> TereTui<'a> {
                     ),
                 };
 
-                queue!(
-                    self.window,
-                    style::SetAttribute(underline),
-                    style::SetBackgroundColor(bg),
-                    style::SetForegroundColor(fg),
-                    style::Print(c.to_string()),
-                )?;
+                // TODO: check changes individually for underline, fg, bg
+                if (underline, fg, bg) != prev {
+                    // only queue set attribute actions if they have changed
+                    queue!(
+                        self.window,
+                        style::SetAttribute(underline),
+                        style::SetBackgroundColor(bg),
+                        style::SetForegroundColor(fg),
+                    )?;
+                    prev = (underline, fg, bg);
+                }
+                queue!(self.window, style::Print(c.to_string()));
             }
 
             if let Some(target) = symlink_target {
@@ -363,11 +370,8 @@ impl<'a> TereTui<'a> {
             }
         }
 
-        execute!(
-            self.window,
-            style::ResetColor,
-            style::SetAttribute(Attribute::Reset),
-        )
+        // actually draw
+        execute!(self.window)
     }
 
     // redraw row 'row' (relative to the top of the main window) without highlighting
