@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Show git revision in version string for untagged versions
+
 
 ## 1.6.0 (2024-09-15)
 

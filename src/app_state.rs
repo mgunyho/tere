@@ -234,7 +234,7 @@ impl TereAppState {
             format!(
                 "{} {} - Type something to search, press '?' to view help or Esc to exit.",
                 env!("CARGO_PKG_NAME"),
-                env!("CARGO_PKG_VERSION"),
+                env!("GIT_DESCRIPTION"),
             )
         } else {
             //TODO: red color or something?
