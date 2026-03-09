@@ -280,6 +280,7 @@ keystrokes to search and navigate folders. File management is not in the scope o
 - [ranger](https://ranger.github.io/)
 - [nnn](https://github.com/jarun/nnn)
 - [Midnight Commander](https://midnight-commander.org/)
+- [yazi](https://github.com/sxyazi/yazi)
 - [vifm](https://vifm.info/)
 - [clifm](https://github.com/leo-arch/clifm) (C)
 - [clifm](https://github.com/pasqu4le/clifm) (Haskell)
