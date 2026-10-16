@@ -1,7 +1,6 @@
 /// This module contains some functions to do some extremely basic rendering of markdown to
 /// `StyledContent` compatible with crossterm. Because the rendering is so simple, we are doing it
 /// ourselves instead of a heavy, full-fledged markdown crate, at least for now.
-
 use crossterm::style::{StyledContent, Stylize};
 
 pub const README_STR: &str = include_str!("../../README.md");
@@ -103,9 +102,10 @@ where
             });
         }
 
-        // always turn off bold at the end of the line
-        if bold {
-            bold = false;
+        // A wrap can fall inside a bold span. Only toggle at an actual markup
+        // boundary, including one immediately before the newline.
+        if Some(&counter) == next_toggle_loc {
+            bold = !bold;
             next_toggle_loc = bold_toggle_locs.next();
         }
 
@@ -183,5 +183,34 @@ mod tests {
         assert_eq!(stylized[2][0], "lorem ipsum".to_string().stylize());
         assert_eq!(stylized[3][0], "dolor/sit".to_string().bold());
         assert_eq!(stylized[3][1], " amet".to_string().stylize());
+    }
+
+    #[test]
+    fn test_wrapped_heading_stays_bold() {
+        let stylized = wrap_and_stylize("## Keyboard shortcuts\n\nNormal text", 10);
+
+        assert_eq!(stylized[0], vec!["Keyboard".to_string().bold()]);
+        assert_eq!(stylized[1], vec!["shortcuts".to_string().bold()]);
+        assert_eq!(stylized[2], vec![]);
+        assert_eq!(stylized[3], vec!["Normal".to_string().stylize()]);
+        assert_eq!(stylized[4], vec!["text".to_string().stylize()]);
+    }
+
+    #[test]
+    fn test_wrapped_inline_code_stays_bold() {
+        let stylized = wrap_and_stylize("Use `Ctrl Shift` then `Enter`.", 10);
+
+        assert_eq!(
+            stylized[0],
+            vec!["Use ".to_string().stylize(), "Ctrl".to_string().bold()]
+        );
+        assert_eq!(
+            stylized[1],
+            vec!["Shift".to_string().bold(), " then".to_string().stylize()]
+        );
+        assert_eq!(
+            stylized[2],
+            vec!["Enter".to_string().bold(), ".".to_string().stylize()]
+        );
     }
 }
