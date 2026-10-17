@@ -293,6 +293,7 @@ keystrokes to search and navigate folders. File management is not in the scope o
 
 - [noice](https://git.2f30.org/noice/file/README.html) - Very similar to `tere`, but there is no option to print the current directory on exit. Filtering/searching directory contents requires two extra keystrokes.
 - [twilight commander](https://github.com/golmman/twilight-commander) - Main goal seems to be a folder tree browser embedded in other apps. No search. No option to go above the initial working directory.
+- Some terminal-based text editors, such as [nano](https://www.nano-editor.org/) and [Vim](https://www.vim.org/) have built-in functionality to browse files and folders.
 
 ## Hacking
 
