@@ -1,6 +1,7 @@
 ## Unreleased
 
 - Show git revision in version string for untagged versions
+- Preserve bold styling across wrapped lines in the help screen
 
 
 ## 1.6.0 (2024-09-15)
