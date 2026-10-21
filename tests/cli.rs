@@ -166,4 +166,52 @@ fn skip_first_run_prompt() -> Result<(), RexpectError> {
 
     Ok(())
 }
+
+#[test]
+fn minimum_escape_codes() -> Result<(), RexpectError> {
+    // The app should ouptut the minimum amount of escape codes, and not any redundant ones
+
+    let mut cmd = get_cmd_no_first_run_prompt();
+    let tmp = tempdir().expect("error creating temporary folder");
+
+    // create some folders
+    for folder_name in vec!["foo", "bar"] {
+        let p = tmp.path().join(folder_name);
+        std::fs::create_dir(p).unwrap();
+    }
+
+    cmd.current_dir(tmp.path())
+        // note: have to set PWD for this to work...
+        .env("PWD", tmp.path().as_os_str());
+
+    let mut proc = run_app_with_cmd(cmd);
+    // 0x1b == 0o33 == 27 escape
+    proc.send("\x1b")?;
+    proc.writer.flush()?;
+
+    fn normalize_version(content: &str) -> String {
+        let ptn = Regex::new(r"tere \d+\.\d+\.\d+").unwrap();
+        ptn.replace(
+            &content,
+            "tere x.y.z",
+        ).to_string()
+    }
+
+    let tmp_path_str = format!("{}", tmp.path().display());
+    // The path of the temporary folder and version string will vary, but everything else should be
+    // the same as in the example output
+    let output = normalize_version(
+        &proc.exp_eof()?
+    ).replace(&tmp_path_str, "/tmp/xxxxxxxxxx");
+    let expected_output = normalize_version(
+        include_str!("expected-output-basic.txt")
+    );
+
+    pretty_assertions::assert_eq!(
+        // explicitly convert to debug representation, otherwise the control codes will be included
+        format!("{:?}", expected_output),
+        format!("{:?}", output),
+    );
+    Ok(())
+}
 }

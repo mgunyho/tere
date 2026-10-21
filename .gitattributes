@@ -6,3 +6,6 @@
 # CRLF and LF).
 
 README.md text eol=lf
+
+# This is raw output from the program, don't do any conversions on it
+tests/expected-output-basic.txt -text
